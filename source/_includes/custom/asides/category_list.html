@@ -1,0 +1,17 @@
+
+<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Categories</h3>
+  </div>
+  <div class="list-group">
+    {% for category in site.categories %}
+    {% capture category_url %}/{{ site.category_dir }}/{{ category | first | slugize | downcase | replace:' ','-' | append:'/index.html'}}{% endcapture %}
+    <a class="list-group-item {% if category_url == page.url %}active{% endif %}" href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">{{ category | last | size }}</span>
+        {{ category | first }}
+      </a>
+    {% endfor %}
+  </div>
+</section>
+<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
