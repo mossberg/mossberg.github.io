@@ -5,7 +5,7 @@ title: Netcat "-e" Analysis
 categories: linux
 ---
 
-As I mentioned in a [previous post](http://blog.mark.lc/2014/03/05/netcat/), netcat has this cool
+As I mentioned in a [previous post](http://blog.mark.lc/blog/2014/03/05/netcat/), netcat has this cool
 `-e` parameter that lets you specify an executable to essentially turn into
 a network service, that is, a process that can send and receive data over the
 network. This option is option is particularly useful when called with a shell
