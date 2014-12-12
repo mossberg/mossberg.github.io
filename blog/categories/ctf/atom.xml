@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Ctf | Mark Mossberg's Blog]]></title>
+  <link href="http://blog.mark.lc/blog/categories/ctf/atom.xml" rel="self"/>
+  <link href="http://blog.mark.lc/"/>
+  <updated>2014-12-11T23:43:57-05:00</updated>
+  <id>http://blog.mark.lc/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Beginner Crackme]]></title>
+    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <updated>2014-10-27T00:00:00-04:00</updated>
+    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
+a crackme style exercise to practice reading x86 assembly and basic
+reverse engineering.</p>
+
+<p>The program is pretty simple. It accepts a password as an argument and we&rsquo;re
+told that if the password is correct, &ldquo;ok&rdquo; is printed.</p>
+
+<pre><code>$ ./crackme
+usage: ./crackme &lt;secret&gt;
+$ ./crackme test
+$
+</code></pre>
+
+<p>As usual, I start by running <code>file</code> on the binary, which shows that it&rsquo;s a
+standard x64 ELF binary. <code>file</code> also says that the binary is &ldquo;not stripped&rdquo;, which means
+that it includes symbols. All I really know about symbols are that they can
+include debugging information about a binary like function and variable names
+and some symbols aren&rsquo;t really necessary; they can be stripped out to reduce
+the binary&rsquo;s size and make reverse engineering more challenging. Maybe I&rsquo;ll
+do a more in depth post on this in the future.</p>
+
+<pre><code>$ file crackme
+crackme: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=0x3fcf895b7865cb6be6b934640d1519a1e6bd6d39, not stripped
+</code></pre>
+
+<p>Next, I run <code>strings</code>, hoping to get lucky and find the password amongst the
+strings in the binary. Strings looks for series of printable characters followed
+by a NULL, but unfortunately nothing here works as the password.</p>
+
+<pre><code>$ strings crackme
+/lib64/ld-linux-x86-64.so.2
+exd4
+libc.so.6
+puts
+printf
+memcmp
+__libc_start_main
+__gmon_start__
+GLIBC_2.2.5
+fffff.
+AWAVA
+AUATL
+[]A\A]A^A_
+usage: %s &lt;secret&gt;
+;*3$"
+</code></pre>
+
+<p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
+actually try to reverse engineer it.
+We&rsquo;ll start with <code>main</code>.</p>
+
+<pre><code class="asm">$ gdb -batch -ex 'file crackme' -ex 'disas main'
+Dump of assembler code for function main:
+   0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+   0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+   0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+End of assembler dump.
+</code></pre>
+
+<p>Let&rsquo;s break this down a little.</p>
+
+<pre><code class="asm">    0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+    0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+    0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+</code></pre>
+
+<p>Starting at the beginning, we see the stack pointer decremented as part of
+the function prologue. The prologue is a set of setup steps involving
+saving the old frame&rsquo;s
+base pointer on the stack, reassigning the base pointer to the current
+stack pointer, then subtracting the stack pointer a certain amount to make room
+on the stack
+for local variables, etc. We don&rsquo;t see the former two steps because this is
+the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
+the base pointer isn&rsquo;t necessary.</p>
+
+<p>Then the <code>edi</code> register is
+compared to 1 and if it is less than or equal, we jump to offset 39.</p>
+
+<pre><code class="asm">   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+</code></pre>
+
+<p>Here at offset 39, we print something then jump to offset 34 where we repair
+the stack (undo the sub instruction from the prologue) and return (ending
+execution).</p>
+
+<p>This is likely how the program checks the arguments and prints the usage
+message if no arguments are supplied (which would cause argc/edi to be 1).</p>
+
+<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
+instruction.</p>
+
+<pre><code class="asm">   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+</code></pre>
+
+<p>Here we can see the <code>verify_secret</code> function being called with a parameter
+in <code>rdi</code>. This is most likely the argument we passed into the program. We can
+confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
+
+<pre><code>gdb-peda$ tele $rsi
+0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
+0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
+0016| 0x7fffffffeb58 --&gt; 0x0
+</code></pre>
+
+<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
+(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
+
+<p>If we look after the <code>verify_secret</code> call we can see the program checks
+if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
+<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
+print out the &ldquo;ok&rdquo; message we want.</p>
+
+<pre><code class="asm">   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+</code></pre>
+
+<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
+and to see how we can make it return non-zero.</p>
+
+<pre><code class="asm">Dump of assembler code for function verify_secret:
+   0x00000000004005e0 &lt;+0&gt;:     sub    rsp,0x408
+   0x00000000004005e7 &lt;+7&gt;:     movzx  eax,BYTE PTR [rdi]
+   0x00000000004005ea &lt;+10&gt;:    mov    rcx,rsp
+   0x00000000004005ed &lt;+13&gt;:    test   al,al
+   0x00000000004005ef &lt;+15&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x00000000004005f1 &lt;+17&gt;:    mov    rdx,rsp
+   0x00000000004005f4 &lt;+20&gt;:    jmp    0x400604 &lt;verify_secret+36&gt;
+   0x00000000004005f6 &lt;+22&gt;:    nop    WORD PTR cs:[rax+rax*1+0x0]
+   0x0000000000400600 &lt;+32&gt;:    test   al,al
+   0x0000000000400602 &lt;+34&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x0000000000400604 &lt;+36&gt;:    xor    eax,0xfffffff7
+   0x0000000000400607 &lt;+39&gt;:    lea    rsi,[rsp+0x400]
+   0x000000000040060f &lt;+47&gt;:    add    rdx,0x1
+   0x0000000000400613 &lt;+51&gt;:    mov    BYTE PTR [rdx-0x1],al
+   0x0000000000400616 &lt;+54&gt;:    add    rdi,0x1
+   0x000000000040061a &lt;+58&gt;:    movzx  eax,BYTE PTR [rdi]
+   0x000000000040061d &lt;+61&gt;:    cmp    rdx,rsi
+   0x0000000000400620 &lt;+64&gt;:    jb     0x400600 &lt;verify_secret+32&gt;
+   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+   0x0000000000400634 &lt;+84&gt;:    test   eax,eax
+   0x0000000000400636 &lt;+86&gt;:    sete   al
+   0x0000000000400639 &lt;+89&gt;:    add    rsp,0x408
+   0x0000000000400640 &lt;+96&gt;:    movzx  eax,al
+   0x0000000000400643 &lt;+99&gt;:    ret
+End of assembler dump.
+</code></pre>
+
+<p>I won&rsquo;t walk through this one in detail because understanding each line
+isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
+the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
+returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
+parameters, two buffers to compare and their lengths, and returns 0 if the
+buffers are identical.</p>
+
+<pre><code class="asm">   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+</code></pre>
+
+<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
+is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
+examine address 0x600a80, we find this 24 byte string:</p>
+
+<pre><code>gdb-peda$ hexd 0x600a80 /2
+0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
+0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
+</code></pre>
+
+<p>Since this is a direct address to some memory, we can be fairly certain that
+we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
+instruction (offset 7)
+which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
+instruction (offset 36), and
+the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
+pointer to our input string, we can reasonably guess
+that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
+we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
+pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+with the xor key.</p>
+
+<p>Here&rsquo;s a way to do this with python.</p>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span>\<span class="n">x91</span>\<span class="n">xbf</span>\<span class="n">xa4</span>\<span class="n">x85</span>\<span class="n">x85</span>\<span class="n">xc3</span>\<span class="n">xba</span>\<span class="n">xb9</span>\<span class="n">x9f</span>\<span class="n">xa6</span>\<span class="n">xb6</span>\<span class="n">xb1</span>\<span class="n">x93</span>\<span class="n">xb9</span>\<span class="n">x83</span>\<span class="n">x8f</span>\<span class="n">xae</span>\<span class="n">xb1</span>\<span class="n">xae</span>\<span class="n">xc1</span>\<span class="n">xbc</span>\<span class="n">x80</span>\<span class="n">xca</span>\<span class="n">xca</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div></p>
+
+<p>Which results in this:</p>
+
+<pre><code>$ python crack.py
+fHSrr4MNhQAFdNtxYFY6Kw==
+$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
+ok
+</code></pre>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[SU-CTF 2014 - "Commerical Application!"]]></title>
+    <link href="http://blog.mark.lc/blog/2014/09/27/suctf_re/"/>
+    <updated>2014-09-27T00:00:00-04:00</updated>
+    <id>http://blog.mark.lc/blog/2014/09/27/suctf_re</id>
+    <content type="html"><![CDATA[<p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
+I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
+one of the 200 point challenges in the third (of five) difficulty tiers.</p>
+
+<h2>&ldquo;Commerical Application!&rdquo;</h2>
+
+<p>For this challenge, we&rsquo;re given an Android application and the hint:</p>
+
+<blockquote><p>Flag is a serial number.</p></blockquote>
+
+<p>I installed it on my phone, here&rsquo;s what it looks like:</p>
+
+<p><img src="/images/apk1.png" alt="" />
+<img src="/images/apk2.png" alt="" />
+<img src="/images/apk3.png" alt="" />
+<img src="/images/apk4.png" alt="" /></p>
+
+<p>I can tap on &ldquo;Picture-01&rdquo; and sliding to the right reveals this picture, but
+if I try to tap on &ldquo;Picture-02&rdquo; or &ldquo;Pictures-03&rdquo; the app says I need to
+enter a registration key. If I tap on the gear in the top right, I&rsquo;m
+prompted to enter my product key.</p>
+
+<p>Running <code>file</code> reveals that <code>.apk</code> files are apparently just Zip archives,
+so let&rsquo;s try simply <code>unzip</code>&lsquo;ing it.</p>
+
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file suCTF.apk
+suCTF.apk: Zip archive data, at least v2.0 to extract
+<span class="nv">$ </span>unzip suCTF.apk
+Archive:  suCTF.apk
+  inflating: assets/db.db
+  inflating: res/color/abs&lt;strong&gt;primary_text_disable_only_holo_dark.xml
+  inflating: res/color/abs&lt;/strong&gt;primary_text_disable_only_holo_light.xml
+  <span class="p">&amp;</span>hellip<span class="p">;</span>
+  inflating: classes.dex
+  inflating: META-INF/MANIFEST.MF
+  inflating: META-INF/CERT.SF
+  inflating: META-INF/CERT.RSA</code></pre></div></p>
+
+<p>Cool! Now we have all the miscellaneous files that comprise the app. There&rsquo;s
+a database file, various <code>.xml</code> design files, and most interestingly, a
+<code>classes.dex</code> file. <code>.dex</code> files contain bytecode run on the Android Dalvik VM, which
+is currently the Java runtime for Android devices, so <code>classes.dex</code> likely
+contains the code that runs the app, in compiled form. We can use the nifty
+<code>d2j-dex2jar</code> utility for decompiling it into a <code>classes-dex2jar.jar</code> file. <code>.jar</code>
+files are apparently also Zip archives, and we can again <code>unzip</code> it to extract
+its contents.</p>
+
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file classes.dex
+classes.dex: Dalvik dex file version 035
+<span class="nv">$ </span>d2j-dex2jar classes.dex
+dex2jar classes.dex -&gt; classes-dex2jar.jar
+<span class="nv">$ </span>unzip classes-dex2jar.jar
+  <span class="p">&amp;</span>hellip<span class="p">;</span>
+  inflating: edu/sharif/ctf/BuildConfig.class
+  inflating: edu/sharif/ctf/CTFApplication.class
+  inflating: edu/sharif/ctf/R<span class="nv">$attr</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$bool</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$color</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$dimen</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$drawable</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$id</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$integer</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$layout</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$menu</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$string</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$style</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$styleable</span>.class
+  inflating: edu/sharif/ctf/R.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$4</span>.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$5</span>.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$6</span>.class
+  inflating: edu/sharif/ctf/config/AppConfig.class
+  inflating: edu/sharif/ctf/db/DBHelper.class
+  inflating: edu/sharif/ctf/fragments/DListFragment<span class="nv">$1</span>.class
+  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$1</span>.class
+  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$OnPictureSelectedListener</span>.class
+  inflating: edu/sharif/ctf/security/KeyVerifier.class
+  <span class="p">&amp;</span>hellip<span class="p">;</span></code></pre></div></p>
+
+<p>This produces a TON of various <code>.class</code> files, but the most interesting lie
+in the <code>edu/sharif/ctf/</code> directory and are the compiled versions of the actual
+code that makes up this app. We can use the <code>jad</code> tool to decompile these back
+into Java source and start trying to reverse the product key.</p>
+
+<p>There&rsquo;s a directory in the app source called <code>security/</code> and contains a file
+called <code>KeyVerifier.class</code> that seems pretty promising. After decompiling it,
+we find a <code>KeyVerifier</code> class with some pretty cool functions.</p>
+
+<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isValidLicenceKey</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="kt">boolean</span> <span class="n">flag</span><span class="o">;</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">encrypt</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">).</span><span class="na">equals</span><span class="o">(&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="mi">29</span><span class="n">a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;))</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="k">else</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="k">return</span> <span class="n">flag</span><span class="o">;</span>
+<span class="o">}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">encrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="n">String</span> <span class="n">s3</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;&amp;</span><span class="n">rdquo</span><span class="o">;;</span>
+    <span class="n">String</span> <span class="n">s4</span><span class="o">;</span>
+    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">AES</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
+    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">AES</span><span class="o">/</span><span class="n">CBC</span><span class="o">/</span><span class="n">PKCS5Padding</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
+    <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+    <span class="n">s4</span> <span class="o">=</span> <span class="n">bytesToHexString</span><span class="o">(</span><span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+    <span class="n">s3</span> <span class="o">=</span> <span class="n">s4</span><span class="o">;</span>
+<span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nl">L2:</span>
+    <span class="k">return</span> <span class="n">s3</span><span class="o">;</span>
+    <span class="n">Exception</span> <span class="n">exception</span><span class="o">;</span>
+    <span class="n">exception</span><span class="o">;</span>
+    <span class="n">exception</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="k">if</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="k">goto</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">L2</span><span class="o">;</span> <span class="k">else</span> <span class="k">goto</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">L1</span>
+<span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nl">L1:</span>
+<span class="o">}</span></code></pre></div></p>
+
+<p>It&rsquo;s pretty clear that <code>isValidLicenceKey()</code> is what processes the product key
+prompt in the app. The <code>encrypt()</code> function shows us that the first paramter
+<code>s</code> is the cleartext to be encrypted, the second parameter <code>s1</code> is the AES
+encryption key, and the last parameter <code>s2</code> is the AES
+<a href="http://en.wikipedia.org/wiki/Initialization_vector">initialization vector</a>.
+After doing a bit of grepping, I confirmed this by decompiling
+<code>activities/MainActivity.class</code> and finding this code snippet:</p>
+
+<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">DialogInterface</span> <span class="n">dialoginterface</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">KeyVerifier</span><span class="o">.</span><span class="na">isValidLicenceKey</span><span class="o">(</span><span class="n">userInput</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityKey</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityIv</span><span class="o">()))</span>
+    <span class="o">{</span>
+        <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">updateLicence</span><span class="o">(</span><span class="mi">2014</span><span class="o">);</span>
+        <span class="n">MainActivity</span><span class="o">.</span><span class="na">isRegisterd</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">Thank</span> <span class="n">you</span><span class="o">,</span> <span class="n">Your</span> <span class="n">application</span> <span class="n">has</span> <span class="n">full</span> <span class="n">licence</span><span class="o">.</span> <span class="n">Enjoy</span> <span class="n">it</span><span class="o">&amp;</span><span class="n">hellip</span><span class="o">;!&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
+    <span class="o">}</span> <span class="k">else</span>
+    <span class="o">{</span>
+        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">Your</span> <span class="n">licence</span> <span class="n">key</span> <span class="n">is</span> <span class="n">incorrect</span><span class="o">&amp;</span><span class="n">hellip</span><span class="o">;!</span> <span class="n">Please</span> <span class="k">try</span> <span class="n">again</span> <span class="n">with</span> <span class="n">another</span><span class="o">.&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
+    <span class="o">}</span>
+<span class="o">}</span></code></pre></div></p>
+
+<p>With
+this in mind, the code seems to AES encrypt the user input and check if it matches
+a certain output. If we had the AES key and IV, we could decrypt the given
+output and find the plaintext product key.</p>
+
+<p>Tracing through the calls for the second and third parameters passed into
+<code>isValidLicense()</code> I found that
+the AES key and IV were stored in the <code>assets/db.db</code> SQLite database I noticed
+earlier.</p>
+
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sqlite3 assets/db.db
+ <span class="p">&amp;</span>hellip<span class="p">;</span>
+ sqlite&gt; <span class="k">select</span> * from config<span class="p">;</span>
+ a           b           c           d           e                 f                                 g           h               i&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt; <span class="m">1</span>           <span class="m">2</span>           <span class="m">2014</span>        <span class="m">0</span>           a5efdbd57b84ca36  37eaae0141f1a3adf8a1dee655853714  <span class="m">1000</span>        ctf.sharif.edu  9</code></pre></div></p>
+
+<p>There are no headers to the columns, but it is pretty obvious that the key
+is the longer and the IV is the shorter of the &ldquo;interesting strings&rdquo; in the
+database. For further confidence, I can verify this from the decompiled code
+in <code>db/DBHelper.class</code>.</p>
+
+<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">AppConfig</span> <span class="nf">getConfig</span><span class="o">()</span>
+<span class="o">{</span>
+    <span class="kt">boolean</span> <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="n">AppConfig</span> <span class="n">appconfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AppConfig</span><span class="o">();</span>
+    <span class="n">Cursor</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">myDataBase</span><span class="o">.</span><span class="na">rawQuery</span><span class="o">(</span><span class="n">SELECT_QUERY</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">moveToFirst</span><span class="o">())</span>
+    <span class="o">{</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">0</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">flag</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setInstallDate</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">2</span><span class="o">));</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="o">;=</span> <span class="mi">0</span><span class="o">)</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setValidLicence</span><span class="o">(</span><span class="n">flag</span><span class="o">);</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityIv</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">4</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityKey</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">5</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setDesc</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">7</span><span class="o">));</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">appconfig</span><span class="o">;</span>
+<span class="o">}</span></code></pre></div></p>
+
+<p>Using the key, IV and expected encrypted output, I wrote a simple decryption
+program.</p>
+
+<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.util.*</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.Cipher</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.IvParameterSpec</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.SecretKeySpec</span><span class="o">;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">blah</span> <span class="o">{</span>
+    <span class="c1">// omitted for brevity</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">bytesToHexString</span><span class="o">(</span><span class="kt">byte</span> <span class="n">abyte0</span><span class="o">[])</span> <span class="o">{</span> <span class="o">&amp;</span><span class="n">hellip</span><span class="o">;</span> <span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">hexStringToBytes</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span> <span class="o">&amp;</span><span class="n">hellip</span><span class="o">;</span> <span class="o">}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">decrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
+    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="kt">byte</span><span class="o">[]</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
+        <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="n">Cipher</span><span class="o">.</span><span class="na">DECRYPT_MODE</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s</span><span class="o">));</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span> <span class="n">args</span><span class="o">[])</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">e</span> <span class="o">=</span> <span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">;</span>
+    <span class="n">String</span> <span class="n">iv</span> <span class="o">=</span> <span class="s">&quot;a5efdbd57b84ca36&quot;</span><span class="o">;</span>
+    <span class="n">String</span> <span class="n">key</span> <span class="o">=</span> <span class="s">&quot;37eaae0141f1a3adf8a1dee655853714&quot;</span><span class="o">;</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decrypt</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">iv</span><span class="o">));</span>
+<span class="o">}</span>
+<span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span></code></pre></div></p>
+
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>java blah
+fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div></p>
+
+<p>Thanks for reading!</p>
+]]></content>
+  </entry>
+  
+</feed>

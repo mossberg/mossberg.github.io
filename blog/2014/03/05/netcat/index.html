@@ -1,0 +1,426 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Netcat Refresher - Mark Mossberg&#8217;s Blog</title>
+  <meta name="author" content="Mark Mossberg">
+
+  
+  <meta name="description" content="Quick overview of the legendary Unix tool, netcat, with examples and applications Introduction Netcat is a great tool for all things networking and &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.mark.lc/blog/2014/03/05/netcat">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-36552439-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mark Mossberg&#8217;s Blog</a></h1>
+  
+    <h2>Hacker Nonsense</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.mark.lc" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Netcat Refresher</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-03-05'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
+
+<h2>Introduction</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Netcat">Netcat</a> is a great tool for all things networking and is commonly nicknamed &ldquo;the TCP/IP Swiss-army knife&rdquo; due to its versatility and utility. An absolute must-know for sysadmins and hackers. In this article, I&rsquo;ll go over a few common uses I have for it that I frequently forget after not using it for a while, primarily for my own personal reference.</p>
+
+<p>Before I begin, I should point out that there are a few variants on netcat that have slightly different options and behaviors but are all essentially the same in &ldquo;spirit and functionality&rdquo;, as the <a href="http://nmap.org/ncat/">ncat</a> man page describes it.</p>
+
+<p>The original netcat comes from the OpenBSD package and was written by &ldquo;Hobbit&rdquo;. This is the default version that comes with OS X and Ubuntu. The version that I use and will cover is the standard GNU Netcat, by Giovanni Giacobbi, which is a rewrite of the original. This available using <a href="http://brew.sh">brew</a> on OS X. On Ubuntu it&rsquo;s called &ldquo;netcat-traditional&rdquo; which you can <code>apt-get</code> and then run with <code>nc.traditional</code>. Lastly, there is <a href="http://nmap.org/ncat">ncat</a>, which is a netcat implementation by our friends from the <a href="http://nmap.org">nmap</a> team. It is designed to modernize netcat and adds features like SSL, IPv6, and proxying which aren&rsquo;t available in the original(s).</p>
+
+<h2>Usage</h2>
+
+<p>At its core, netcat is a tool for creating arbitrary TCP connections, which looks like</p>
+
+<pre><code>$ netcat [host] [port]
+</code></pre>
+
+<p>where host is either an IP Address or a domain name, and port is the TCP port to connect to.</p>
+
+<p>You can also use netcat to do the reverse: listen for arbitrary TCP connections. This looks like</p>
+
+<pre><code>$ netcat -l -p [port] [host]
+</code></pre>
+
+<p>Here, host is an optional parameter which lets you limit what host can create connections.</p>
+
+<h4>Example: Chat</h4>
+
+<p>Using these two behaviors, we can create a crude chat system. One one host, listen for connections on a port.</p>
+
+<pre><code>$ netcat -l -p 1337
+</code></pre>
+
+<p>On the same one, in another terminal, connect to it on that port.</p>
+
+<pre><code>$ nc localhost 1337
+</code></pre>
+
+<p>There won&rsquo;t be a prompt, but when you enter text and press enter, it will appear in the other terminal. You can just as easily do this between different hosts and have a super basic chat setup.</p>
+
+<p><img src="https://draftin.com:443/images/12181?token=V4hz4Qtwi_uM_-4ulkErwUudxL_qY8D2yxx-fPjLSffSc8-FV0FOVRlvd4psBi-fLricHlJLjufBWr6E91R_spQ" alt="" /></p>
+
+<h3>Example: Curl-like behavior</h3>
+
+<p>You can also use netcat to emulate curl and interact with HTTP servers. Connect to the server on port 80 (or whatever port it&rsquo;s running on) and you can then type out the HTTP request to send to it. When you&rsquo;re finished, hit enter twice and it will send.</p>
+
+<pre><code>[mark:~]{ nc example.org 80
+GET / HTTP/1.1
+
+HTTP/1.1 400 Bad Request
+Content-Type: text/html
+Content-Length: 349
+Connection: close
+Date: Wed, 05 Mar 2014 20:15:42 GMT
+Server: ECSF (mdw/1383)
+
+&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
+&lt;head&gt;
+&lt;title&gt;400 - Bad Request&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;400 - Bad Request&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>As you can see here, we sent a bare-bones HTTP request (<code>GET / HTTP/1.1</code>) which was successfully sent to the server. The server responded with a 400, because our request didn&rsquo;t contain enough information, but that&rsquo;s not important; if we had filled in the right headers, it would have responded with the home page for example.org.</p>
+
+<h2>For Hackers</h2>
+
+<p>There are two applications for netcat that I find particularly useful in pen-testing situations.</p>
+
+<h3>Recon</h3>
+
+<p>The first is helpful for the recon stage, which is essentially getting information on your target. Sometimes network services may give away version information when an arbitrary network connection is made. For example, OpenSSH by default gives away it&rsquo;s version information as well as information on the host, when you connect. For example,</p>
+
+<pre><code>$ netcat 1.2.3.4 22
+SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.1
+</code></pre>
+
+<p>is typically what you might see. For an attacker, this is pretty valuable stuff! MySQL behaves similarly.</p>
+
+<pre><code>$ netcat 1.2.3.4 3306
+J
+5.5.33-.?2|&gt;\8��@x\E$"zeic2lmysql_native_password
+</code></pre>
+
+<p>The output isn&rsquo;t as clear as OpenSSH, but we can confirm that MySQL is indeed running, and we can infer that the version is &ldquo;5.5.33&rdquo;. For information on removing these banners, check out my <a href="http://blog.mark.lc/banner">blog post</a> on it.</p>
+
+<h3>Persistence/Access</h3>
+
+<p>The other application is when you have achieved command execution, but not exactly shell access. You can use netcat to create a nifty backdoor which you can externally connect to. To create the backdoor, we&rsquo;ll use the <code>-e</code> flag to tell netcat to execute a binary on receiving a connection. We want a shell, so we&rsquo;ll say <code>-e /bin/sh</code>. The whole command will look like:</p>
+
+<pre><code>$ netcat -l -p 1337 -e /bin/sh
+</code></pre>
+
+<p>which will give you a backdoor on port 1337, which will then let you run commands upon connecting to that port. For a good example, check out my other <a href="http://blog.mark.lc/ihackedit">blog post</a> where I actually used this.</p>
+
+<h2>Conclusion</h2>
+
+<p>That was a quick overview of netcat including its basic functionality and some example use cases. Thanks for reading!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mark Mossberg</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-03-05'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/reference/'>reference</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/03/05/netcat/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/03/05/netcat/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/01/ihackedit/" title="Previous Post: iHackedIT">&laquo; iHackedIT</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/09/11/csrf-news/" title="Next Post: Abusing Admin Privileges via CSRF">Abusing Admin Privileges via CSRF &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>Hi</p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/05/netcat/">Netcat Refresher</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/mossberg">@mossberg</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'mossberg',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Categories</h3>
+  </div>
+  <div class="list-group">
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        security
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reference
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        linux
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        sysadmin
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        web
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        hacking
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        python
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        ctf
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reverse-engineering
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        android
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        assembly
+      </a>
+    
+  </div>
+</section>
+<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mark Mossberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

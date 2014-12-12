@@ -1,0 +1,634 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Beginner Crackme - Mark Mossberg&#8217;s Blog</title>
+  <meta name="author" content="Mark Mossberg">
+
+  
+  <meta name="description" content="As part of an Intro to Security course I&rsquo;m taking, my professor gave us
+a crackme style exercise to practice reading x86 assembly and basic &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.mark.lc/blog/2014/10/27/crackme">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-36552439-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mark Mossberg&#8217;s Blog</a></h1>
+  
+    <h2>Hacker Nonsense</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.mark.lc" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Beginner Crackme</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-10-27'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
+a crackme style exercise to practice reading x86 assembly and basic
+reverse engineering.</p>
+
+<p>The program is pretty simple. It accepts a password as an argument and we&rsquo;re
+told that if the password is correct, &ldquo;ok&rdquo; is printed.</p>
+
+<pre><code>$ ./crackme
+usage: ./crackme &lt;secret&gt;
+$ ./crackme test
+$
+</code></pre>
+
+<p>As usual, I start by running <code>file</code> on the binary, which shows that it&rsquo;s a
+standard x64 ELF binary. <code>file</code> also says that the binary is &ldquo;not stripped&rdquo;, which means
+that it includes symbols. All I really know about symbols are that they can
+include debugging information about a binary like function and variable names
+and some symbols aren&rsquo;t really necessary; they can be stripped out to reduce
+the binary&rsquo;s size and make reverse engineering more challenging. Maybe I&rsquo;ll
+do a more in depth post on this in the future.</p>
+
+<pre><code>$ file crackme
+crackme: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=0x3fcf895b7865cb6be6b934640d1519a1e6bd6d39, not stripped
+</code></pre>
+
+<p>Next, I run <code>strings</code>, hoping to get lucky and find the password amongst the
+strings in the binary. Strings looks for series of printable characters followed
+by a NULL, but unfortunately nothing here works as the password.</p>
+
+<pre><code>$ strings crackme
+/lib64/ld-linux-x86-64.so.2
+exd4
+libc.so.6
+puts
+printf
+memcmp
+__libc_start_main
+__gmon_start__
+GLIBC_2.2.5
+fffff.
+AWAVA
+AUATL
+[]A\A]A^A_
+usage: %s &lt;secret&gt;
+;*3$"
+</code></pre>
+
+<p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
+actually try to reverse engineer it.
+We&rsquo;ll start with <code>main</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">$</span> <span class="no">gdb</span> <span class="p">-</span><span class="no">batch</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">file</span> <span class="no">crackme</span><span class="err">&#39;</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">disas</span> <span class="no">main</span><span class="err">&#39;</span>
+</span><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">main</span><span class="p">:</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s break this down a little.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Starting at the beginning, we see the stack pointer decremented as part of
+the function prologue. The prologue is a set of setup steps involving
+saving the old frame&rsquo;s
+base pointer on the stack, reassigning the base pointer to the current
+stack pointer, then subtracting the stack pointer a certain amount to make room
+on the stack
+for local variables, etc. We don&rsquo;t see the former two steps because this is
+the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
+the base pointer isn&rsquo;t necessary.</p>
+
+<p>Then the <code>edi</code> register is
+compared to 1 and if it is less than or equal, we jump to offset 39.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here at offset 39, we print something then jump to offset 34 where we repair
+the stack (undo the sub instruction from the prologue) and return (ending
+execution).</p>
+
+<p>This is likely how the program checks the arguments and prints the usage
+message if no arguments are supplied (which would cause argc/edi to be 1).</p>
+
+<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
+instruction.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we can see the <code>verify_secret</code> function being called with a parameter
+in <code>rdi</code>. This is most likely the argument we passed into the program. We can
+confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
+
+<pre><code>gdb-peda$ tele $rsi
+0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
+0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
+0016| 0x7fffffffeb58 --&gt; 0x0
+</code></pre>
+
+<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
+(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
+
+<p>If we look after the <code>verify_secret</code> call we can see the program checks
+if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
+<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
+print out the &ldquo;ok&rdquo; message we want.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
+and to see how we can make it return non-zero.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">verify_secret</span><span class="p">:</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ea</span> <span class="err">&lt;+</span><span class="mi">10</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rcx</span><span class="p">,</span><span class="no">rsp</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ed</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ef</span> <span class="err">&lt;+</span><span class="mi">15</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f1</span> <span class="err">&lt;+</span><span class="mi">17</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsp</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x400604</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">36</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">nop</span>    <span class="no">WORD</span> <span class="no">PTR</span> <span class="no">cs</span><span class="p">:</span><span class="err">[</span><span class="no">rax</span><span class="err">+</span><span class="no">rax</span><span class="p">*</span><span class="mi">1</span><span class="err">+</span><span class="mi">0x0</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400600</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400602</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400604</span> <span class="err">&lt;+</span><span class="mi">36</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0xfffffff7</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400607</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">rsi</span><span class="p">,</span><span class="err">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">0x400</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040060f</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdx</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400613</span> <span class="err">&lt;+</span><span class="mi">51</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdx-0x1</span><span class="err">]</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400616</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061a</span> <span class="err">&lt;+</span><span class="mi">58</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061d</span> <span class="err">&lt;+</span><span class="mi">61</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">cmp</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsi</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400620</span> <span class="err">&lt;+</span><span class="mi">64</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jb</span>     <span class="mh">0x400600</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">32</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400634</span> <span class="err">&lt;+</span><span class="mi">84</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400636</span> <span class="err">&lt;+</span><span class="mi">86</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">sete</span>   <span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400639</span> <span class="err">&lt;+</span><span class="mi">89</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400640</span> <span class="err">&lt;+</span><span class="mi">96</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400643</span> <span class="err">&lt;+</span><span class="mi">99</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I won&rsquo;t walk through this one in detail because understanding each line
+isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
+the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
+returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
+parameters, two buffers to compare and their lengths, and returns 0 if the
+buffers are identical.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
+is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
+examine address 0x600a80, we find this 24 byte string:</p>
+
+<pre><code>gdb-peda$ hexd 0x600a80 /2
+0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
+0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
+</code></pre>
+
+<p>Since this is a direct address to some memory, we can be fairly certain that
+we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
+instruction (offset 7)
+which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
+instruction (offset 36), and
+the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
+pointer to our input string, we can reasonably guess
+that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
+we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
+pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+with the xor key.</p>
+
+<p>Here&rsquo;s a way to do this with python.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca</span><span class="s">&#39;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div>
+
+
+<p>Which results in this:</p>
+
+<pre><code>$ python crack.py
+fHSrr4MNhQAFdNtxYFY6Kw==
+$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
+ok
+</code></pre>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mark Mossberg</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-10-27'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/assembly/'>assembly</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse-engineering</a>, <a class='category' href='/blog/categories/security/'>security</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/10/27/crackme/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/10/27/crackme/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/27/suctf_re/" title="Previous Post: SU-CTF 2014 - "Commerical Application!"">&laquo; SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/11/03/netcat-exec/" title="Next Post: Netcat "-e" Analysis">Netcat &#8220;-e&#8221; Analysis &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>Hi</p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/05/netcat/">Netcat Refresher</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/mossberg">@mossberg</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'mossberg',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Categories</h3>
+  </div>
+  <div class="list-group">
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        security
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reference
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        linux
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        sysadmin
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        web
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        hacking
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        python
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        ctf
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reverse-engineering
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        android
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        assembly
+      </a>
+    
+  </div>
+</section>
+<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mark Mossberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

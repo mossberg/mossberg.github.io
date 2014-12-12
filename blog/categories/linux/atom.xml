@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
+  <link href="http://blog.mark.lc/blog/categories/linux/atom.xml" rel="self"/>
+  <link href="http://blog.mark.lc/"/>
+  <updated>2014-12-11T23:43:57-05:00</updated>
+  <id>http://blog.mark.lc/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Netcat "-e" Analysis]]></title>
+    <link href="http://blog.mark.lc/blog/2014/11/03/netcat-exec/"/>
+    <updated>2014-11-03T00:00:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/11/03/netcat-exec</id>
+    <content type="html"><![CDATA[<p>As I mentioned in a <a href="http://blog.mark.lc/2014/03/05/netcat/">previous post</a>, netcat has this cool
+<code>-e</code> parameter that lets you specify an executable to essentially turn into
+a network service, that is, a process that can send and receive data over the
+network. This option is option is particularly useful when called with a shell
+(<code>/bin/sh</code>, <code>/bin/bash</code>, etc) as a parameter because this creates a poor man&rsquo;s
+remote shell connection, and can also be used as a backdoor into the system.
+As part of the <a href="https://github.com/mossberg/poet">post-exploitation tool</a> I&rsquo;m
+working on, I wanted to try to add this type of remote shell feature, but it
+wasn&rsquo;t immediately obvious to me
+how something like this would be done, so I decided to dive into netcat&rsquo;s
+source and see if I could understand how it was implemented.</p>
+
+<p>Not knowing where to start, I first tried searching the file for &ldquo;-e&rdquo; which
+brought me to:</p>
+
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">e</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">:</span>           <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">prog</span> <span class="n">to</span> <span class="n">exec</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span>
+    <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Cannot</span> <span class="n">specify</span> <span class="err">`</span><span class="o">-</span><span class="n">e</span><span class="err">&#39;</span> <span class="n">option</span> <span class="kt">double</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+  <span class="n">opt_exec</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">optarg</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></div></p>
+
+<p>This snippet is using the GNU argument parsing library, getopt, to check if
+&ldquo;-e&rdquo; is set, and if not, setting the global <code>char*</code> variable <code>opt_exec</code> to the
+parameter. Then I tried searching for <code>opt_exec</code>, bringing me to:</p>
+
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">netcat_mode</span> <span class="o">==</span> <span class="n">NETCAT_LISTEN</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_VERB2</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Passing</span> <span class="n">control</span> <span class="n">to</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">program</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+<span class="n">ncexec</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">listen_sock</span><span class="p">);</span>       <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">this</span> <span class="n">won</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span> <span class="k">return</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+  <span class="p">}</span>
+  <span class="n">core_readwrite</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">listen_sock</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">stdio_sock</span><span class="p">);</span>
+  <span class="n">debug_dv</span><span class="p">((</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="nl">Listen</span><span class="p">:</span> <span class="n">EXIT</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+<span class="p">}</span></code></pre></div></p>
+
+<p>This code checks if <code>opt_exec</code> is set, and if so calling <code>ncexec()</code>.</p>
+
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="lineno"> 1</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Execute</span> <span class="n">an</span> <span class="n">external</span> <span class="n">file</span> <span class="n">making</span> <span class="n">its</span> <span class="n">stdin</span><span class="o">/</span><span class="n">stdout</span><span class="o">/</span><span class="n">stderr</span> <span class="n">the</span> <span class="n">actual</span> <span class="n">socket</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">void</span> <span class="n">ncexec</span><span class="p">(</span><span class="kt">nc_sock_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">ncsock</span><span class="p">)</span>
+<span class="lineno"> 4</span> <span class="p">{</span>
+<span class="lineno"> 5</span>   <span class="kt">int</span> <span class="n">saved_stderr</span><span class="p">;</span>
+<span class="lineno"> 6</span>   <span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">p</span><span class="p">;</span>
+<span class="lineno"> 7</span>   <span class="n">assert</span><span class="p">(</span><span class="n">ncsock</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">));</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno"> 8</span> 
+<span class="lineno"> 9</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">save</span> <span class="n">the</span> <span class="n">stderr</span> <span class="n">fd</span> <span class="n">because</span> <span class="n">we</span> <span class="n">may</span> <span class="n">need</span> <span class="n">it</span> <span class="n">later</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">10</span>   <span class="n">saved_stderr</span> <span class="o">=</span> <span class="n">dup</span><span class="p">(</span><span class="n">STDERR_FILENO</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">11</span> 
+<span class="lineno">12</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">duplicate</span> <span class="n">the</span> <span class="n">socket</span> <span class="k">for</span> <span class="n">the</span> <span class="n">child</span> <span class="n">program</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">13</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">,</span> <span class="n">STDIN_FILENO</span><span class="p">);</span>   <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">the</span> <span class="n">precise</span> <span class="n">order</span> <span class="n">of</span> <span class="n">fiddlage</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">14</span>   <span class="n">close</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">);</span>            <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">is</span> <span class="n">apparently</span> <span class="n">crucial</span><span class="p">;</span> <span class="n">this</span> <span class="n">is</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">15</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDOUT_FILENO</span><span class="p">);</span>    <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">swiped</span> <span class="n">directly</span> <span class="n">out</span> <span class="n">of</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">inetd</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;.</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">16</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>    <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">also</span> <span class="n">duplicate</span> <span class="n">the</span> <span class="n">stderr</span> <span class="n">channel</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">17</span> 
+<span class="lineno">18</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">change</span> <span class="n">the</span> <span class="n">label</span> <span class="k">for</span> <span class="n">the</span> <span class="n">executed</span> <span class="n">program</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">19</span>   <span class="k">if</span> <span class="p">((</span><span class="n">p</span> <span class="o">=</span> <span class="n">strrchr</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">/&amp;</span><span class="n">rsquo</span><span class="p">;)))</span>
+<span class="lineno">20</span>     <span class="n">p</span><span class="o">++</span><span class="p">;</span>            <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">shorter</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">21</span>   <span class="k">else</span>
+<span class="lineno">22</span>     <span class="n">p</span> <span class="o">=</span> <span class="n">opt_exec</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">23</span> 
+<span class="lineno">24</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">replace</span> <span class="n">this</span> <span class="n">process</span> <span class="n">with</span> <span class="n">the</span> <span class="n">new</span> <span class="n">one</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">25</span> 
+<span class="lineno">26</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">ifndef</span> <span class="n">USE_OLD_COMPAT</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">27</span> 
+<span class="lineno">28</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">execl</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">sh</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="n">p</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">-</span><span class="n">c</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="n">opt_exec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">29</span> 
+<span class="lineno">30</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="k">else</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">31</span> 
+<span class="lineno">32</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">execl</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">33</span> 
+<span class="lineno">34</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">35</span> 
+<span class="lineno">36</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">dup2</span><span class="p">(</span><span class="n">saved_stderr</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>
+<span class="lineno">37</span>   <span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Couldn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span> <span class="n">execute</span> <span class="o">%</span><span class="nl">s</span><span class="p">:</span> <span class="o">%</span><span class="n">s</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;),</span>
+<span class="lineno">38</span>       <span class="n">opt_exec</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+<span class="lineno">39</span> <span class="p">}</span>               <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">end</span> <span class="n">of</span> <span class="n">ncexec</span><span class="p">()</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span></code></pre></div></p>
+
+<p>Here, on lines 13-16 is how the &ldquo;-e&rdquo; parameter really works. <code>dup2()</code> accepts
+two file descriptors and after deallocating the second one (as if <code>close()</code>
+was called on it), the second one&rsquo;s value is set to the first. So in this
+case on line 13, the child process&rsquo;s stdin is being set to the file descriptor for the
+network socket netcat opened. This means that the child process will view
+any data received over the network will as input data and will act accordingly.
+Then on lines 15 and 16, the stdout and stderr descriptors are also set to the
+socket, which will cause any output the program has to be directed over the
+network. As far as line 14 goes, I&rsquo;m not sure why the original socket file descriptor
+has to be closed at that exact point (and based on the comments, it seems like
+the netcat author wasn&rsquo;t sure either).</p>
+
+<p>The main point is this file descriptor swapping has essentially
+converted our specified program into a network service; all the input and output
+will be piped over the network, and at this point the child process can
+be executed. The child will replace the netcat process and will also inherit
+the newly set socket file descriptors. Note that on lines 30 and 31 there&rsquo;s
+some error handling code that resets the original stderr for the netcat process
+and prints out an error message. This is because the code should actually
+never get to this point in execution due to the <code>execl()</code> call and if it does,
+there was an error executing the child.</p>
+
+<p>I wrote this little python program to see if I understood
+things correctly:</p>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="err">!</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">env</span> <span class="n">python</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">sys</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">inp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">inp</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">hello</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">hi</span>\<span class="n">n</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">bye</span>\<span class="n">n</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span></code></pre></div></p>
+
+<p>It simply reads 5 bytes from stdin and prints &lsquo;hi&rsquo; if those 5 bytes were &lsquo;hello&rsquo;
+otherwise printing &lsquo;bye&rsquo;.</p>
+
+<p>Using this program as the <code>-e</code> parameter results in this:</p>
+
+<pre><code class="sh">$ netcat -e /tmp/test.py -lp 8080 &amp;
+[1] 19021
+$ echo asdfg | netcat 127.0.0.1 8080
+bye
+[1]+  Done                    netcat -e /tmp/blah.py -lp 8080
+$ netcat -e /tmp/test.py -lp 8080 &amp;
+[1] 19024
+$ echo hello | netcat 127.0.0.1 8080
+hi
+[1]+  Done                    netcat -e /tmp/blah.py -lp 8080
+</code></pre>
+
+<p>We can see the &ldquo;server&rdquo; launched in the background. The <code>echo</code> command sends
+data into netcat&rsquo;s stdin, which is being sent over the network, handled by
+the python script, which sends back its response, which gets printed. Then we
+can see that the server exits since the netcat process has been replaced by
+the script, and the script has exited.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Netcat Refresher]]></title>
+    <link href="http://blog.mark.lc/blog/2014/03/05/netcat/"/>
+    <updated>2014-03-05T00:00:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/03/05/netcat</id>
+    <content type="html"><![CDATA[<p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
+
+<h2>Introduction</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Netcat">Netcat</a> is a great tool for all things networking and is commonly nicknamed &ldquo;the TCP/IP Swiss-army knife&rdquo; due to its versatility and utility. An absolute must-know for sysadmins and hackers. In this article, I&rsquo;ll go over a few common uses I have for it that I frequently forget after not using it for a while, primarily for my own personal reference.</p>
+
+<p>Before I begin, I should point out that there are a few variants on netcat that have slightly different options and behaviors but are all essentially the same in &ldquo;spirit and functionality&rdquo;, as the <a href="http://nmap.org/ncat/">ncat</a> man page describes it.</p>
+
+<p>The original netcat comes from the OpenBSD package and was written by &ldquo;Hobbit&rdquo;. This is the default version that comes with OS X and Ubuntu. The version that I use and will cover is the standard GNU Netcat, by Giovanni Giacobbi, which is a rewrite of the original. This available using <a href="http://brew.sh">brew</a> on OS X. On Ubuntu it&rsquo;s called &ldquo;netcat-traditional&rdquo; which you can <code>apt-get</code> and then run with <code>nc.traditional</code>. Lastly, there is <a href="http://nmap.org/ncat">ncat</a>, which is a netcat implementation by our friends from the <a href="http://nmap.org">nmap</a> team. It is designed to modernize netcat and adds features like SSL, IPv6, and proxying which aren&rsquo;t available in the original(s).</p>
+
+<h2>Usage</h2>
+
+<p>At its core, netcat is a tool for creating arbitrary TCP connections, which looks like</p>
+
+<pre><code>$ netcat [host] [port]
+</code></pre>
+
+<p>where host is either an IP Address or a domain name, and port is the TCP port to connect to.</p>
+
+<p>You can also use netcat to do the reverse: listen for arbitrary TCP connections. This looks like</p>
+
+<pre><code>$ netcat -l -p [port] [host]
+</code></pre>
+
+<p>Here, host is an optional parameter which lets you limit what host can create connections.</p>
+
+<h4>Example: Chat</h4>
+
+<p>Using these two behaviors, we can create a crude chat system. One one host, listen for connections on a port.</p>
+
+<pre><code>$ netcat -l -p 1337
+</code></pre>
+
+<p>On the same one, in another terminal, connect to it on that port.</p>
+
+<pre><code>$ nc localhost 1337
+</code></pre>
+
+<p>There won&rsquo;t be a prompt, but when you enter text and press enter, it will appear in the other terminal. You can just as easily do this between different hosts and have a super basic chat setup.</p>
+
+<p><img src="https://draftin.com:443/images/12181?token=V4hz4Qtwi_uM_-4ulkErwUudxL_qY8D2yxx-fPjLSffSc8-FV0FOVRlvd4psBi-fLricHlJLjufBWr6E91R_spQ" alt="" /></p>
+
+<h3>Example: Curl-like behavior</h3>
+
+<p>You can also use netcat to emulate curl and interact with HTTP servers. Connect to the server on port 80 (or whatever port it&rsquo;s running on) and you can then type out the HTTP request to send to it. When you&rsquo;re finished, hit enter twice and it will send.</p>
+
+<pre><code>[mark:~]{ nc example.org 80
+GET / HTTP/1.1
+
+HTTP/1.1 400 Bad Request
+Content-Type: text/html
+Content-Length: 349
+Connection: close
+Date: Wed, 05 Mar 2014 20:15:42 GMT
+Server: ECSF (mdw/1383)
+
+&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
+&lt;head&gt;
+&lt;title&gt;400 - Bad Request&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;400 - Bad Request&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+
+<p>As you can see here, we sent a bare-bones HTTP request (<code>GET / HTTP/1.1</code>) which was successfully sent to the server. The server responded with a 400, because our request didn&rsquo;t contain enough information, but that&rsquo;s not important; if we had filled in the right headers, it would have responded with the home page for example.org.</p>
+
+<h2>For Hackers</h2>
+
+<p>There are two applications for netcat that I find particularly useful in pen-testing situations.</p>
+
+<h3>Recon</h3>
+
+<p>The first is helpful for the recon stage, which is essentially getting information on your target. Sometimes network services may give away version information when an arbitrary network connection is made. For example, OpenSSH by default gives away it&rsquo;s version information as well as information on the host, when you connect. For example,</p>
+
+<pre><code>$ netcat 1.2.3.4 22
+SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.1
+</code></pre>
+
+<p>is typically what you might see. For an attacker, this is pretty valuable stuff! MySQL behaves similarly.</p>
+
+<pre><code>$ netcat 1.2.3.4 3306
+J
+5.5.33-.?2|&gt;\8��@x\E$"zeic2lmysql_native_password
+</code></pre>
+
+<p>The output isn&rsquo;t as clear as OpenSSH, but we can confirm that MySQL is indeed running, and we can infer that the version is &ldquo;5.5.33&rdquo;. For information on removing these banners, check out my <a href="http://blog.mark.lc/banner">blog post</a> on it.</p>
+
+<h3>Persistence/Access</h3>
+
+<p>The other application is when you have achieved command execution, but not exactly shell access. You can use netcat to create a nifty backdoor which you can externally connect to. To create the backdoor, we&rsquo;ll use the <code>-e</code> flag to tell netcat to execute a binary on receiving a connection. We want a shell, so we&rsquo;ll say <code>-e /bin/sh</code>. The whole command will look like:</p>
+
+<pre><code>$ netcat -l -p 1337 -e /bin/sh
+</code></pre>
+
+<p>which will give you a backdoor on port 1337, which will then let you run commands upon connecting to that port. For a good example, check out my other <a href="http://blog.mark.lc/ihackedit">blog post</a> where I actually used this.</p>
+
+<h2>Conclusion</h2>
+
+<p>That was a quick overview of netcat including its basic functionality and some example use cases. Thanks for reading!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Banner Hiding on Ubuntu 12.04]]></title>
+    <link href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/"/>
+    <updated>2014-01-10T17:30:00-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/01/10/banner-hiding</id>
+    <content type="html"><![CDATA[<p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
+
+<blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>
+
+<p>While I can see how it&rsquo;s not acceptable to use obscurity as a complete solution for potential vulnerabilities, I disagree with the assertion that it does &ldquo;nothing at all.&rdquo; Obviously, everyone should aim to make their systems secure at a fundamental level, and obscurity is no substitute for that, however every little bit that you can do to make it more challenging for an attacker, in order to bolster <em>your existing security implementation</em>, is worth it, in my opinion.</p>
+
+<p>Moving back to the original topic, you might be surprised to know how much of this information (services, version numbers) your server gives away by default. For example, let&rsquo;s take a look at the response headers from a default Apache install:</p>
+
+<p><a href="http://img.svbtle.com/sgoa4yt9b3putw.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/sgoa4yt9b3putw_small.png" alt="Screen_Shot_2013-12-15_at_1.38.13_AM.png" /></a></p>
+
+<p>Right off the bat, we can see that we&rsquo;re giving away our OS, web server, and version. Let&rsquo;s make it a little harder for an attacker and hide everything except for &ldquo;Apache&rdquo;, which can be done with a trivial edit to your <code>/etc/apache2/apache2.conf</code> file. Simply append the following lines at the end of the file.</p>
+
+<pre><code>ServerTokens Prod
+ServerSignature Off
+</code></pre>
+
+<p>Technically all you really need is the first line, which will do what we want, but the second line will also remove server info in Apache generated pages (error pages, directory listings), so it&rsquo;s probably a good idea too. That gets us this far:</p>
+
+<p><a href="http://img.svbtle.com/1gs6rgbxmeliq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/1gs6rgbxmeliq_small.png" alt="Screen_Shot_2013-12-15_at_2.01.18_AM.png" /></a></p>
+
+<p>Unfortunately, &ldquo;Apache&rdquo; is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do&hellip; get out your hex editors<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, boys, we&rsquo;re going binary patching! Yes, you heard me right, we&rsquo;re going to directly edit the apache2 binary and remove that pesky banner string.</p>
+
+<p>First off, I recommend making a copy of the binary so if you really screw something up, you can easily get back to where you were. Then get out hexedit and search in the ASCII section for the string &ldquo;Apache&rdquo;. Eventually you&rsquo;ll see some familiar strings all in a row, with the Apache version numbers, etc. There are a couple of them; they represent the different options with the &ldquo;ServerTokens&rdquo; config. The &ldquo;Prod&rdquo; option corresponds to the first instance of &ldquo;Apache&rdquo; there, so let&rsquo;s change it to &ldquo;LOLche&rdquo;. Make sure to only overwrite the existing bytes and nothing more, because doing otherwise could cause other problems with the binary.</p>
+
+<p><a href="http://img.svbtle.com/tok3zivx32pngq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/tok3zivx32pngq_small.png" alt="Screen_Shot_2013-12-15_at_2.17.43_AM.png" /></a></p>
+
+<p>Restart the apache service, and violá! We&rsquo;re officially running a &ldquo;LOLche&rdquo; web server.</p>
+
+<p><a href="http://img.svbtle.com/rhhj4sha4u4jug.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/rhhj4sha4u4jug_small.png" alt="Screen Shot 2013-12-15 at 2.24.33 AM.png" /></a></p>
+
+<p>While we&rsquo;re messing with these headers, I should point out that you can also add your own headers too. Make sure you have the mod_headers.c Apache module enabled, and then simply append the following to your <code>/etc/apache2/httpd.conf</code>.</p>
+
+<pre><code>&lt;IfModule mod_headers.c&gt;
+    Header set Servar "y u look here go away"
+&lt;/IfModule&gt;
+</code></pre>
+
+<p>Which gives you:</p>
+
+<p><a href="http://img.svbtle.com/9lml4ymw40acog.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/9lml4ymw40acog_small.png" alt="Screen_Shot_2013-12-15_at_2.30.28_AM.png" /></a></p>
+
+<p>Similar to Apache, OpenSSH also gives out a bunch of information by default.</p>
+
+<pre><code>$ nc localhost 22
+SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
+</code></pre>
+
+<p>To get rid of the Debian information, just add this line to your <code>/etc/ssh/sshd_config</code>.</p>
+
+<pre><code>DebianBanner no
+</code></pre>
+
+<p>However, this still leaves all the OpenSSH stuff. A more complete solution would be to patch the sshd binary in the same way we did the apache binary.</p>
+
+<p>In addition to screwing with people that are physically looking at these headers and stuff, making these quick fixes also makes an nmap port scan much less effective, since this is primarily where nmap gets its information about what services you&rsquo;re running.</p>
+
+<p>Just to reiterate, these configurations are <em>not</em> designed to be security solutions in and of themselves, but are simply meant to bolster your existing security practices and make it just a little harder for attackers to do their thing.</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>http://httpd.apache.org/docs/current/mod/core.html<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+<li id="fn:2">
+<p>I guess you could also use a plain text editor just as well also.<a href="#fnref:2" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Assembly | Mark Mossberg's Blog]]></title>
+  <link href="http://blog.mark.lc/blog/categories/assembly/atom.xml" rel="self"/>
+  <link href="http://blog.mark.lc/"/>
+  <updated>2014-12-11T23:43:57-05:00</updated>
+  <id>http://blog.mark.lc/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Beginner Crackme]]></title>
+    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <updated>2014-10-27T00:00:00-04:00</updated>
+    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
+a crackme style exercise to practice reading x86 assembly and basic
+reverse engineering.</p>
+
+<p>The program is pretty simple. It accepts a password as an argument and we&rsquo;re
+told that if the password is correct, &ldquo;ok&rdquo; is printed.</p>
+
+<pre><code>$ ./crackme
+usage: ./crackme &lt;secret&gt;
+$ ./crackme test
+$
+</code></pre>
+
+<p>As usual, I start by running <code>file</code> on the binary, which shows that it&rsquo;s a
+standard x64 ELF binary. <code>file</code> also says that the binary is &ldquo;not stripped&rdquo;, which means
+that it includes symbols. All I really know about symbols are that they can
+include debugging information about a binary like function and variable names
+and some symbols aren&rsquo;t really necessary; they can be stripped out to reduce
+the binary&rsquo;s size and make reverse engineering more challenging. Maybe I&rsquo;ll
+do a more in depth post on this in the future.</p>
+
+<pre><code>$ file crackme
+crackme: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=0x3fcf895b7865cb6be6b934640d1519a1e6bd6d39, not stripped
+</code></pre>
+
+<p>Next, I run <code>strings</code>, hoping to get lucky and find the password amongst the
+strings in the binary. Strings looks for series of printable characters followed
+by a NULL, but unfortunately nothing here works as the password.</p>
+
+<pre><code>$ strings crackme
+/lib64/ld-linux-x86-64.so.2
+exd4
+libc.so.6
+puts
+printf
+memcmp
+__libc_start_main
+__gmon_start__
+GLIBC_2.2.5
+fffff.
+AWAVA
+AUATL
+[]A\A]A^A_
+usage: %s &lt;secret&gt;
+;*3$"
+</code></pre>
+
+<p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
+actually try to reverse engineer it.
+We&rsquo;ll start with <code>main</code>.</p>
+
+<pre><code class="asm">$ gdb -batch -ex 'file crackme' -ex 'disas main'
+Dump of assembler code for function main:
+   0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+   0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+   0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+End of assembler dump.
+</code></pre>
+
+<p>Let&rsquo;s break this down a little.</p>
+
+<pre><code class="asm">    0x00000000004004a0 &lt;+0&gt;:     sub    rsp,0x8
+    0x00000000004004a4 &lt;+4&gt;:     cmp    edi,0x1
+    0x00000000004004a7 &lt;+7&gt;:     jle    0x4004c7 &lt;main+39&gt;
+</code></pre>
+
+<p>Starting at the beginning, we see the stack pointer decremented as part of
+the function prologue. The prologue is a set of setup steps involving
+saving the old frame&rsquo;s
+base pointer on the stack, reassigning the base pointer to the current
+stack pointer, then subtracting the stack pointer a certain amount to make room
+on the stack
+for local variables, etc. We don&rsquo;t see the former two steps because this is
+the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
+the base pointer isn&rsquo;t necessary.</p>
+
+<p>Then the <code>edi</code> register is
+compared to 1 and if it is less than or equal, we jump to offset 39.</p>
+
+<pre><code class="asm">   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+   0x00000000004004c7 &lt;+39&gt;:    mov    rsi,QWORD PTR [rsi]
+   0x00000000004004ca &lt;+42&gt;:    mov    edi,0x4006d4
+   0x00000000004004cf &lt;+47&gt;:    xor    eax,eax
+   0x00000000004004d1 &lt;+49&gt;:    call   0x400460 &lt;printf@plt&gt;
+   0x00000000004004d6 &lt;+54&gt;:    mov    eax,0x1
+   0x00000000004004db &lt;+59&gt;:    jmp    0x4004c2 &lt;main+34&gt;
+</code></pre>
+
+<p>Here at offset 39, we print something then jump to offset 34 where we repair
+the stack (undo the sub instruction from the prologue) and return (ending
+execution).</p>
+
+<p>This is likely how the program checks the arguments and prints the usage
+message if no arguments are supplied (which would cause argc/edi to be 1).</p>
+
+<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
+instruction.</p>
+
+<pre><code class="asm">   0x00000000004004a9 &lt;+9&gt;:     mov    rdi,QWORD PTR [rsi+0x8]
+   0x00000000004004ad &lt;+13&gt;:    call   0x4005e0 &lt;verify_secret&gt;
+</code></pre>
+
+<p>Here we can see the <code>verify_secret</code> function being called with a parameter
+in <code>rdi</code>. This is most likely the argument we passed into the program. We can
+confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
+
+<pre><code>gdb-peda$ tele $rsi
+0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
+0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
+0016| 0x7fffffffeb58 --&gt; 0x0
+</code></pre>
+
+<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
+(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
+
+<p>If we look after the <code>verify_secret</code> call we can see the program checks
+if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
+<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
+print out the &ldquo;ok&rdquo; message we want.</p>
+
+<pre><code class="asm">   0x00000000004004b2 &lt;+18&gt;:    test   eax,eax
+   0x00000000004004b4 &lt;+20&gt;:    je     0x4004c2 &lt;main+34&gt;
+   0x00000000004004b6 &lt;+22&gt;:    mov    edi,0x4006e8
+   0x00000000004004bb &lt;+27&gt;:    call   0x400450 &lt;puts@plt&gt;
+   0x00000000004004c0 &lt;+32&gt;:    xor    eax,eax
+   0x00000000004004c2 &lt;+34&gt;:    add    rsp,0x8
+   0x00000000004004c6 &lt;+38&gt;:    ret
+</code></pre>
+
+<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
+and to see how we can make it return non-zero.</p>
+
+<pre><code class="asm">Dump of assembler code for function verify_secret:
+   0x00000000004005e0 &lt;+0&gt;:     sub    rsp,0x408
+   0x00000000004005e7 &lt;+7&gt;:     movzx  eax,BYTE PTR [rdi]
+   0x00000000004005ea &lt;+10&gt;:    mov    rcx,rsp
+   0x00000000004005ed &lt;+13&gt;:    test   al,al
+   0x00000000004005ef &lt;+15&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x00000000004005f1 &lt;+17&gt;:    mov    rdx,rsp
+   0x00000000004005f4 &lt;+20&gt;:    jmp    0x400604 &lt;verify_secret+36&gt;
+   0x00000000004005f6 &lt;+22&gt;:    nop    WORD PTR cs:[rax+rax*1+0x0]
+   0x0000000000400600 &lt;+32&gt;:    test   al,al
+   0x0000000000400602 &lt;+34&gt;:    je     0x400622 &lt;verify_secret+66&gt;
+   0x0000000000400604 &lt;+36&gt;:    xor    eax,0xfffffff7
+   0x0000000000400607 &lt;+39&gt;:    lea    rsi,[rsp+0x400]
+   0x000000000040060f &lt;+47&gt;:    add    rdx,0x1
+   0x0000000000400613 &lt;+51&gt;:    mov    BYTE PTR [rdx-0x1],al
+   0x0000000000400616 &lt;+54&gt;:    add    rdi,0x1
+   0x000000000040061a &lt;+58&gt;:    movzx  eax,BYTE PTR [rdi]
+   0x000000000040061d &lt;+61&gt;:    cmp    rdx,rsi
+   0x0000000000400620 &lt;+64&gt;:    jb     0x400600 &lt;verify_secret+32&gt;
+   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+   0x0000000000400634 &lt;+84&gt;:    test   eax,eax
+   0x0000000000400636 &lt;+86&gt;:    sete   al
+   0x0000000000400639 &lt;+89&gt;:    add    rsp,0x408
+   0x0000000000400640 &lt;+96&gt;:    movzx  eax,al
+   0x0000000000400643 &lt;+99&gt;:    ret
+End of assembler dump.
+</code></pre>
+
+<p>I won&rsquo;t walk through this one in detail because understanding each line
+isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
+the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
+returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
+parameters, two buffers to compare and their lengths, and returns 0 if the
+buffers are identical.</p>
+
+<pre><code class="asm">   0x0000000000400622 &lt;+66&gt;:    mov    edx,0x18
+   0x0000000000400627 &lt;+71&gt;:    mov    esi,0x600a80
+   0x000000000040062c &lt;+76&gt;:    mov    rdi,rcx
+   0x000000000040062f &lt;+79&gt;:    call   0x400480 &lt;memcmp@plt&gt;
+</code></pre>
+
+<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
+is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
+examine address 0x600a80, we find this 24 byte string:</p>
+
+<pre><code>gdb-peda$ hexd 0x600a80 /2
+0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
+0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
+</code></pre>
+
+<p>Since this is a direct address to some memory, we can be fairly certain that
+we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
+instruction (offset 7)
+which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
+instruction (offset 36), and
+the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
+pointer to our input string, we can reasonably guess
+that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
+we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
+pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+with the xor key.</p>
+
+<p>Here&rsquo;s a way to do this with python.</p>
+
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span>\<span class="n">x91</span>\<span class="n">xbf</span>\<span class="n">xa4</span>\<span class="n">x85</span>\<span class="n">x85</span>\<span class="n">xc3</span>\<span class="n">xba</span>\<span class="n">xb9</span>\<span class="n">x9f</span>\<span class="n">xa6</span>\<span class="n">xb6</span>\<span class="n">xb1</span>\<span class="n">x93</span>\<span class="n">xb9</span>\<span class="n">x83</span>\<span class="n">x8f</span>\<span class="n">xae</span>\<span class="n">xb1</span>\<span class="n">xae</span>\<span class="n">xc1</span>\<span class="n">xbc</span>\<span class="n">x80</span>\<span class="n">xca</span>\<span class="n">xca</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div></p>
+
+<p>Which results in this:</p>
+
+<pre><code>$ python crack.py
+fHSrr4MNhQAFdNtxYFY6Kw==
+$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
+ok
+</code></pre>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Netcat &#8220;-e&#8221; Analysis - Mark Mossberg&#8217;s Blog</title>
+  <meta name="author" content="Mark Mossberg">
+
+  
+  <meta name="description" content="As I mentioned in a previous post, netcat has this cool
+-e parameter that lets you specify an executable to essentially turn into
+a network service, &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.mark.lc/blog/2014/11/03/netcat-exec">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-36552439-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mark Mossberg&#8217;s Blog</a></h1>
+  
+    <h2>Hacker Nonsense</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.mark.lc" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Netcat &#8220;-e&#8221; Analysis</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-11-03'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>As I mentioned in a <a href="http://blog.mark.lc/2014/03/05/netcat/">previous post</a>, netcat has this cool
+<code>-e</code> parameter that lets you specify an executable to essentially turn into
+a network service, that is, a process that can send and receive data over the
+network. This option is option is particularly useful when called with a shell
+(<code>/bin/sh</code>, <code>/bin/bash</code>, etc) as a parameter because this creates a poor man&rsquo;s
+remote shell connection, and can also be used as a backdoor into the system.
+As part of the <a href="https://github.com/mossberg/poet">post-exploitation tool</a> I&rsquo;m
+working on, I wanted to try to add this type of remote shell feature, but it
+wasn&rsquo;t immediately obvious to me
+how something like this would be done, so I decided to dive into netcat&rsquo;s
+source and see if I could understand how it was implemented.</p>
+
+<p>Not knowing where to start, I first tried searching the file for &ldquo;-e&rdquo; which
+brought me to:</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">&#39;e&#39;</span><span class="o">:</span>           <span class="cm">/* prog to exec */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span>
+    <span class="n">_</span><span class="p">(</span><span class="s">&quot;Cannot specify `-e&#39; option double&quot;</span><span class="p">));</span>
+  <span class="n">opt_exec</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">optarg</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></div>
+
+
+<p>This snippet is using the GNU argument parsing library, getopt, to check if
+&ldquo;-e&rdquo; is set, and if not, setting the global <code>char*</code> variable <code>opt_exec</code> to the
+parameter. Then I tried searching for <code>opt_exec</code>, bringing me to:</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">netcat_mode</span> <span class="o">==</span> <span class="n">NETCAT_LISTEN</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_VERB2</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;Passing control to the specified program&quot;</span><span class="p">));</span>
+<span class="n">ncexec</span><span class="p">(</span><span class="o">&amp;</span><span class="n">listen_sock</span><span class="p">);</span>       <span class="cm">/* this won&#39;t return */</span>
+  <span class="p">}</span>
+  <span class="n">core_readwrite</span><span class="p">(</span><span class="o">&amp;</span><span class="n">listen_sock</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">stdio_sock</span><span class="p">);</span>
+  <span class="n">debug_dv</span><span class="p">((</span><span class="s">&quot;Listen: EXIT&quot;</span><span class="p">));</span>
+<span class="p">}</span></code></pre></div>
+
+
+<p>This code checks if <code>opt_exec</code> is set, and if so calling <code>ncexec()</code>.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="lineno"> 1</span> <span class="cm">/* Execute an external file making its stdin/stdout/stderr the actual socket */</span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span> <span class="k">static</span> <span class="kt">void</span> <span class="nf">ncexec</span><span class="p">(</span><span class="kt">nc_sock_t</span> <span class="o">*</span><span class="n">ncsock</span><span class="p">)</span>
+<span class="lineno"> 4</span> <span class="p">{</span>
+<span class="lineno"> 5</span>   <span class="kt">int</span> <span class="n">saved_stderr</span><span class="p">;</span>
+<span class="lineno"> 6</span>   <span class="kt">char</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+<span class="lineno"> 7</span>   <span class="n">assert</span><span class="p">(</span><span class="n">ncsock</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">));</span>
+<span class="lineno"> 8</span> 
+<span class="lineno"> 9</span>   <span class="cm">/* save the stderr fd because we may need it later */</span>
+<span class="lineno">10</span>   <span class="n">saved_stderr</span> <span class="o">=</span> <span class="n">dup</span><span class="p">(</span><span class="n">STDERR_FILENO</span><span class="p">);</span>
+<span class="lineno">11</span> 
+<span class="lineno">12</span>   <span class="cm">/* duplicate the socket for the child program */</span>
+<span class="lineno">13</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">,</span> <span class="n">STDIN_FILENO</span><span class="p">);</span>   <span class="cm">/* the precise order of fiddlage */</span>
+<span class="lineno">14</span>   <span class="n">close</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">);</span>            <span class="cm">/* is apparently crucial; this is */</span>
+<span class="lineno">15</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDOUT_FILENO</span><span class="p">);</span>    <span class="cm">/* swiped directly out of &quot;inetd&quot;. */</span>
+<span class="lineno">16</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>    <span class="cm">/* also duplicate the stderr channel */</span>
+<span class="lineno">17</span> 
+<span class="lineno">18</span>   <span class="cm">/* change the label for the executed program */</span>
+<span class="lineno">19</span>   <span class="k">if</span> <span class="p">((</span><span class="n">p</span> <span class="o">=</span> <span class="n">strrchr</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="sc">&#39;/&#39;</span><span class="p">)))</span>
+<span class="lineno">20</span>     <span class="n">p</span><span class="o">++</span><span class="p">;</span>            <span class="cm">/* shorter argv[0] */</span>
+<span class="lineno">21</span>   <span class="k">else</span>
+<span class="lineno">22</span>     <span class="n">p</span> <span class="o">=</span> <span class="n">opt_exec</span><span class="p">;</span>
+<span class="lineno">23</span> 
+<span class="lineno">24</span>   <span class="cm">/* replace this process with the new one */</span>
+<span class="lineno">25</span> <span class="cp">#ifndef USE_OLD_COMPAT</span>
+<span class="lineno">26</span>   <span class="n">execl</span><span class="p">(</span><span class="s">&quot;/bin/sh&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="s">&quot;-c&quot;</span><span class="p">,</span> <span class="n">opt_exec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<span class="lineno">27</span> <span class="cp">#else</span>
+<span class="lineno">28</span>   <span class="n">execl</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<span class="lineno">29</span> <span class="cp">#endif</span>
+<span class="lineno">30</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">saved_stderr</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>
+<span class="lineno">31</span>   <span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;Couldn&#39;t execute %s: %s&quot;</span><span class="p">),</span>
+<span class="lineno">32</span>       <span class="n">opt_exec</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+<span class="lineno">33</span> <span class="p">}</span>               <span class="cm">/* end of ncexec() */</span></code></pre></div>
+
+
+<p>Here, on lines 13-16 is how the &ldquo;-e&rdquo; parameter really works. <code>dup2()</code> accepts
+two file descriptors and after deallocating the second one (as if <code>close()</code>
+was called on it), the second one&rsquo;s value is set to the first. So in this
+case on line 13, the child process&rsquo;s stdin is being set to the file descriptor for the
+network socket netcat opened. This means that the child process will view
+any data received over the network will as input data and will act accordingly.
+Then on lines 15 and 16, the stdout and stderr descriptors are also set to the
+socket, which will cause any output the program has to be directed over the
+network. As far as line 14 goes, I&rsquo;m not sure why the original socket file descriptor
+has to be closed at that exact point (and based on the comments, it seems like
+the netcat author wasn&rsquo;t sure either).</p>
+
+<p>The main point is this file descriptor swapping has essentially
+converted our specified program into a network service; all the input and output
+will be piped over the network, and at this point the child process can
+be executed. The child will replace the netcat process and will also inherit
+the newly set socket file descriptors. Note that on lines 30 and 31 there&rsquo;s
+some error handling code that resets the original stderr for the netcat process
+and prints out an error message. This is because the code should actually
+never get to this point in execution due to the <code>execl()</code> call and if it does,
+there was an error executing the child.</p>
+
+<p>I wrote this little python program to see if I understood
+things correctly:</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">inp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">inp</span> <span class="o">==</span> <span class="s">&#39;hello&#39;</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;hi</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;bye</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">)</span></code></pre></div>
+
+
+<p>It simply reads 5 bytes from stdin and prints &lsquo;hi&rsquo; if those 5 bytes were &lsquo;hello&rsquo;
+otherwise printing &lsquo;bye&rsquo;.</p>
+
+<p>Using this program as the <code>-e</code> parameter results in this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>netcat -e /tmp/test.py -lp <span class="m">8080</span> <span class="p">&amp;</span>
+</span><span class='line'><span class="o">[</span>1<span class="o">]</span> 19021
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo </span>asdfg <span class="p">|</span> netcat 127.0.0.1 8080
+</span><span class='line'>bye
+</span><span class='line'><span class="o">[</span>1<span class="o">]</span>+  Done                    netcat -e /tmp/blah.py -lp 8080
+</span><span class='line'><span class="nv">$ </span>netcat -e /tmp/test.py -lp <span class="m">8080</span> <span class="p">&amp;</span>
+</span><span class='line'><span class="o">[</span>1<span class="o">]</span> 19024
+</span><span class='line'><span class="nv">$ </span><span class="nb">echo </span>hello <span class="p">|</span> netcat 127.0.0.1 8080
+</span><span class='line'>hi
+</span><span class='line'><span class="o">[</span>1<span class="o">]</span>+  Done                    netcat -e /tmp/blah.py -lp 8080
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see the &ldquo;server&rdquo; launched in the background. The <code>echo</code> command sends
+data into netcat&rsquo;s stdin, which is being sent over the network, handled by
+the python script, which sends back its response, which gets printed. Then we
+can see that the server exits since the netcat process has been replaced by
+the script, and the script has exited.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mark Mossberg</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-11-03'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>3</span><span class='date-suffix'>rd</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/11/03/netcat-exec/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/11/03/netcat-exec/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/10/27/crackme/" title="Previous Post: Beginner Crackme">&laquo; Beginner Crackme</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>Hi</p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/05/netcat/">Netcat Refresher</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/mossberg">@mossberg</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'mossberg',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Categories</h3>
+  </div>
+  <div class="list-group">
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        security
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reference
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        linux
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        sysadmin
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        web
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        hacking
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        python
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        ctf
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reverse-engineering
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        android
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        assembly
+      </a>
+    
+  </div>
+</section>
+<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mark Mossberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

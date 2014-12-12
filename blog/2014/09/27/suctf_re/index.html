@@ -1,0 +1,553 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>SU-CTF 2014 - &#8220;Commerical Application!&#8221; - Mark Mossberg&#8217;s Blog</title>
+  <meta name="author" content="Mark Mossberg">
+
+  
+  <meta name="description" content="This weekend I decided to try playing SU-CTF.
+I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
+one of the 200 point &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.mark.lc/blog/2014/09/27/suctf_re">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-36552439-2']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Mark Mossberg&#8217;s Blog</a></h1>
+  
+    <h2>Hacker Nonsense</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:blog.mark.lc" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-09-27'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
+I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
+one of the 200 point challenges in the third (of five) difficulty tiers.</p>
+
+<h2>&ldquo;Commerical Application!&rdquo;</h2>
+
+<p>For this challenge, we&rsquo;re given an Android application and the hint:</p>
+
+<blockquote><p>Flag is a serial number.</p></blockquote>
+
+<p>I installed it on my phone, here&rsquo;s what it looks like:</p>
+
+<p><img src="/images/apk1.png" alt="" />
+<img src="/images/apk2.png" alt="" />
+<img src="/images/apk3.png" alt="" />
+<img src="/images/apk4.png" alt="" /></p>
+
+<p>I can tap on &ldquo;Picture-01&rdquo; and sliding to the right reveals this picture, but
+if I try to tap on &ldquo;Picture-02&rdquo; or &ldquo;Pictures-03&rdquo; the app says I need to
+enter a registration key. If I tap on the gear in the top right, I&rsquo;m
+prompted to enter my product key.</p>
+
+<p>Running <code>file</code> reveals that <code>.apk</code> files are apparently just Zip archives,
+so let&rsquo;s try simply <code>unzip</code>&lsquo;ing it.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file suCTF.apk
+suCTF.apk: Zip archive data, at least v2.0 to extract
+<span class="nv">$ </span>unzip suCTF.apk
+Archive:  suCTF.apk
+  inflating: assets/db.db
+  inflating: res/color/abs__primary_text_disable_only_holo_dark.xml
+  inflating: res/color/abs__primary_text_disable_only_holo_light.xml
+  ...
+  inflating: classes.dex
+  inflating: META-INF/MANIFEST.MF
+  inflating: META-INF/CERT.SF
+  inflating: META-INF/CERT.RSA</code></pre></div>
+
+
+<p>Cool! Now we have all the miscellaneous files that comprise the app. There&rsquo;s
+a database file, various <code>.xml</code> design files, and most interestingly, a
+<code>classes.dex</code> file. <code>.dex</code> files contain bytecode run on the Android Dalvik VM, which
+is currently the Java runtime for Android devices, so <code>classes.dex</code> likely
+contains the code that runs the app, in compiled form. We can use the nifty
+<code>d2j-dex2jar</code> utility for decompiling it into a <code>classes-dex2jar.jar</code> file. <code>.jar</code>
+files are apparently also Zip archives, and we can again <code>unzip</code> it to extract
+its contents.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file classes.dex
+classes.dex: Dalvik dex file version 035
+<span class="nv">$ </span>d2j-dex2jar classes.dex
+dex2jar classes.dex -&gt; classes-dex2jar.jar
+<span class="nv">$ </span>unzip classes-dex2jar.jar
+  ...
+  inflating: edu/sharif/ctf/BuildConfig.class
+  inflating: edu/sharif/ctf/CTFApplication.class
+  inflating: edu/sharif/ctf/R<span class="nv">$attr</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$bool</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$color</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$dimen</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$drawable</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$id</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$integer</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$layout</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$menu</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$string</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$style</span>.class
+  inflating: edu/sharif/ctf/R<span class="nv">$styleable</span>.class
+  inflating: edu/sharif/ctf/R.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$4</span>.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$5</span>.class
+  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$6</span>.class
+  inflating: edu/sharif/ctf/config/AppConfig.class
+  inflating: edu/sharif/ctf/db/DBHelper.class
+  inflating: edu/sharif/ctf/fragments/DListFragment<span class="nv">$1</span>.class
+  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$1</span>.class
+  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$OnPictureSelectedListener</span>.class
+  inflating: edu/sharif/ctf/security/KeyVerifier.class
+  ...</code></pre></div>
+
+
+<p>This produces a TON of various <code>.class</code> files, but the most interesting lie
+in the <code>edu/sharif/ctf/</code> directory and are the compiled versions of the actual
+code that makes up this app. We can use the <code>jad</code> tool to decompile these back
+into Java source and start trying to reverse the product key.</p>
+
+<p>There&rsquo;s a directory in the app source called <code>security/</code> and contains a file
+called <code>KeyVerifier.class</code> that seems pretty promising. After decompiling it,
+we find a <code>KeyVerifier</code> class with some pretty cool functions.</p>
+
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isValidLicenceKey</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="kt">boolean</span> <span class="n">flag</span><span class="o">;</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">encrypt</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">).</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">))</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="k">else</span>
+        <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="k">return</span> <span class="n">flag</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">encrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="n">String</span> <span class="n">s3</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
+    <span class="n">String</span> <span class="n">s4</span><span class="o">;</span>
+    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
+    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
+    <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+    <span class="n">s4</span> <span class="o">=</span> <span class="n">bytesToHexString</span><span class="o">(</span><span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+    <span class="n">s3</span> <span class="o">=</span> <span class="n">s4</span><span class="o">;</span>
+<span class="nl">_L2:</span>
+    <span class="k">return</span> <span class="n">s3</span><span class="o">;</span>
+    <span class="n">Exception</span> <span class="n">exception</span><span class="o">;</span>
+    <span class="n">exception</span><span class="o">;</span>
+    <span class="n">exception</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+    <span class="k">if</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="k">goto</span> <span class="n">_L2</span><span class="o">;</span> <span class="k">else</span> <span class="k">goto</span> <span class="n">_L1</span>
+<span class="nl">_L1:</span>
+<span class="o">}</span></code></pre></div>
+
+
+<p>It&rsquo;s pretty clear that <code>isValidLicenceKey()</code> is what processes the product key
+prompt in the app. The <code>encrypt()</code> function shows us that the first paramter
+<code>s</code> is the cleartext to be encrypted, the second parameter <code>s1</code> is the AES
+encryption key, and the last parameter <code>s2</code> is the AES
+<a href="http://en.wikipedia.org/wiki/Initialization_vector">initialization vector</a>.
+After doing a bit of grepping, I confirmed this by decompiling
+<code>activities/MainActivity.class</code> and finding this code snippet:</p>
+
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">DialogInterface</span> <span class="n">dialoginterface</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">)</span>
+<span class="o">{</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">KeyVerifier</span><span class="o">.</span><span class="na">isValidLicenceKey</span><span class="o">(</span><span class="n">userInput</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityKey</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityIv</span><span class="o">()))</span>
+    <span class="o">{</span>
+        <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">updateLicence</span><span class="o">(</span><span class="mi">2014</span><span class="o">);</span>
+        <span class="n">MainActivity</span><span class="o">.</span><span class="na">isRegisterd</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="s">&quot;Thank you, Your application has full licence. Enjoy it...!&quot;</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">else</span>
+    <span class="o">{</span>
+        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="s">&quot;Your licence key is incorrect...! Please try again with another.&quot;</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span></code></pre></div>
+
+
+<p>With
+this in mind, the code seems to AES encrypt the user input and check if it matches
+a certain output. If we had the AES key and IV, we could decrypt the given
+output and find the plaintext product key.</p>
+
+<p>Tracing through the calls for the second and third parameters passed into
+<code>isValidLicense()</code> I found that
+the AES key and IV were stored in the <code>assets/db.db</code> SQLite database I noticed
+earlier.</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sqlite3 assets/db.db
+ ...
+ sqlite&gt; <span class="k">select</span> * from config<span class="p">;</span>
+ a           b           c           d           e                 f                                 g           h               i
+ ----------  ----------  ----------  ----------  ----------------  --------------------------------  ----------  --------------  ----------
+ <span class="m">1</span>           <span class="m">2</span>           <span class="m">2014</span>        <span class="m">0</span>           a5efdbd57b84ca36  37eaae0141f1a3adf8a1dee655853714  <span class="m">1000</span>        ctf.sharif.edu  9</code></pre></div>
+
+
+<p>There are no headers to the columns, but it is pretty obvious that the key
+is the longer and the IV is the shorter of the &ldquo;interesting strings&rdquo; in the
+database. For further confidence, I can verify this from the decompiled code
+in <code>db/DBHelper.class</code>.</p>
+
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">AppConfig</span> <span class="nf">getConfig</span><span class="o">()</span>
+<span class="o">{</span>
+    <span class="kt">boolean</span> <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="n">AppConfig</span> <span class="n">appconfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AppConfig</span><span class="o">();</span>
+    <span class="n">Cursor</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">myDataBase</span><span class="o">.</span><span class="na">rawQuery</span><span class="o">(</span><span class="n">SELECT_QUERY</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+    <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">moveToFirst</span><span class="o">())</span>
+    <span class="o">{</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">0</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">flag</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setInstallDate</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">2</span><span class="o">));</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="o">)</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setValidLicence</span><span class="o">(</span><span class="n">flag</span><span class="o">);</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityIv</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">4</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityKey</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">5</span><span class="o">));</span>
+        <span class="n">appconfig</span><span class="o">.</span><span class="na">setDesc</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">7</span><span class="o">));</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="n">appconfig</span><span class="o">;</span>
+<span class="o">}</span></code></pre></div>
+
+
+<p>Using the key, IV and expected encrypted output, I wrote a simple decryption
+program.</p>
+
+<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.util.*</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.Cipher</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.IvParameterSpec</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">javax.crypto.spec.SecretKeySpec</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">blah</span> <span class="o">{</span>
+    <span class="c1">// omitted for brevity</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">bytesToHexString</span><span class="o">(</span><span class="kt">byte</span> <span class="n">abyte0</span><span class="o">[])</span> <span class="o">{</span> <span class="o">...</span> <span class="o">}</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">hexStringToBytes</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span> <span class="o">...</span> <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">decrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
+    <span class="o">{</span>
+        <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
+        <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="kt">byte</span><span class="o">[]</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
+            <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="n">Cipher</span><span class="o">.</span><span class="na">DECRYPT_MODE</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s</span><span class="o">));</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span> <span class="n">args</span><span class="o">[])</span> <span class="o">{</span>
+        <span class="n">String</span> <span class="n">e</span> <span class="o">=</span> <span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">;</span>
+        <span class="n">String</span> <span class="n">iv</span> <span class="o">=</span> <span class="s">&quot;a5efdbd57b84ca36&quot;</span><span class="o">;</span>
+        <span class="n">String</span> <span class="n">key</span> <span class="o">=</span> <span class="s">&quot;37eaae0141f1a3adf8a1dee655853714&quot;</span><span class="o">;</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decrypt</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">iv</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span></code></pre></div>
+
+
+
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>java blah
+fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div>
+
+
+<p>Thanks for reading!</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Mark Mossberg</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2014-09-27'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse-engineering</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/09/27/suctf_re/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/09/27/suctf_re/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/11/csrf-news/" title="Previous Post: Abusing Admin Privileges via CSRF">&laquo; Abusing Admin Privileges via CSRF</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/10/27/crackme/" title="Next Post: Beginner Crackme">Beginner Crackme &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>Hi</p>
+</section>
+<section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/05/netcat/">Netcat Refresher</a>
+      </li>
+    
+  </ul>
+</section>
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating&#8230;</li>
+  </ul>
+  
+  <a href="https://github.com/mossberg">@mossberg</a> on GitHub
+  
+  <script type="text/javascript">
+    $(document).ready(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'mossberg',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Categories</h3>
+  </div>
+  <div class="list-group">
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        security
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reference
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        linux
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">3</span>
+        sysadmin
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        web
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">5</span>
+        hacking
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        python
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        ctf
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">2</span>
+        reverse-engineering
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        android
+      </a>
+    
+    
+    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
+        <span class="badge">1</span>
+        assembly
+      </a>
+    
+  </div>
+</section>
+<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Mark Mossberg -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
