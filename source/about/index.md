@@ -27,9 +27,9 @@ playing guitar, and working on various projects. In April 2014, I placed in the 
 #### Contact
 
 - twitter: [@markmossberg](https://twitter.com/markmossberg)
-- github: [@mossberg](https://github.com/mossberg)
+- github: [mossberg](https://github.com/mossberg)
 - linkedin: [markmossberg](https://linkedin.com/in/markmossberg)
-- keybase: [@mossberg](https://keybase.io/mossberg)
+- keybase: [mossberg](https://keybase.io/mossberg)
 - gmail: <a href="" onClick="alert('I\'m not actually a link ¯\\_(ツ)_/¯');">mark.mossberg</a>
 
 *Last updated 12/12/2014*
