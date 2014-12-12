@@ -68,8 +68,10 @@
 </form>
   
 <ul class="main-navigation">
+  <li><a href="/about">About</a></li>
   <li><a href="/">Blog</a></li>
   <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/projects">Projects</a></li>
 </ul>
 
 </nav>
@@ -96,7 +98,7 @@
 <time datetime="2014-10-27T00:00:00-04:00" pubdate><span class='month'>Oct</span> <span class='day'>27</span> <span class='year'>2014</span></time>
 
 <footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/assembly/'>assembly</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse-engineering</a>, <a class='category' href='/blog/categories/security/'>security</a></span>
+  <span class="categories">posted in <a class='category' href='/blog/categories/assembly/'>assembly</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse engineering</a>, <a class='category' href='/blog/categories/security/'>security</a></span>
 </footer>
 
 
@@ -112,8 +114,12 @@
 <aside class="sidebar">
   
     <section>
-  <h1>About Me</h1>
-  <p>Hi</p>
+  <h1>External</h1>
+  <ul>
+      <li>twitter: <a href="http://twitter.com/markmossberg">@markmossberg</a></li>
+      <li>github: <a href="http://github.com/mossberg">@mossberg</a></li>
+      <li>email: <a href="mailto:mark.mossberg@gmail.com">mark.mossberg@gmail</a></li>
+  </ul>
 </section>
 <section>
   <h1>Recent Posts</h1>
@@ -141,113 +147,11 @@
     
   </ul>
 </section>
-
 <section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/mossberg">@mossberg</a> on GitHub
-  
-  <script type="text/javascript">
-    $(document).ready(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'mossberg',
-            count: 3,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
+  <h1>Categories</h1>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (5)</a></li><li><a href='/blog/categories/linux'>linux (3)</a></li><li><a href='/blog/categories/python'>python (1)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (5)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (3)</a></li><li><a href='/blog/categories/web'>web (2)</a></li></ul>
 </section>
 
-
-<!-- saved from url=(0068)http://kaworu.github.io/octostrap3/downloads/code/category_list.html -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style type="text/css"></style></head><body><section class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">Categories</h3>
-  </div>
-  <div class="list-group">
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">5</span>
-        security
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">2</span>
-        reference
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">3</span>
-        linux
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">3</span>
-        sysadmin
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">2</span>
-        web
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">5</span>
-        hacking
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">1</span>
-        python
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">2</span>
-        ctf
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">2</span>
-        reverse-engineering
-      </a>
-    
-    
-    <a class="list-group-item " href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">1</span>
-        android
-      </a>
-    
-    
-    <a class="list-group-item active" href="http://kaworu.github.io/octostrap3/downloads/code/%7B%7B%20root_url%20%7C%20append:category_url%20%7D%7D">
-        <span class="badge">1</span>
-        assembly
-      </a>
-    
-  </div>
-</section>
-<span id="buffer-extension-hover-button" style="display: none;position: absolute;z-index: 8675309;width: 100px;height: 25px;background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png);background-size: 100px 25px;opacity: 0.9;cursor: pointer;"></span></body></html>
   
 </aside>
 
