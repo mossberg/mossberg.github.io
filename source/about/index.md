@@ -6,6 +6,8 @@ sharing: true
 footer: false
 ---
 
+{% img right http://en.gravatar.com/avatar/2005e81614092b796f2d0f5ff61f6a1a.jpg?s=300 %}
+
 ### Hi, I'm Mark Mossberg.
 
 **tl;dr**: I like making and breaking things.
