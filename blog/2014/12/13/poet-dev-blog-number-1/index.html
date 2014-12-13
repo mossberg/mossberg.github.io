@@ -5,11 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>CCDC Regional Qualifiers 2014 - Mark Mossberg&#8217;s Blog</title>
+  <title>Poet Dev Blog #1 - Mark Mossberg&#8217;s Blog</title>
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other &hellip;">
+  <meta name="description" content="For the past eight months or so, I&rsquo;ve been working sporadically on a side
+project of mine I call Poet. Poet is
+basically a tool for hackers &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +20,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://blog.mark.lc/blog/2014/01/25/ccdc2014">
+  <link rel="canonical" href="http://blog.mark.lc/blog/2014/12/13/poet-dev-blog-number-1">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
@@ -82,7 +84,7 @@
   
   <header>
     
-      <h1 class="entry-title">CCDC Regional Qualifiers 2014</h1>
+      <h1 class="entry-title">Poet Dev Blog #1</h1>
     
     
       <p class="meta">
@@ -91,32 +93,70 @@
 
 
 
-<time class='entry-date' datetime='2014-01-25T23:56:00-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:56 pm</span></time>
+<time class='entry-date' datetime='2014-12-13T02:38:31-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:38 am</span></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
+<div class="entry-content"><p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
+project of mine I call <a href="http://github.com/mossberg/poet">Poet</a>. Poet is
+basically a tool for hackers that&rsquo;s useful for post exploitation, that is,
+<em>after</em> you&rsquo;ve initially exploited and gotten access to the computer you&rsquo;re
+not supposed to have access to. Poet is useful because it essentially acts as
+a backdoor you can install into a system to help you maintain access once
+you&rsquo;ve gotten your foot in the door.</p>
 
-<p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
+<p>As a disclaimer, I am building Poet purely for my own education and learning experience.
+The code is freely available because I think it might be useful to others interested
+in learning about this sort of thing. Use it responsibly.</p>
 
-<h2>Overview</h2>
+<p>I&rsquo;ve learned a lot during the process of
+building this tool and I thought it would be cool to write a blog post (possibly
+more to come)
+documenting some of the things I learned, design decisions I made, problems
+I encountered, etc. in that process.</p>
 
-<p>Basically, the way this competition works is each team is given the IT infrastructure of a small business and it is their task to lock down the security of the infrastructure. They have to do this while under attack from a Red Team of hackers who are trying to break in and exfiltrate sensitive data (credit card info, <a href="https://en.wikipedia.org/wiki/Personally_identifiable_information">PII</a>, etc.), or just generally mess with and pwn you. In this case, we were managing an e-commerce website that included a web server running a CMS, a DNS (and MySQL, interestingly) server, a firewall, a mail server, and a FTP server.</p>
+<h3>Motivation</h3>
 
-<h2>Approach</h2>
+<p>ccdc
+oh that&rsquo;s cool, where can I learn more about this
+google google&hellip;nothing?
+make my own!
+seems pretty simple</p>
 
-<p>Personally, myself and a teammate tag teamed securing the DNS/database server. This was an important box to secure because if it got pwnt, an attacker would be able to disrupt the DNS of the e-commerce site, disrupt email, and most importantly, potentially dump the database and exfiltrate sensitive information. Throughout the course of the competition, we implemented basic security measures such as changing default passwords for important system and database accounts, and killing unnecessary network services (such as ntpd, sshd, and apache in our case) as well as more involve measures such as skin-tight iptables rules that controlled specifically what traffic would be able to reach our box, and audit rules that would monitor directories/binaries that an attacker on the system would probably modify or execute.</p>
+<h3>v0.1</h3>
 
-<h2>Expectations</h2>
+<p>the first version of poet is drastically different than the current form
+and much, much simpler. it&rsquo;s
+server maintained a queue of commands to execute and the client would one
+by one pop them off
+of course this isn&rsquo;t very useful at all. ideally your interval is very large
+to remain stealthy but that puts a hard limit on what commands you can execute
+and it&rsquo;s just bad in general</p>
 
-<p>At the beginning of the competition, I had a bit of an adrenaline rush going because I was constantly waiting for the red team to come out of nowhere and own us in some place that we hadn&rsquo;t thought of, or secured yet, or <em>something</em>. Over time that rush wore off because&hellip;the red team never seemed to show up. At no point in the competition did we see any signs of unauthorized access on our box, or even potentially malicious traffic reaching it. Although I do appreciate it, this was a bit of a letdown, given my expectations of getting totally wrecked by the red team.</p>
+<h3>v0.2</h3>
 
-<h2>Results</h2>
+<p>complete redesign. opt for a model where each ping back is a full opportunity
+to do as much as you want. opt for a model where server isn&rsquo;t always on, and
+only turned on when access is needed. simple cli versus a webapp.
+needed to implement control shell, and poet &ldquo;userland&rdquo; or the commands that
+can be run
+also design protoc
+design crude protocol for socket comms</p>
 
-<p>Ultimately, our team did well enough that we were able to place among the top teams competing and qualify for the Northeast regional competition to be held in March in New Hampshire. Definitely excited for that; I&rsquo;ve learned a ton about cyber defense by getting involved with the team and I&rsquo;m looking forward to putting it to use at the real event!</p>
+<h3>v0.3</h3>
+
+<p>oop refactoring
+improvements to backend, especially heavily fleshing out the remote shell
+chint command for flexibility on the client side</p>
+
+<h3>future work</h3>
+
+<p>improve protocol
+encryption
+more windows support</p>
 </div>
 
 
@@ -132,12 +172,12 @@
 
 
 
-<time class='entry-date' datetime='2014-01-25T23:56:00-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:56 pm</span></time>
+<time class='entry-date' datetime='2014-12-13T02:38:31-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:38 am</span></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/security/'>security</a>, <a class='category' href='/blog/categories/sysadmin/'>sysadmin</a>
+    <a class='category' href='/blog/categories/programming/'>programming</a>, <a class='category' href='/blog/categories/python/'>python</a>
   
 </span>
 
@@ -146,7 +186,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/01/25/ccdc2014/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/01/25/ccdc2014/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://blog.mark.lc/blog/2014/12/13/poet-dev-blog-number-1/" data-via="" data-counturl="http://blog.mark.lc/blog/2014/12/13/poet-dev-blog-number-1/" >Tweet</a>
   
   
   
@@ -155,10 +195,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/01/10/banner-hiding/" title="Previous Post: Banner hiding on Ubuntu 12.04">&laquo; Banner hiding on Ubuntu 12.04</a>
+        <a class="basic-alignment left" href="/blog/2014/11/03/netcat-exec/" title="Previous Post: Netcat "-e" Analysis">&laquo; Netcat &#8220;-e&#8221; Analysis</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/03/01/ihackedit/" title="Next Post: iHackedIT">iHackedIT &raquo;</a>
       
     </p>
   </footer>
