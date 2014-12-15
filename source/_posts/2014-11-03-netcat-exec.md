@@ -3,6 +3,7 @@ layout: post
 date: 2014-11-03
 title: Netcat "-e" Analysis
 categories: linux
+comments: true
 ---
 
 As I mentioned in a [previous post](http://blog.mark.lc/blog/2014/03/05/netcat/), netcat has this cool

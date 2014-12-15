@@ -3,6 +3,7 @@ layout: post
 date: 2014-03-01 14:00
 title: iHackedIT
 categories: web security hacking python
+comments: true
 ---
 
 *Discovering, patching, and exploiting a simple command injection webapp*

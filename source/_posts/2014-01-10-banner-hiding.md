@@ -3,6 +3,7 @@ layout: post
 date: 2014-01-10 17:30
 title: Banner hiding on Ubuntu 12.04
 categories: security reference linux sysadmin
+comments: true
 ---
 
 In most cases, the first phase of any sort of cyber-attack is the "fingerprinting" phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google *"[web/ssh server] [version] vulnerabilities"*, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid [security through obscurity](http://en.wikipedia.org/wiki/Security_through_obscurity) argument to be made here, and even the Apache docs[^1] themselves state that 
