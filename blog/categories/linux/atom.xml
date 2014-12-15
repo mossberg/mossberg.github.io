@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2014-12-15T09:42:46-05:00</updated>
+  <updated>2014-12-15T16:10:07-05:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,323 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
+    <link href="http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <updated>2014-12-13T02:38:31-05:00</updated>
+    <id>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <content type="html"><![CDATA[<h3>Introduction</h3>
+
+<p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
+project of mine I call <a href="http://github.com/mossberg/poet">Poet</a>. Poet is
+basically a tool for hackers that&rsquo;s useful for post exploitation, that is,
+<em>after</em> you&rsquo;ve initially exploited and gotten access to the computer you&rsquo;re
+not supposed to have access to. Poet is useful because it essentially acts as
+a backdoor you can install into a system to help you maintain access once
+you&rsquo;ve gotten your foot in the door.</p>
+
+<p>As a disclaimer, I am building Poet purely for my own education and learning experience.
+The code is freely available because I think it might be useful to others interested
+in learning about this sort of thing. Use it responsibly.</p>
+
+<p>I&rsquo;ve learned a lot during the process of
+building this tool and I thought it would be cool to write a blog post (possibly
+more to come)
+documenting that process.</p>
+
+<h3>Motivation</h3>
+
+<p>The initial motivation for this project came from an experience I had
+participating in the 2014 Northeast Collegiate Cyber Defense Competition. In
+short, the competition requires a team of students to protect a small
+business IT infrastructure from a red team of hackers. Usually the red team
+is really good and completely owns you at some point or other throughout
+the competition, and at the end they tell you what they did and give
+you tips on how to improve. In particular, the red team told us that there
+was pre-installed &ldquo;beaconing&rdquo; malware on many of our systems from the start
+of the competition that would &ldquo;phone home&rdquo; to a command and control (C2) server
+every once in a while to get commands and tasks to execute on the target
+system. This idea was pretty interesting to me, and a basic implementation
+didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
+though at this point, I had no experience with network programming.</p>
+
+<!-- more -->
+
+
+<h3>v0.1</h3>
+
+<p>The first version of Poet was drastically different from the current form
+and was just about as simple and primitive as it gets for something
+like this. In this version, the client program (executed on target) would
+repeatedly attempt to connect to a socket (port 80 by default) on the server (attacker&rsquo;s C2 server)
+at a specified interval. If the connection failed (server
+wasn&rsquo;t running), the client would sleep, otherwise it would execute
+a command sent from the server, sending back the stdout of the command.
+The
+server simply maintained a queue of commands to execute and would one
+by one pop them off the queue and send them to the client, printing out the stdout
+when it came back.
+This was a great exercise
+to learn the basics of socket programming, but of course
+wasn&rsquo;t very useful at all, for a number of reasons. First, ideally the client&rsquo;s
+interval is very large so as to minimize network use and
+remain stealthy but that puts a hard limit on the rate at which
+commands can be executed. This system was also very inflexible because there
+was no way to reorder or edit commands in the queue, since the &ldquo;user
+interface&rdquo; was just a server script that was run with the commands to execute
+as arguments. Overall, a good start,
+but there was definitely much work ahead to actually make this a semi-realistic tool.</p>
+
+<h3>v0.2</h3>
+
+<p>The second version of Poet involved a pretty substantial redesign although
+one of the things to stay the same would be the high
+level client/server beaconing dynamic. This is far superior than having the
+client attempt to listen on the target&rsquo;s end because in any sort of &ldquo;real&rdquo;
+scenario, the target will likely be behind a firewall that will reject
+incoming packets on arbitrary ports.
+The beaconing model will allow the tool
+to bypass most standard firewalls that aren&rsquo;t specifically targeting it because
+outbound port 80 traffic is almost certainly
+allowed. I later changed the default port to 443 because it&rsquo;s just as
+likely to be allowed out and because it could potentially avoid packet inspection,
+since traffic on 443 is usually encrypted.</p>
+
+<p>Building on top of this model, there were a couple other brainstorms I had
+to build on top of v0.1. Instead of executing a single command for every ping,
+what about sending over multiple commands? What about a pastebin/gist URL to
+a script that the client
+would download and execute? These would help solve the rate limit problem
+because an arbitrary number of commands, instead of one, could be executed
+for each ping. What about user interface?
+What about creating an actual web user interface
+for managing the command queue that the client was pulling from each ping?
+This would help solve the flexibility problem.</p>
+
+<p>While these would be relatively simple to add to v0.1,
+if I asked myself, &ldquo;If I were a hacker, would I
+want to use this tool?&rdquo; the answer would be &ldquo;No way!&rdquo; because I would only be able
+to interact with my target system via discrete scripts, and I
+would have to wait the ideally large time interval between pings to
+get any sort of feedback on my actions.</p>
+
+<p>This made it obvious that I would have to move
+from a design where each ping from the client was an opportunity for the
+user to run <em>x</em> actions on the target,
+to a design where each ping from
+the client was an opportunity for the user to interactively control the client
+for an unlimited time,
+and perform actions on the target with continuous feedback.
+With this in mind, I opted to use a shell as the user interface on the server
+side since it seemed simpler to implement and I was more familiar with
+implementing a shell versus something like a web interface (which would
+likely have to have a shell built into it anyway for executing commands).
+The server design would be similar to that of v0.1 in that the server would
+only be running when the user wanted to control the client, and the client
+would use the inability to connect to the server as an sign to &ldquo;go to sleep&rdquo;
+for another interval, although this isn&rsquo;t strictly necessary. Another server design
+I thought of would be an always-on model where the server would always answer
+the client&rsquo;s ping with some kind of binary state value, which would work equally
+well, but wouldn&rsquo;t be strictly necessary because state can be inferred as
+described above.</p>
+
+<p>In designing the actual protocol the client
+and server use to communicate, I decided to
+use HTTP to mildly obfuscate the client&rsquo;s initial check if
+the server is running. The client&rsquo;s ping consists of a
+GET request for <code>/style.css</code> on the server <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. Of course, the server isn&rsquo;t
+a real web server, but it temporarily masquerades as one for the purposes of
+the initial handshake and sends back a hardcoded HTTP response of some random
+css file, and launches the control shell for the user. At this point, the
+protocol used is as simple as it gets: size of the following data + the data
+itself. This being my first time doing socket programming, my implementation
+was a little weird and reserved the first five bytes of the data sent over the
+wire for the ASCII decimal representation of the size (<code>¯\_(ツ)_/¯</code>), but
+hey, it worked.</p>
+
+<p>The majority of the work left for v0.2 was essentially deciding on the features
+that the control shell would have and implementing the &ldquo;userland utilities&rdquo;
+or commands you could run at the shell. The commands I thought of and implemented
+were:</p>
+
+<ul>
+<li><code>exec</code>: This was the first command I wrote. It executes one or more commands on
+the target, sending the stdout of all of them back in one big chunk of text. I later
+added a flag that would save the big chunk to a file in the archive directory.
+Useful for stuff like grabbing process dumps.</li>
+<li><code>recon</code>: Basically like <code>exec</code>, but the commands are pre-selected and are tailored
+towards &ldquo;reconnaissance&rdquo; purposes. Stuff like <code>whoami</code>, <code>id</code>, <code>uname -a</code>, <code>w</code>, etc.</li>
+<li><code>shell</code>: Launches an actual remote shell on the target (inside the original
+control shell). Was implemented
+really crudely in this version with the execution backend on the client simply
+being something like</li>
+</ul>
+
+
+<pre><code class="python">subprocess.Popen(cmd, stdout=sp.PIPE, stderr=sp.STDOUT, shell=True).communicate()[0]
+</code></pre>
+
+<ul>
+<li><code>exfil</code>: Exfiltrate files and saves to the archive directory. Pretty standard.
+Current implementation is pretty crude, and loads entire file into memory, rather
+than paging the data somehow.</li>
+<li><code>selfdestruct</code>: Exit the client and delete script on disk. Without this,
+the user would have to do something weird (nay, treasonous?) like
+killing the client&rsquo;s process from its own remote shell to completely
+turn off the client.</li>
+<li><code>dlexec</code>: Download an executable from the internet and execute it. Also
+pretty standard, useful for upgrading or installing additional tools on target</li>
+<li><code>exit</code>: Pretty self explanatory, this tells the client that the server&rsquo;s
+done for now and that the client can now go back to sleep and begin pinging
+again in one time interval.</li>
+</ul>
+
+
+<p>This work resulted in a decently functional prototype that could feasibly
+be used for post-exploitation.</p>
+
+<h3>v0.3</h3>
+
+<p>Version 0.3 was a pretty arbitrary decision, but mostly involved significant
+refactoring of the backend code, with a couple new user facing features.
+One notable change was the refactoring of the entire codebase from imperative,
+C-style programming to object oriented style, which gave the code much better
+structure. The communications protocol was also slightly refactored to be
+more standard by reserving the first four bytes for
+the binary data size value which simultaneously conserved
+bytes sent over the wire and increased the maximum data that could be sent in
+one message between client and server. An additional shell command I implemented
+was called <code>chint</code>, standing for &ldquo;change interval&rdquo;, which lets the server
+change the client&rsquo;s ping delay interval after the client&rsquo;s been started.</p>
+
+<p>All that&rsquo;s great, but the most significant set of improvements in my opinion
+were related to fleshing out the remote shell feature. While it &ldquo;worked&rdquo;
+to a decent degree for most standard commands there were two main problems with
+it that kept it from being a &ldquo;real&rdquo; shell. For reference, here&rsquo;s what the code
+looked like for executing commands in v0.2.</p>
+
+<pre><code class="python">def cmd_exec(cmd):
+    return sp.Popen(cmd, stdout=sp.PIPE, stderr=sp.STDOUT,
+                    shell=True).communicate()[0]
+</code></pre>
+
+<p>For those that aren&rsquo;t as familiar with Python&rsquo;s <code>subprocess</code> library, this
+executes an arbitrary command line (<code>cmd</code>), sending the stderr to the stdout,
+and returns any stdout of the command.</p>
+
+<p>The first problem was that the shell
+output was not continuous &ndash; when executing a command like <code>ls -R /</code>, which
+typically results in lots of scrolling output in a normal terminal, my remote
+shell would instead block on the server end while the client executed the
+command to its completion and sent over the entire stdout as one big piece.
+I solved this problem by adapting the code to continuously poll the
+stdout file descriptor for new lines of output, sending those over individually
+so that the server would get each line of output as soon as it was available.</p>
+
+<p>The second problem was that if certain commands like <code>ping</code> were executed in the shell,
+the client would effectively become unusable because <code>ping</code> (when executed
+without the <code>-c</code> parameter) is usually ended by being sent a INT signal (SIGINT),
+typically by hitting Ctrl-C on the keyboard. The problem is, the client side
+had no mechanism to receive signals and send them to the running process, so
+it would be eternally running this unending process and the user
+would totally lose control of the target. To solve this problem, I needed a way for the
+client to simultaneously execute the requested command, <strong>and</strong> listen for
+messages from the server, presumably telling the client to end the running
+process. To do this, I learned to use the <code>select()</code> function which is an
+easy way for an application to multiplex data streams (in this case,
+the stdout of the running process, and the socket connection to the server)
+and process their data without requiring concurrency at the application
+level.</p>
+
+<p>The resulting code from these two fixes is below. Select takes in multiple
+file descriptors (File objects in Python) and returns which ones
+are readable (in this example). After it returns, I can check which file descriptors
+it returned, and proceed accordingly. In the expected case where
+we can read from the process&rsquo;s stdout file descriptor, we get a line of
+stdout from the process, forwarding it to the server immediately.
+In the exceptional case where we can read from the socket, we receive the message,
+making sure it contains the proper keyword to end the process (&lsquo;shellterm&rsquo;)
+and terminating the process if it does.</p>
+
+<pre><code class="python">proc = sp.Popen(inp, stdout=sp.PIPE, stderr=sp.STDOUT, shell=True)
+while True:
+    readable = select.select([proc.stdout, s.s], [], [], 30)[0]
+    for fd in readable:
+        if fd == proc.stdout:  # proc has stdout/err to send
+            output = proc.stdout.readline()
+            if output:
+                s.send(output)
+            else:
+                return
+        elif fd == s.s:  # remote signal from server
+            sig = s.recv()
+            if sig == 'shellterm':
+                proc.terminate()
+                return
+</code></pre>
+
+<p>That&rsquo;s all for v0.3. Again, the v0.3 decision was pretty arbitrary and I ultimately
+chose to ship it because all the other features I had lined up at
+the time were
+more labor intensive/experimental and I <em>really</em> wanted to get my fancy
+new remote shell into master :D.</p>
+
+<h3>Future Work</h3>
+
+<p>At this point, I&rsquo;m pretty satisfied with the state of the project, but as
+always, there&rsquo;s more work to be done. Here are some future features/ideas/improvements
+that may or may not ever get implemented:</p>
+
+<ul>
+<li><strong>crypto</strong>: If anything, I&rsquo;d say encrypted communications are the one thing
+keeping this from being a really usable tool. Right now, communications are
+sent in the clear essentially, although they are base64 encoded for the slightest
+amount of obfuscation. Ideally I&rsquo;d use Python&rsquo;s ssl library, probably doing
+something like hardcoding a server public key into the client. A solution
+that wouldn&rsquo;t be as much work, but only slightly more secure than the current
+cleartext communications would be to use a basic xor cipher which would be
+pretty easy to write, and force an analyst to retrieve the key from memory,
+or the initial exchange over the network, depending on how I chose to implement it.</li>
+<li><strong>protocol improvement</strong>: This shouldn&rsquo;t actually be too hard to implement,
+but the data section of a poet message is typically some type of keyword, a space,
+then any relevant data. For example, to start a shell, the server sends
+over &ldquo;shell&rdquo;, to get recon data, the server sends &ldquo;recon&rdquo;, for an <code>exec</code>
+command, the server sends over &ldquo;exec&rdquo; followed by the commands to execute.
+Instead of using these string keywords, it would be possible to move them into
+the protocol as a single byte after the data size and have some sort
+of lookup table for referencing the appropriate action to each key.</li>
+<li><strong>interval fuzzing</strong>: Instead of having a strict, predictable delay time
+interval for client pings, I could implement some sort of fuzzing so that the delay
+time is slightly variable for further obfuscation
+purposes.</li>
+</ul>
+
+
+<p>and last, but not least&hellip;</p>
+
+<ul>
+<li><strong>botnet</strong>(?!): Now that I more or less have the infrastructure down for
+controlling a single client, it would be pretty cool to
+fork the project and adapt it for a more distributed design with multiple
+clients connecting to the server, all receiving commands to execute.</li>
+</ul>
+
+
+<hr />
+
+<p>Again, all the code for this project is available on <a href="http://github.com/mossberg/poet">github</a>.
+Hopefully this was interesting/helpful for some people, and as always thanks for reading!</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Writing this post and thinking about this again actually helped me discover a bug in the server where the server would terminate if it happened to receive a non-client HTTP request while waiting for the client. This would enable a third party that wanted to mess with the Poet user to spam the Poet user&rsquo;s machine with HTTP requests (assuming they knew the proper port to send to) at any interval smaller than the Poet interval, and effectively DOS Poet.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Netcat "-e" Analysis]]></title>

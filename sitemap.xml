@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/</loc>
+    <lastmod>2014-12-13T02:38:31-05:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>http://blog.mark.lc/blog/2014/11/03/netcat-exec/</loc>
     <lastmod>2014-11-03T00:00:00-05:00</lastmod>
     <priority>0.8</priority>
@@ -42,25 +47,25 @@
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/archives/</loc>
-    <lastmod>2014-12-15T09:42:46-05:00</lastmod>
+    <lastmod>2014-12-15T16:10:07-05:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/</loc>
-    <lastmod>2014-12-15T09:42:46-05:00</lastmod>
+    <lastmod>2014-12-15T16:10:07-05:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/about/</loc>
-    <lastmod>2014-12-15T09:42:46-05:00</lastmod>
+    <lastmod>2014-12-15T16:10:07-05:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/projects/</loc>
-    <lastmod>2014-12-15T09:42:46-05:00</lastmod>
+    <lastmod>2014-12-15T16:10:07-05:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

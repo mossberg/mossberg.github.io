@@ -9,9 +9,9 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="As I mentioned in a previous post, netcat has this cool
--e parameter that lets you specify an executable to essentially turn into
-a network service, &hellip;">
+  <meta name="description" content="Introduction For the past eight months or so, I&rsquo;ve been working sporadically on a side
+project of mine I call Poet. Poet is
+basically a tool &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +81,73 @@ a network service, &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Poet: Beacon Based Post-Exploitation</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-12-13T02:38:31-05:00'><span class='date'><span class='date-month'>Dec</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>2:38 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>Introduction</h3>
+
+<p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
+project of mine I call <a href="http://github.com/mossberg/poet">Poet</a>. Poet is
+basically a tool for hackers that&rsquo;s useful for post exploitation, that is,
+<em>after</em> you&rsquo;ve initially exploited and gotten access to the computer you&rsquo;re
+not supposed to have access to. Poet is useful because it essentially acts as
+a backdoor you can install into a system to help you maintain access once
+you&rsquo;ve gotten your foot in the door.</p>
+
+<p>As a disclaimer, I am building Poet purely for my own education and learning experience.
+The code is freely available because I think it might be useful to others interested
+in learning about this sort of thing. Use it responsibly.</p>
+
+<p>I&rsquo;ve learned a lot during the process of
+building this tool and I thought it would be cool to write a blog post (possibly
+more to come)
+documenting that process.</p>
+
+<h3>Motivation</h3>
+
+<p>The initial motivation for this project came from an experience I had
+participating in the 2014 Northeast Collegiate Cyber Defense Competition. In
+short, the competition requires a team of students to protect a small
+business IT infrastructure from a red team of hackers. Usually the red team
+is really good and completely owns you at some point or other throughout
+the competition, and at the end they tell you what they did and give
+you tips on how to improve. In particular, the red team told us that there
+was pre-installed &ldquo;beaconing&rdquo; malware on many of our systems from the start
+of the competition that would &ldquo;phone home&rdquo; to a command and control (C2) server
+every once in a while to get commands and tasks to execute on the target
+system. This idea was pretty interesting to me, and a basic implementation
+didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
+though at this point, I had no experience with network programming.</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -325,268 +392,12 @@ usage: %s &lt;secret&gt;
 actually try to reverse engineer it.
 We&rsquo;ll start with <code>main</code>.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">$</span> <span class="no">gdb</span> <span class="p">-</span><span class="no">batch</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">file</span> <span class="no">crackme</span><span class="err">&#39;</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">disas</span> <span class="no">main</span><span class="err">&#39;</span>
-</span><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">main</span><span class="p">:</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Let&rsquo;s break this down a little.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Starting at the beginning, we see the stack pointer decremented as part of
-the function prologue. The prologue is a set of setup steps involving
-saving the old frame&rsquo;s
-base pointer on the stack, reassigning the base pointer to the current
-stack pointer, then subtracting the stack pointer a certain amount to make room
-on the stack
-for local variables, etc. We don&rsquo;t see the former two steps because this is
-the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
-the base pointer isn&rsquo;t necessary.</p>
-
-<p>Then the <code>edi</code> register is
-compared to 1 and if it is less than or equal, we jump to offset 39.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here at offset 39, we print something then jump to offset 34 where we repair
-the stack (undo the sub instruction from the prologue) and return (ending
-execution).</p>
-
-<p>This is likely how the program checks the arguments and prints the usage
-message if no arguments are supplied (which would cause argc/edi to be 1).</p>
-
-<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
-instruction.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here we can see the <code>verify_secret</code> function being called with a parameter
-in <code>rdi</code>. This is most likely the argument we passed into the program. We can
-confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
-
-<pre><code>gdb-peda$ tele $rsi
-0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
-0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
-0016| 0x7fffffffeb58 --&gt; 0x0
-</code></pre>
-
-<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
-(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
-
-<p>If we look after the <code>verify_secret</code> call we can see the program checks
-if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
-<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
-print out the &ldquo;ok&rdquo; message we want.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
-and to see how we can make it return non-zero.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">verify_secret</span><span class="p">:</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ea</span> <span class="err">&lt;+</span><span class="mi">10</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rcx</span><span class="p">,</span><span class="no">rsp</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ed</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ef</span> <span class="err">&lt;+</span><span class="mi">15</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f1</span> <span class="err">&lt;+</span><span class="mi">17</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsp</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x400604</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">36</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">nop</span>    <span class="no">WORD</span> <span class="no">PTR</span> <span class="no">cs</span><span class="p">:</span><span class="err">[</span><span class="no">rax</span><span class="err">+</span><span class="no">rax</span><span class="p">*</span><span class="mi">1</span><span class="err">+</span><span class="mi">0x0</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400600</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400602</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400604</span> <span class="err">&lt;+</span><span class="mi">36</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0xfffffff7</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400607</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">rsi</span><span class="p">,</span><span class="err">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">0x400</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040060f</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdx</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400613</span> <span class="err">&lt;+</span><span class="mi">51</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdx-0x1</span><span class="err">]</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400616</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061a</span> <span class="err">&lt;+</span><span class="mi">58</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061d</span> <span class="err">&lt;+</span><span class="mi">61</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">cmp</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsi</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400620</span> <span class="err">&lt;+</span><span class="mi">64</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jb</span>     <span class="mh">0x400600</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">32</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400634</span> <span class="err">&lt;+</span><span class="mi">84</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400636</span> <span class="err">&lt;+</span><span class="mi">86</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">sete</span>   <span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400639</span> <span class="err">&lt;+</span><span class="mi">89</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400640</span> <span class="err">&lt;+</span><span class="mi">96</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400643</span> <span class="err">&lt;+</span><span class="mi">99</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>I won&rsquo;t walk through this one in detail because understanding each line
-isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
-the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
-returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
-parameters, two buffers to compare and their lengths, and returns 0 if the
-buffers are identical.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
-is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
-examine address 0x600a80, we find this 24 byte string:</p>
-
-<pre><code>gdb-peda$ hexd 0x600a80 /2
-0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
-0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
-</code></pre>
-
-<p>Since this is a direct address to some memory, we can be fairly certain that
-we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
-instruction (offset 7)
-which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
-instruction (offset 36), and
-the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
-pointer to our input string, we can reasonably guess
-that this function is xor&#8217;ing each character of our input with 0xf7 and writing
-the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
-we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
-pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
-with the xor key.</p>
-
-<p>Here&rsquo;s a way to do this with python.</p>
-
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca</span><span class="s">&#39;</span>
-<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
-    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
-<span class="k">print</span> <span class="n">ba</span></code></pre></div>
-
-
-<p>Which results in this:</p>
-
-<pre><code>$ python crack.py
-fHSrr4MNhQAFdNtxYFY6Kw==
-$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
-ok
-</code></pre>
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/10/27/crackme/">Read on &rarr;</a>
+    </footer>
   
 
 
@@ -1513,6 +1324,10 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Poet: Beacon Based Post-Exploitation</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
       </li>
     
@@ -1528,15 +1343,11 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
         <a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/03/05/netcat/">Netcat Refresher</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (5)</a></li><li><a href='/blog/categories/linux'>linux (3)</a></li><li><a href='/blog/categories/python'>python (1)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (5)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (3)</a></li><li><a href='/blog/categories/web'>web (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (6)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (1)</a></li><li><a href='/blog/categories/python'>python (2)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (3)</a></li><li><a href='/blog/categories/web'>web (2)</a></li></ul>
 </section>
 
   

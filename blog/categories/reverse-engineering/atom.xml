@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Reverse Engineering | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/reverse-engineering/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2014-12-15T09:42:46-05:00</updated>
+  <updated>2014-12-15T16:10:07-05:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -68,6 +68,9 @@ usage: %s &lt;secret&gt;
 <p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
 actually try to reverse engineer it.
 We&rsquo;ll start with <code>main</code>.</p>
+
+<!-- more -->
+
 
 <pre><code class="asm">$ gdb -batch -ex 'file crackme' -ex 'disas main'
 Dump of assembler code for function main:
