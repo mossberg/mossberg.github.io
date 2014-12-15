@@ -24,7 +24,7 @@ On campus I'm involved with [IEEE](http://ieee.neu.edu),
 and [NU Hacks](http://hacks.io).
 
 In my free time I enjoy [slacklining](http://en.wikipedia.org/wiki/Slacklining),
-playing guitar, and working on various projects. In April 2014, I placed in the top three for a Massachusetts [cybersecurity competition](http://www.bostonglobe.com/metro/2014/05/03/hackers-hone-their-skills-cybersecurity-competition-umass-boston/Jcbnuv3D1Tdc09MYJITs8J/story.html).
+playing guitar, and working on various [projects](/projects). In April 2014, I placed in the top three for a Massachusetts [cybersecurity competition](http://www.bostonglobe.com/metro/2014/05/03/hackers-hone-their-skills-cybersecurity-competition-umass-boston/Jcbnuv3D1Tdc09MYJITs8J/story.html).
 
 #### Contact
 
