@@ -13,9 +13,12 @@ footer: false
 **tl;dr**: I like making and breaking things.
 
 I'm a junior at [Northeastern University](http://ece.neu.edu),
-studying Computer Engineering. My main interests include operating systems
-and reverse engineering although you might also catch me playing with embedded
-systems and web/app development occasionally.
+studying Computer Engineering. My main interests include operating
+and embedded systems,
+and systems exploitation and reverse engineering.
+<small>Don't tell anyone, but
+you might also catch me trying my hand at web/app development occasionally.
+</small>
 
 On campus I'm involved with [IEEE](http://ieee.neu.edu),
 [Wireless Club](http://wireless.neu.edu), the Northeastern
