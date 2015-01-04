@@ -6,7 +6,7 @@ sharing: true
 footer: false
 ---
 
-{% img right http://en.gravatar.com/avatar/2005e81614092b796f2d0f5ff61f6a1a.jpg?s=300 %}
+{% img right http://en.gravatar.com/avatar/2005e81614092b796f2d0f5ff61f6a1a.jpg?s=200 %}
 
 ### Hi, I'm Mark Mossberg.
 
@@ -16,15 +16,15 @@ I'm a junior at [Northeastern University](http://ece.neu.edu),
 studying Computer Engineering. My main interests include operating
 and embedded systems,
 and systems exploitation and reverse engineering.
-<small>Don't tell anyone, but
-you might also catch me trying my hand at web/app development occasionally.
-</small>
+You might also catch me trying my hand at web/app development, but
+don't tell anyone ;).
 
 On campus I'm involved with [IEEE](http://ieee.neu.edu),
 [Wireless Club](http://wireless.neu.edu), the Northeastern
-[CCDC](http://www.nationalccdc.org/) and
-[CTF](http://en.wikipedia.org/wiki/Capture_the_flag#Computer_security) teams,
-and [NU Hacks](http://hacks.io).
+[CCDC](http://www.nationalccdc.org/) team,
+and [NU Hacks](http://hacks.io). Occasionally I play
+[CTF](http://en.wikipedia.org/wiki/Capture_the_flag#Computer_security) with
+[Shellphish](https://ctftime.org/team/285).
 
 In my free time I enjoy [slacklining](http://en.wikipedia.org/wiki/Slacklining),
 playing guitar, and working on various [projects](/projects). In April 2014, I placed in the top three for a Massachusetts [cybersecurity competition](http://www.bostonglobe.com/metro/2014/05/03/hackers-hone-their-skills-cybersecurity-competition-umass-boston/Jcbnuv3D1Tdc09MYJITs8J/story.html).
