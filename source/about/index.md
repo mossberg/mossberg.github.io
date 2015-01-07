@@ -22,8 +22,9 @@ don't tell anyone ;).
 On campus I'm involved with [IEEE](http://ieee.neu.edu),
 [Wireless Club](http://wireless.neu.edu), the Northeastern
 [CCDC](http://www.nationalccdc.org/) team,
-and [NU Hacks](http://hacks.io). Occasionally I play
-[CTF](http://en.wikipedia.org/wiki/Capture_the_flag#Computer_security) with
+and [NU Hacks](http://hacks.io). Sometimes I play
+[CTF](http://en.wikipedia.org/wiki/Capture_the_flag#Computer_security),
+occasionally with
 [Shellphish](https://ctftime.org/team/285).
 
 In my free time I enjoy [slacklining](http://en.wikipedia.org/wiki/Slacklining),
