@@ -20,8 +20,6 @@ to turn them all off rather than having some physical switch [^1], so I decided
 to fully embrace the IoT trend and use my Raspberry Pi to build a simple
 HTTP-fluent light switch for turning my lights on and off.
 
-<!-- more -->
-
 ### Hardware
 
 The circuitry itself is literally as simple as it gets for this kind of thing,
