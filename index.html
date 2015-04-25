@@ -9,9 +9,9 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="I&rsquo;m lucky enough to own a Philips Hue wireless
-lighting unit (thanks NUACM!) which essentially is
-this really awesome Internet of Things (IoT) &hellip;">
+  <meta name="description" content="Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
+anniversary prize giveaway. I really didn&rsquo;t need
+a &ldquo;. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -87,6 +87,104 @@ this really awesome Internet of Things (IoT) &hellip;">
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-04-25T17:42:10-04:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>5:42 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
+<a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
+a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
+register a stereotypical &ldquo;sketchy&rdquo; domain and set it up as a drive-by
+download site or something, because while I&rsquo;ve <em>heard</em> of doing this kind of
+thing, I&rsquo;ve never actually done it before. Here&rsquo;s a blog post walking through
+what I did. The usual disclaimer applies here: I did this purely for my
+own education and learning experience and am not responsible for anything
+you do with it.</p>
+
+<h3>Step 1: Register your sketchy domain</h3>
+
+<p>I chose <a href="http://freemoviedownload.club">http://freemoviedownload.club</a>.</p>
+
+<h3>Step 2: Set up drive-by downloads</h3>
+
+<p>This involves configuring your web server to automatically set the
+<code>Content-Type</code> header of the resource you want to force download
+to <code>application/octet-stream</code>. That should make most web browsers trigger
+a download file prompt to actually download the file. Safari curiously
+doesn&rsquo;t support prompts for downloaded file location like Chrome and Firefox,
+so in that case, it will immediately download the file to <code>~/Downloads</code>.</p>
+
+<p>I&rsquo;m going to try to force a drive-by download of a jpg file, so I added
+the below config to my <code>.htaccess</code> file in Apache&rsquo;s <code>DocumentRoot</code>.</p>
+
+<figure class='code'><figcaption><span>.htaccess</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Files</span> <span class="err">*.jpg</span><span class="nt">&gt;</span>
+</span><span class='line'>        ForceType application/octet-stream
+</span><span class='line'><span class="nt">&lt;/Files&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That will force browers to download the image, rather than rendering it
+when a browser tries to access <code>http://freemoviedownload.club/image.jpg</code>, for
+example.</p>
+
+<p>At this point, we&rsquo;re technically done. We can send someone a link to a file
+and, assuming they say yes to the prompt (or use Safari), download it to their
+computer.  But for some extra polish, I want to have an actual website with
+content and have the download come from <em>that</em> page.</p>
+
+<h3>Step 3: Redirect</h3>
+
+<p>We can accomplish this with a trivial Javascript redirect that executes
+after the page has loaded. We can even add a delay before the download happens
+to give them time to read the website or whatever. The redirect will need
+to be to the path configured in step 2, but this will give the illusion that
+the download is coming from the <code>index.html</code> page.</p>
+
+<figure class='code'><figcaption><span>index.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>you have arrived at the official free movie download club! enjoy your download
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="kd">function</span> <span class="nx">f</span><span class="p">()</span> <span class="p">{</span> <span class="nb">document</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s1">&#39;dickbutt.jpg&#39;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="mi">2000</span><span class="p">);</span>
+</span><span class='line'><span class="nt">&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
+&ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
+against Safari and Chrome for Android, in my testing.</p>
+
+<p><img src="images/sketchy.gif" alt="" /></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2015/01/18/a-simple-iot-light-switch/">Building a Simple IoT Light Switch</a></h1>
     
     
@@ -117,12 +215,113 @@ to turn them all off rather than having some physical switch <sup id="fnref:1"><
 to fully embrace the IoT trend and use my Raspberry Pi to build a simple
 HTTP-fluent light switch for turning my lights on and off.</p>
 
+<h3>Hardware</h3>
+
+<p>The circuitry itself is literally as simple as it gets for this kind of thing,
+all I have is GPIO pin 11 on the board (BCM pin 17) connected to pin 6 (GND),
+with a switch in between. In my code, I&rsquo;ll configure pin 17 to use an internal
+pull up resistor which will bring the voltage up to 3.3V when the button is not
+pressed and down to 0V when it is.</p>
+
+<p><img src="/images/rpi.jpg" alt="" /></p>
+
+<h3>Software</h3>
+
+<p>The Raspberry Pi Python library makes it really easy to control circuits. For
+simplicity, my code uses a polling approach to detect when the button is pressed
+but the RPi library also supports real callbacks using threading.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">inp</span> <span class="o">=</span> <span class="n">gpio</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">PIN</span><span class="p">)</span>
+</span><span class='line'>        <span class="c"># pull up resistor will cause inp to be True when button is not</span>
+</span><span class='line'>        <span class="c"># pressed and False when button is pressed</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">inp</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">callback</span><span class="p">()</span>
+</span><span class='line'>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">BUTTON_SLEEP</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>My <code>callback()</code> function consists of code that uses the Hue API to request
+a diagnostic of the lights, which comes back as a JSON blob with each light
+represented as an object. If no lights are on, it turns them on, otherwise
+turning them all off. Turning the lights on and off is as simple as submitting
+a PUT request to the API endpoint for each light with a JSON blob specifying
+the state to turn to (On=True, Off=False).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">callback</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">survey</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">BASE</span> <span class="o">+</span> <span class="s">&#39;/lights&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">survey</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">survey</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">numlights</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">survey</span><span class="p">)</span>
+</span><span class='line'>    <span class="c"># if any are on, turn all off.</span>
+</span><span class='line'>    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="n">survey</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)][</span><span class="s">&#39;state&#39;</span><span class="p">][</span><span class="s">&#39;on&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">numlights</span><span class="o">+</span><span class="mi">1</span><span class="p">)]):</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">light</span> <span class="ow">in</span> <span class="n">survey</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+</span><span class='line'>            <span class="n">turn</span><span class="p">(</span><span class="n">light</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;[{}] Off&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+</span><span class='line'>    <span class="k">else</span><span class="p">:</span>  <span class="c"># else if all are off, then all on</span>
+</span><span class='line'>        <span class="k">for</span> <span class="n">light</span> <span class="ow">in</span> <span class="n">survey</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+</span><span class='line'>            <span class="n">turn</span><span class="p">(</span><span class="n">light</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;[{}] On&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">turn</span><span class="p">(</span><span class="n">light</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s">&#39;on&#39;</span><span class="p">:</span><span class="n">state</span><span class="p">})</span>
+</span><span class='line'>    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">BASE</span> <span class="o">+</span> <span class="s">&#39;/lights/{}/state&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">light</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&rsquo;s it! I leave the script running in a tmux pane on the Pi and I can
+hit the button at any point to toggle the lights on and off. The full code
+is available on <a href="https://github.com/mossberg/raspi/blob/master/hue.py">github</a>.</p>
+
+<p>For future work,
+it would be cool to integrate RF chips so the button wouldn&rsquo;t have to be
+physically attached to the Pi and I could have a little remote control. I&rsquo;ll
+leave that for another day. Thanks for reading, here it is in action!</p>
+
+<blockquote class="instagram-media" data-instgrm-version="4" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:658px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:8px;"> <div style=" background:#F8F8F8; line-height:0; margin-top:40px; padding:50% 0; text-align:center; width:100%;"> <div style=" background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAMAAAApWqozAAAAGFBMVEUiIiI9PT0eHh4gIB4hIBkcHBwcHBwcHBydr+JQAAAACHRSTlMABA4YHyQsM5jtaMwAAADfSURBVDjL7ZVBEgMhCAQBAf//42xcNbpAqakcM0ftUmFAAIBE81IqBJdS3lS6zs3bIpB9WED3YYXFPmHRfT8sgyrCP1x8uEUxLMzNWElFOYCV6mHWWwMzdPEKHlhLw7NWJqkHc4uIZphavDzA2JPzUDsBZziNae2S6owH8xPmX8G7zzgKEOPUoYHvGz1TBCxMkd3kwNVbU0gKHkx+iZILf77IofhrY1nYFnB/lQPb79drWOyJVa/DAvg9B/rLB4cC+Nqgdz/TvBbBnr6GBReqn/nRmDgaQEej7WhonozjF+Y2I/fZou/qAAAAAElFTkSuQmCC); display:block; height:44px; margin:0 auto -44px; position:relative; top:-22px; width:44px;"></div></div><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="https://instagram.com/p/yAhhmMn8yt/" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_top">A video posted by Mark Mossberg (@mssbrg)</a> on <time style=" font-family:Arial,sans-serif; font-size:14px; line-height:17px;" datetime="2015-01-18T20:09:40+00:00">Jan 18, 2015 at 12:09pm PST</time></p></div></blockquote>
+
+
+<script async defer src="//platform.instagram.com/en_US/embeds.js"></script>
+
+
+
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Of course I could physically go to each light and flip the switch but manually turning off all three lights in my room is even more work than launching the app.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
   
-  
-    <footer>
-      <a rel="full-article" href="/blog/2015/01/18/a-simple-iot-light-switch/">Read on &rarr;</a>
-    </footer>
   
 
 
@@ -184,12 +383,301 @@ system. This idea was pretty interesting to me, and a basic implementation
 didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
 though at this point, I had no experience with network programming.</p>
 
+<h3>v0.1</h3>
+
+<p>The first version of Poet was drastically different from the current form
+and was just about as simple and primitive as it gets for something
+like this. In this version, the client program (executed on target) would
+repeatedly attempt to connect to a socket (port 80 by default) on the server (attacker&rsquo;s C2 server)
+at a specified interval. If the connection failed (server
+wasn&rsquo;t running), the client would sleep, otherwise it would execute
+a command sent from the server, sending back the stdout of the command.
+The
+server simply maintained a queue of commands to execute and would one
+by one pop them off the queue and send them to the client, printing out the stdout
+when it came back.
+This was a great exercise
+to learn the basics of socket programming, but of course
+wasn&rsquo;t very useful at all, for a number of reasons. First, ideally the client&rsquo;s
+interval is very large so as to minimize network use and
+remain stealthy but that puts a hard limit on the rate at which
+commands can be executed. This system was also very inflexible because there
+was no way to reorder or edit commands in the queue, since the &ldquo;user
+interface&rdquo; was just a server script that was run with the commands to execute
+as arguments. Overall, a good start,
+but there was definitely much work ahead to actually make this a semi-realistic tool.</p>
+
+<h3>v0.2</h3>
+
+<p>The second version of Poet involved a pretty substantial redesign although
+one of the things to stay the same would be the high
+level client/server beaconing dynamic. This is far superior than having the
+client attempt to listen on the target&rsquo;s end because in any sort of &ldquo;real&rdquo;
+scenario, the target will likely be behind a firewall that will reject
+incoming packets on arbitrary ports.
+The beaconing model will allow the tool
+to bypass most standard firewalls that aren&rsquo;t specifically targeting it because
+outbound port 80 traffic is almost certainly
+allowed. I later changed the default port to 443 because it&rsquo;s just as
+likely to be allowed out and because it could potentially avoid packet inspection,
+since traffic on 443 is usually encrypted.</p>
+
+<p>Building on top of this model, there were a couple other brainstorms I had
+to build on top of v0.1. Instead of executing a single command for every ping,
+what about sending over multiple commands? What about a pastebin/gist URL to
+a script that the client
+would download and execute? These would help solve the rate limit problem
+because an arbitrary number of commands, instead of one, could be executed
+for each ping. What about user interface?
+What about creating an actual web user interface
+for managing the command queue that the client was pulling from each ping?
+This would help solve the flexibility problem.</p>
+
+<p>While these would be relatively simple to add to v0.1,
+if I asked myself, &ldquo;If I were a hacker, would I
+want to use this tool?&rdquo; the answer would be &ldquo;No way!&rdquo; because I would only be able
+to interact with my target system via discrete scripts, and I
+would have to wait the ideally large time interval between pings to
+get any sort of feedback on my actions.</p>
+
+<p>This made it obvious that I would have to move
+from a design where each ping from the client was an opportunity for the
+user to run <em>x</em> actions on the target,
+to a design where each ping from
+the client was an opportunity for the user to interactively control the client
+for an unlimited time,
+and perform actions on the target with continuous feedback.
+With this in mind, I opted to use a shell as the user interface on the server
+side since it seemed simpler to implement and I was more familiar with
+implementing a shell versus something like a web interface (which would
+likely have to have a shell built into it anyway for executing commands).
+The server design would be similar to that of v0.1 in that the server would
+only be running when the user wanted to control the client, and the client
+would use the inability to connect to the server as an sign to &ldquo;go to sleep&rdquo;
+for another interval, although this isn&rsquo;t strictly necessary. Another server design
+I thought of would be an always-on model where the server would always answer
+the client&rsquo;s ping with some kind of binary state value, which would work equally
+well, but wouldn&rsquo;t be strictly necessary because state can be inferred as
+described above.</p>
+
+<p>In designing the actual protocol the client
+and server use to communicate, I decided to
+use HTTP to mildly obfuscate the client&rsquo;s initial check if
+the server is running. The client&rsquo;s ping consists of a
+GET request for <code>/style.css</code> on the server <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>. Of course, the server isn&rsquo;t
+a real web server, but it temporarily masquerades as one for the purposes of
+the initial handshake and sends back a hardcoded HTTP response of some random
+css file, and launches the control shell for the user. At this point, the
+protocol used is as simple as it gets: size of the following data + the data
+itself. This being my first time doing socket programming, my implementation
+was a little weird and reserved the first five bytes of the data sent over the
+wire for the ASCII decimal representation of the size (<code>¯\_(ツ)_/¯</code>), but
+hey, it worked.</p>
+
+<p>The majority of the work left for v0.2 was essentially deciding on the features
+that the control shell would have and implementing the &ldquo;userland utilities&rdquo;
+or commands you could run at the shell. The commands I thought of and implemented
+were:</p>
+
+<ul>
+<li><code>exec</code>: This was the first command I wrote. It executes one or more commands on
+the target, sending the stdout of all of them back in one big chunk of text. I later
+added a flag that would save the big chunk to a file in the archive directory.
+Useful for stuff like grabbing process dumps.</li>
+<li><code>recon</code>: Basically like <code>exec</code>, but the commands are pre-selected and are tailored
+towards &ldquo;reconnaissance&rdquo; purposes. Stuff like <code>whoami</code>, <code>id</code>, <code>uname -a</code>, <code>w</code>, etc.</li>
+<li><code>shell</code>: Launches an actual remote shell on the target (inside the original
+control shell). Was implemented
+really crudely in this version with the execution backend on the client simply
+being something like</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">communicate</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>exfil</code>: Exfiltrate files and saves to the archive directory. Pretty standard.
+Current implementation is pretty crude, and loads entire file into memory, rather
+than paging the data somehow.</li>
+<li><code>selfdestruct</code>: Exit the client and delete script on disk. Without this,
+the user would have to do something weird (nay, treasonous?) like
+killing the client&rsquo;s process from its own remote shell to completely
+turn off the client.</li>
+<li><code>dlexec</code>: Download an executable from the internet and execute it. Also
+pretty standard, useful for upgrading or installing additional tools on target</li>
+<li><code>exit</code>: Pretty self explanatory, this tells the client that the server&rsquo;s
+done for now and that the client can now go back to sleep and begin pinging
+again in one time interval.</li>
+</ul>
+
+
+<p>This work resulted in a decently functional prototype that could feasibly
+be used for post-exploitation.</p>
+
+<h3>v0.3</h3>
+
+<p>Version 0.3 was a pretty arbitrary decision, but mostly involved significant
+refactoring of the backend code, with a couple new user facing features.
+One notable change was the refactoring of the entire codebase from imperative,
+C-style programming to object oriented style, which gave the code much better
+structure. The communications protocol was also slightly refactored to be
+more standard by reserving the first four bytes for
+the binary data size value which simultaneously conserved
+bytes sent over the wire and increased the maximum data that could be sent in
+one message between client and server. An additional shell command I implemented
+was called <code>chint</code>, standing for &ldquo;change interval&rdquo;, which lets the server
+change the client&rsquo;s ping delay interval after the client&rsquo;s been started.</p>
+
+<p>All that&rsquo;s great, but the most significant set of improvements in my opinion
+were related to fleshing out the remote shell feature. While it &ldquo;worked&rdquo;
+to a decent degree for most standard commands there were two main problems with
+it that kept it from being a &ldquo;real&rdquo; shell. For reference, here&rsquo;s what the code
+looked like for executing commands in v0.2.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">cmd_exec</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">communicate</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For those that aren&rsquo;t as familiar with Python&rsquo;s <code>subprocess</code> library, this
+executes an arbitrary command line (<code>cmd</code>), sending the stderr to the stdout,
+and returns any stdout of the command.</p>
+
+<p>The first problem was that the shell
+output was not continuous &ndash; when executing a command like <code>ls -R /</code>, which
+typically results in lots of scrolling output in a normal terminal, my remote
+shell would instead block on the server end while the client executed the
+command to its completion and sent over the entire stdout as one big piece.
+I solved this problem by adapting the code to continuously poll the
+stdout file descriptor for new lines of output, sending those over individually
+so that the server would get each line of output as soon as it was available.</p>
+
+<p>The second problem was that if certain commands like <code>ping</code> were executed in the shell,
+the client would effectively become unusable because <code>ping</code> (when executed
+without the <code>-c</code> parameter) is usually ended by being sent a INT signal (SIGINT),
+typically by hitting Ctrl-C on the keyboard. The problem is, the client side
+had no mechanism to receive signals and send them to the running process, so
+it would be eternally running this unending process and the user
+would totally lose control of the target. To solve this problem, I needed a way for the
+client to simultaneously execute the requested command, <strong>and</strong> listen for
+messages from the server, presumably telling the client to end the running
+process. To do this, I learned to use the <code>select()</code> function which is an
+easy way for an application to multiplex data streams (in this case,
+the stdout of the running process, and the socket connection to the server)
+and process their data without requiring concurrency at the application
+level.</p>
+
+<p>The resulting code from these two fixes is below. Select takes in multiple
+file descriptors (File objects in Python) and returns which ones
+are readable (in this example). After it returns, I can check which file descriptors
+it returned, and proceed accordingly. In the expected case where
+we can read from the process&rsquo;s stdout file descriptor, we get a line of
+stdout from the process, forwarding it to the server immediately.
+In the exceptional case where we can read from the socket, we receive the message,
+making sure it contains the proper keyword to end the process (&lsquo;shellterm&rsquo;)
+and terminating the process if it does.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">proc</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">readable</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">s</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mi">30</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="n">readable</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">fd</span> <span class="o">==</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>  <span class="c"># proc has stdout/err to send</span>
+</span><span class='line'>            <span class="n">output</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span class='line'>            <span class="k">if</span> <span class="n">output</span><span class="p">:</span>
+</span><span class='line'>                <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>                <span class="k">return</span>
+</span><span class='line'>        <span class="k">elif</span> <span class="n">fd</span> <span class="o">==</span> <span class="n">s</span><span class="o">.</span><span class="n">s</span><span class="p">:</span>  <span class="c"># remote signal from server</span>
+</span><span class='line'>            <span class="n">sig</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
+</span><span class='line'>            <span class="k">if</span> <span class="n">sig</span> <span class="o">==</span> <span class="s">&#39;shellterm&#39;</span><span class="p">:</span>
+</span><span class='line'>                <span class="n">proc</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+</span><span class='line'>                <span class="k">return</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&rsquo;s all for v0.3. Again, the v0.3 decision was pretty arbitrary and I ultimately
+chose to ship it because all the other features I had lined up at
+the time were
+more labor intensive/experimental and I <em>really</em> wanted to get my fancy
+new remote shell into master :D.</p>
+
+<h3>Future Work</h3>
+
+<p>At this point, I&rsquo;m pretty satisfied with the state of the project, but as
+always, there&rsquo;s more work to be done. Here are some future features/ideas/improvements
+that may or may not ever get implemented:</p>
+
+<ul>
+<li><strong>crypto</strong>: If anything, I&rsquo;d say encrypted communications are the one thing
+keeping this from being a really usable tool. Right now, communications are
+sent in the clear essentially, although they are base64 encoded for the slightest
+amount of obfuscation. Ideally I&rsquo;d use Python&rsquo;s ssl library, probably doing
+something like hardcoding a server public key into the client. A solution
+that wouldn&rsquo;t be as much work, but only slightly more secure than the current
+cleartext communications would be to use a basic xor cipher which would be
+pretty easy to write, and force an analyst to retrieve the key from memory,
+or the initial exchange over the network, depending on how I chose to implement it.</li>
+<li><strong>protocol improvement</strong>: This shouldn&rsquo;t actually be too hard to implement,
+but the data section of a poet message is typically some type of keyword, a space,
+then any relevant data. For example, to start a shell, the server sends
+over &ldquo;shell&rdquo;, to get recon data, the server sends &ldquo;recon&rdquo;, for an <code>exec</code>
+command, the server sends over &ldquo;exec&rdquo; followed by the commands to execute.
+Instead of using these string keywords, it would be possible to move them into
+the protocol as a single byte after the data size and have some sort
+of lookup table for referencing the appropriate action to each key.</li>
+<li><strong>interval fuzzing</strong>: Instead of having a strict, predictable delay time
+interval for client pings, I could implement some sort of fuzzing so that the delay
+time is slightly variable for further obfuscation
+purposes.</li>
+</ul>
+
+
+<p>and last, but not least&hellip;</p>
+
+<ul>
+<li><strong>botnet</strong>(?!): Now that I more or less have the infrastructure down for
+controlling a single client, it would be pretty cool to
+fork the project and adapt it for a more distributed design with multiple
+clients connecting to the server, all receiving commands to execute.</li>
+</ul>
+
+
+<hr />
+
+<p>Again, all the code for this project is available on <a href="http://github.com/mossberg/poet">github</a>.
+Hopefully this was interesting/helpful for some people, and as always thanks for reading!</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Writing this post and thinking about this again actually helped me discover a bug in the server where the server would terminate if it happened to receive a non-client HTTP request while waiting for the client. This would enable a third party that wanted to mess with the Poet user to spam the Poet user&rsquo;s machine with HTTP requests (assuming they knew the proper port to send to) at any interval smaller than the Poet interval, and effectively DOS Poet.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
 </div>
   
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Read on &rarr;</a>
-    </footer>
   
 
 
@@ -438,12 +926,268 @@ usage: %s &lt;secret&gt;
 actually try to reverse engineer it.
 We&rsquo;ll start with <code>main</code>.</p>
 
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">$</span> <span class="no">gdb</span> <span class="p">-</span><span class="no">batch</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">file</span> <span class="no">crackme</span><span class="err">&#39;</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">disas</span> <span class="no">main</span><span class="err">&#39;</span>
+</span><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">main</span><span class="p">:</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s break this down a little.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Starting at the beginning, we see the stack pointer decremented as part of
+the function prologue. The prologue is a set of setup steps involving
+saving the old frame&rsquo;s
+base pointer on the stack, reassigning the base pointer to the current
+stack pointer, then subtracting the stack pointer a certain amount to make room
+on the stack
+for local variables, etc. We don&rsquo;t see the former two steps because this is
+the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
+the base pointer isn&rsquo;t necessary.</p>
+
+<p>Then the <code>edi</code> register is
+compared to 1 and if it is less than or equal, we jump to offset 39.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here at offset 39, we print something then jump to offset 34 where we repair
+the stack (undo the sub instruction from the prologue) and return (ending
+execution).</p>
+
+<p>This is likely how the program checks the arguments and prints the usage
+message if no arguments are supplied (which would cause argc/edi to be 1).</p>
+
+<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
+instruction.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we can see the <code>verify_secret</code> function being called with a parameter
+in <code>rdi</code>. This is most likely the argument we passed into the program. We can
+confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
+
+<pre><code>gdb-peda$ tele $rsi
+0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
+0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
+0016| 0x7fffffffeb58 --&gt; 0x0
+</code></pre>
+
+<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
+(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
+
+<p>If we look after the <code>verify_secret</code> call we can see the program checks
+if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
+<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
+print out the &ldquo;ok&rdquo; message we want.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
+and to see how we can make it return non-zero.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">verify_secret</span><span class="p">:</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ea</span> <span class="err">&lt;+</span><span class="mi">10</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rcx</span><span class="p">,</span><span class="no">rsp</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ed</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ef</span> <span class="err">&lt;+</span><span class="mi">15</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f1</span> <span class="err">&lt;+</span><span class="mi">17</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsp</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x400604</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">36</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">nop</span>    <span class="no">WORD</span> <span class="no">PTR</span> <span class="no">cs</span><span class="p">:</span><span class="err">[</span><span class="no">rax</span><span class="err">+</span><span class="no">rax</span><span class="p">*</span><span class="mi">1</span><span class="err">+</span><span class="mi">0x0</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400600</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400602</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400604</span> <span class="err">&lt;+</span><span class="mi">36</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0xfffffff7</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400607</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">rsi</span><span class="p">,</span><span class="err">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">0x400</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040060f</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdx</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400613</span> <span class="err">&lt;+</span><span class="mi">51</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdx-0x1</span><span class="err">]</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400616</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdi</span><span class="p">,</span><span class="mi">0x1</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061a</span> <span class="err">&lt;+</span><span class="mi">58</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061d</span> <span class="err">&lt;+</span><span class="mi">61</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">cmp</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsi</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400620</span> <span class="err">&lt;+</span><span class="mi">64</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jb</span>     <span class="mh">0x400600</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">32</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400634</span> <span class="err">&lt;+</span><span class="mi">84</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400636</span> <span class="err">&lt;+</span><span class="mi">86</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">sete</span>   <span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400639</span> <span class="err">&lt;+</span><span class="mi">89</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400640</span> <span class="err">&lt;+</span><span class="mi">96</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">al</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400643</span> <span class="err">&lt;+</span><span class="mi">99</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
+</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I won&rsquo;t walk through this one in detail because understanding each line
+isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
+the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
+returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
+parameters, two buffers to compare and their lengths, and returns 0 if the
+buffers are identical.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
+</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
+is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
+examine address 0x600a80, we find this 24 byte string:</p>
+
+<pre><code>gdb-peda$ hexd 0x600a80 /2
+0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
+0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
+</code></pre>
+
+<p>Since this is a direct address to some memory, we can be fairly certain that
+we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
+instruction (offset 7)
+which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
+instruction (offset 36), and
+the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
+pointer to our input string, we can reasonably guess
+that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
+we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
+pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+with the xor key.</p>
+
+<p>Here&rsquo;s a way to do this with python.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca</span><span class="s">&#39;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div>
+
+
+<p>Which results in this:</p>
+
+<pre><code>$ python crack.py
+fHSrr4MNhQAFdNtxYFY6Kw==
+$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
+ok
+</code></pre>
 </div>
   
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/10/27/crackme/">Read on &rarr;</a>
-    </footer>
   
 
 
@@ -1255,102 +1999,9 @@ echo $SHELL
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/10/banner-hiding/">Banner Hiding on Ubuntu 12.04</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-01-10T17:30:00-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>10</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>5:30 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
-
-<blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>
-
-<p>While I can see how it&rsquo;s not acceptable to use obscurity as a complete solution for potential vulnerabilities, I disagree with the assertion that it does &ldquo;nothing at all.&rdquo; Obviously, everyone should aim to make their systems secure at a fundamental level, and obscurity is no substitute for that, however every little bit that you can do to make it more challenging for an attacker, in order to bolster <em>your existing security implementation</em>, is worth it, in my opinion.</p>
-
-<p>Moving back to the original topic, you might be surprised to know how much of this information (services, version numbers) your server gives away by default. For example, let&rsquo;s take a look at the response headers from a default Apache install:</p>
-
-<p><a href="http://img.svbtle.com/sgoa4yt9b3putw.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/sgoa4yt9b3putw_small.png" alt="Screen_Shot_2013-12-15_at_1.38.13_AM.png" /></a></p>
-
-<p>Right off the bat, we can see that we&rsquo;re giving away our OS, web server, and version. Let&rsquo;s make it a little harder for an attacker and hide everything except for &ldquo;Apache&rdquo;, which can be done with a trivial edit to your <code>/etc/apache2/apache2.conf</code> file. Simply append the following lines at the end of the file.</p>
-
-<pre><code>ServerTokens Prod
-ServerSignature Off
-</code></pre>
-
-<p>Technically all you really need is the first line, which will do what we want, but the second line will also remove server info in Apache generated pages (error pages, directory listings), so it&rsquo;s probably a good idea too. That gets us this far:</p>
-
-<p><a href="http://img.svbtle.com/1gs6rgbxmeliq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/1gs6rgbxmeliq_small.png" alt="Screen_Shot_2013-12-15_at_2.01.18_AM.png" /></a></p>
-
-<p>Unfortunately, &ldquo;Apache&rdquo; is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do&hellip; get out your hex editors<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, boys, we&rsquo;re going binary patching! Yes, you heard me right, we&rsquo;re going to directly edit the apache2 binary and remove that pesky banner string.</p>
-
-<p>First off, I recommend making a copy of the binary so if you really screw something up, you can easily get back to where you were. Then get out hexedit and search in the ASCII section for the string &ldquo;Apache&rdquo;. Eventually you&rsquo;ll see some familiar strings all in a row, with the Apache version numbers, etc. There are a couple of them; they represent the different options with the &ldquo;ServerTokens&rdquo; config. The &ldquo;Prod&rdquo; option corresponds to the first instance of &ldquo;Apache&rdquo; there, so let&rsquo;s change it to &ldquo;LOLche&rdquo;. Make sure to only overwrite the existing bytes and nothing more, because doing otherwise could cause other problems with the binary.</p>
-
-<p><a href="http://img.svbtle.com/tok3zivx32pngq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/tok3zivx32pngq_small.png" alt="Screen_Shot_2013-12-15_at_2.17.43_AM.png" /></a></p>
-
-<p>Restart the apache service, and violá! We&rsquo;re officially running a &ldquo;LOLche&rdquo; web server.</p>
-
-<p><a href="http://img.svbtle.com/rhhj4sha4u4jug.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/rhhj4sha4u4jug_small.png" alt="Screen Shot 2013-12-15 at 2.24.33 AM.png" /></a></p>
-
-<p>While we&rsquo;re messing with these headers, I should point out that you can also add your own headers too. Make sure you have the mod_headers.c Apache module enabled, and then simply append the following to your <code>/etc/apache2/httpd.conf</code>.</p>
-
-<pre><code>&lt;IfModule mod_headers.c&gt;
-    Header set Servar "y u look here go away"
-&lt;/IfModule&gt;
-</code></pre>
-
-<p>Which gives you:</p>
-
-<p><a href="http://img.svbtle.com/9lml4ymw40acog.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/9lml4ymw40acog_small.png" alt="Screen_Shot_2013-12-15_at_2.30.28_AM.png" /></a></p>
-
-<p>Similar to Apache, OpenSSH also gives out a bunch of information by default.</p>
-
-<pre><code>$ nc localhost 22
-SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
-</code></pre>
-
-<p>To get rid of the Debian information, just add this line to your <code>/etc/ssh/sshd_config</code>.</p>
-
-<pre><code>DebianBanner no
-</code></pre>
-
-<p>However, this still leaves all the OpenSSH stuff. A more complete solution would be to patch the sshd binary in the same way we did the apache binary.</p>
-
-<p>In addition to screwing with people that are physically looking at these headers and stuff, making these quick fixes also makes an nmap port scan much less effective, since this is primarily where nmap gets its information about what services you&rsquo;re running.</p>
-
-<p>Just to reiterate, these configurations are <em>not</em> designed to be security solutions in and of themselves, but are simply meant to bolster your existing security practices and make it just a little harder for attackers to do their thing.</p>
-<div class="footnotes">
-<hr/>
-<ol>
-<li id="fn:1">
-<p>http://httpd.apache.org/docs/current/mod/core.html<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
-<li id="fn:2">
-<p>I guess you could also use a plain text editor just as well also.<a href="#fnref:2" rev="footnote">&#8617;</a></p></li>
-</ol>
-</div>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/posts/2">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -1370,6 +2021,10 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/01/18/a-simple-iot-light-switch/">Building a Simple IoT Light Switch</a>
       </li>
     
@@ -1385,15 +2040,11 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
         <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (6)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (2)</a></li><li><a href='/blog/categories/python'>python (3)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (3)</a></li><li><a href='/blog/categories/web'>web (2)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (2)</a></li><li><a href='/blog/categories/python'>python (3)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (3)</a></li><li><a href='/blog/categories/web'>web (2)</a></li></ul>
 </section>
 
   

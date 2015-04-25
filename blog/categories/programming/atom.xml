@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Programming | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/programming/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T17:35:32-04:00</updated>
+  <updated>2015-04-25T18:53:22-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -31,9 +31,6 @@ The lights are awesome, but it is a bit of a drag to have to use an app
 to turn them all off rather than having some physical switch <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>, so I decided
 to fully embrace the IoT trend and use my Raspberry Pi to build a simple
 HTTP-fluent light switch for turning my lights on and off.</p>
-
-<!-- more -->
-
 
 <h3>Hardware</h3>
 
@@ -154,9 +151,6 @@ every once in a while to get commands and tasks to execute on the target
 system. This idea was pretty interesting to me, and a basic implementation
 didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
 though at this point, I had no experience with network programming.</p>
-
-<!-- more -->
-
 
 <h3>v0.1</h3>
 

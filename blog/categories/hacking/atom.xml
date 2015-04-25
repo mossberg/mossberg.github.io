@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hacking | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/hacking/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T17:35:32-04:00</updated>
+  <updated>2015-04-25T18:53:22-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,78 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
+    <link href="http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <updated>2015-04-25T17:42:10-04:00</updated>
+    <id>http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
+<a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
+a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
+register a stereotypical &ldquo;sketchy&rdquo; domain and set it up as a drive-by
+download site or something, because while I&rsquo;ve <em>heard</em> of doing this kind of
+thing, I&rsquo;ve never actually done it before. Here&rsquo;s a blog post walking through
+what I did. The usual disclaimer applies here: I did this purely for my
+own education and learning experience and am not responsible for anything
+you do with it.</p>
+
+<h3>Step 1: Register your sketchy domain</h3>
+
+<p>I chose <a href="http://freemoviedownload.club">http://freemoviedownload.club</a>.</p>
+
+<h3>Step 2: Set up drive-by downloads</h3>
+
+<p>This involves configuring your web server to automatically set the
+<code>Content-Type</code> header of the resource you want to force download
+to <code>application/octet-stream</code>. That should make most web browsers trigger
+a download file prompt to actually download the file. Safari curiously
+doesn&rsquo;t support prompts for downloaded file location like Chrome and Firefox,
+so in that case, it will immediately download the file to <code>~/Downloads</code>.</p>
+
+<p>I&rsquo;m going to try to force a drive-by download of a jpg file, so I added
+the below config to my <code>.htaccess</code> file in Apache&rsquo;s <code>DocumentRoot</code>.</p>
+
+<pre><code class="xml .htaccess">&lt;Files *.jpg&gt;
+        ForceType application/octet-stream
+&lt;/Files&gt;
+</code></pre>
+
+<p>That will force browers to download the image, rather than rendering it
+when a browser tries to access <code>http://freemoviedownload.club/image.jpg</code>, for
+example.</p>
+
+<p>At this point, we&rsquo;re technically done. We can send someone a link to a file
+and, assuming they say yes to the prompt (or use Safari), download it to their
+computer.  But for some extra polish, I want to have an actual website with
+content and have the download come from <em>that</em> page.</p>
+
+<h3>Step 3: Redirect</h3>
+
+<p>We can accomplish this with a trivial Javascript redirect that executes
+after the page has loaded. We can even add a delay before the download happens
+to give them time to read the website or whatever. The redirect will need
+to be to the path configured in step 2, but this will give the illusion that
+the download is coming from the <code>index.html</code> page.</p>
+
+<p>&#8220;`html index.html
+you have arrived at the official free movie download club! enjoy your download</p>
+
+<script type="text/javascript" charset="utf-8">
+    function f() { document.location = 'dickbutt.jpg' }
+    setTimeout(f, 2000);
+</script>
+
+
+<p>&#8220;`</p>
+
+<p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
+&ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
+against Safari and Chrome for Android, in my testing.</p>
+
+<p><img src="images/sketchy.gif" alt="" /></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
@@ -52,9 +124,6 @@ every once in a while to get commands and tasks to execute on the target
 system. This idea was pretty interesting to me, and a basic implementation
 didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
 though at this point, I had no experience with network programming.</p>
-
-<!-- more -->
-
 
 <h3>v0.1</h3>
 
@@ -385,9 +454,6 @@ usage: %s &lt;secret&gt;
 <p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
 actually try to reverse engineer it.
 We&rsquo;ll start with <code>main</code>.</p>
-
-<!-- more -->
-
 
 <pre><code class="asm">$ gdb -batch -ex 'file crackme' -ex 'disas main'
 Dump of assembler code for function main:
@@ -978,118 +1044,6 @@ successfully faking requests as the authenticated user.</p>
 </ol>
 </div>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Netcat Refresher]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/05/netcat/"/>
-    <updated>2014-03-05T00:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/05/netcat</id>
-    <content type="html"><![CDATA[<p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
-
-<h2>Introduction</h2>
-
-<p><a href="https://en.wikipedia.org/wiki/Netcat">Netcat</a> is a great tool for all things networking and is commonly nicknamed &ldquo;the TCP/IP Swiss-army knife&rdquo; due to its versatility and utility. An absolute must-know for sysadmins and hackers. In this article, I&rsquo;ll go over a few common uses I have for it that I frequently forget after not using it for a while, primarily for my own personal reference.</p>
-
-<p>Before I begin, I should point out that there are a few variants on netcat that have slightly different options and behaviors but are all essentially the same in &ldquo;spirit and functionality&rdquo;, as the <a href="http://nmap.org/ncat/">ncat</a> man page describes it.</p>
-
-<p>The original netcat comes from the OpenBSD package and was written by &ldquo;Hobbit&rdquo;. This is the default version that comes with OS X and Ubuntu. The version that I use and will cover is the standard GNU Netcat, by Giovanni Giacobbi, which is a rewrite of the original. This available using <a href="http://brew.sh">brew</a> on OS X. On Ubuntu it&rsquo;s called &ldquo;netcat-traditional&rdquo; which you can <code>apt-get</code> and then run with <code>nc.traditional</code>. Lastly, there is <a href="http://nmap.org/ncat">ncat</a>, which is a netcat implementation by our friends from the <a href="http://nmap.org">nmap</a> team. It is designed to modernize netcat and adds features like SSL, IPv6, and proxying which aren&rsquo;t available in the original(s).</p>
-
-<h2>Usage</h2>
-
-<p>At its core, netcat is a tool for creating arbitrary TCP connections, which looks like</p>
-
-<pre><code>$ netcat [host] [port]
-</code></pre>
-
-<p>where host is either an IP Address or a domain name, and port is the TCP port to connect to.</p>
-
-<p>You can also use netcat to do the reverse: listen for arbitrary TCP connections. This looks like</p>
-
-<pre><code>$ netcat -l -p [port] [host]
-</code></pre>
-
-<p>Here, host is an optional parameter which lets you limit what host can create connections.</p>
-
-<h4>Example: Chat</h4>
-
-<p>Using these two behaviors, we can create a crude chat system. One one host, listen for connections on a port.</p>
-
-<pre><code>$ netcat -l -p 1337
-</code></pre>
-
-<p>On the same one, in another terminal, connect to it on that port.</p>
-
-<pre><code>$ nc localhost 1337
-</code></pre>
-
-<p>There won&rsquo;t be a prompt, but when you enter text and press enter, it will appear in the other terminal. You can just as easily do this between different hosts and have a super basic chat setup.</p>
-
-<p><img src="https://draftin.com:443/images/12181?token=V4hz4Qtwi_uM_-4ulkErwUudxL_qY8D2yxx-fPjLSffSc8-FV0FOVRlvd4psBi-fLricHlJLjufBWr6E91R_spQ" alt="" /></p>
-
-<h3>Example: Curl-like behavior</h3>
-
-<p>You can also use netcat to emulate curl and interact with HTTP servers. Connect to the server on port 80 (or whatever port it&rsquo;s running on) and you can then type out the HTTP request to send to it. When you&rsquo;re finished, hit enter twice and it will send.</p>
-
-<pre><code>[mark:~]{ nc example.org 80
-GET / HTTP/1.1
-
-HTTP/1.1 400 Bad Request
-Content-Type: text/html
-Content-Length: 349
-Connection: close
-Date: Wed, 05 Mar 2014 20:15:42 GMT
-Server: ECSF (mdw/1383)
-
-&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
-&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
-&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
-&lt;head&gt;
-&lt;title&gt;400 - Bad Request&lt;/title&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;h1&gt;400 - Bad Request&lt;/h1&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-
-<p>As you can see here, we sent a bare-bones HTTP request (<code>GET / HTTP/1.1</code>) which was successfully sent to the server. The server responded with a 400, because our request didn&rsquo;t contain enough information, but that&rsquo;s not important; if we had filled in the right headers, it would have responded with the home page for example.org.</p>
-
-<h2>For Hackers</h2>
-
-<p>There are two applications for netcat that I find particularly useful in pen-testing situations.</p>
-
-<h3>Recon</h3>
-
-<p>The first is helpful for the recon stage, which is essentially getting information on your target. Sometimes network services may give away version information when an arbitrary network connection is made. For example, OpenSSH by default gives away it&rsquo;s version information as well as information on the host, when you connect. For example,</p>
-
-<pre><code>$ netcat 1.2.3.4 22
-SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.1
-</code></pre>
-
-<p>is typically what you might see. For an attacker, this is pretty valuable stuff! MySQL behaves similarly.</p>
-
-<pre><code>$ netcat 1.2.3.4 3306
-J
-5.5.33-.?2|&gt;\8��@x\E$"zeic2lmysql_native_password
-</code></pre>
-
-<p>The output isn&rsquo;t as clear as OpenSSH, but we can confirm that MySQL is indeed running, and we can infer that the version is &ldquo;5.5.33&rdquo;. For information on removing these banners, check out my <a href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/">blog post</a> on it.</p>
-
-<h3>Persistence/Access</h3>
-
-<p>The other application is when you have achieved command execution, but not exactly shell access. You can use netcat to create a nifty backdoor which you can externally connect to. To create the backdoor, we&rsquo;ll use the <code>-e</code> flag to tell netcat to execute a binary on receiving a connection. We want a shell, so we&rsquo;ll say <code>-e /bin/sh</code>. The whole command will look like:</p>
-
-<pre><code>$ netcat -l -p 1337 -e /bin/sh
-</code></pre>
-
-<p>which will give you a backdoor on port 1337, which will then let you run commands upon connecting to that port. For a good example, check out my other <a href="http://blog.mark.lc/blog/2014/03/01/ihackedit/">blog post</a> where I actually used this.</p>
-
-<h2>Conclusion</h2>
-
-<p>That was a quick overview of netcat including its basic functionality and some example use cases. Thanks for reading!</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T17:35:32-04:00</updated>
+  <updated>2015-04-25T18:53:22-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,84 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
+    <link href="http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <updated>2015-04-25T17:42:10-04:00</updated>
+    <id>http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
+<a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
+a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
+register a stereotypical &ldquo;sketchy&rdquo; domain and set it up as a drive-by
+download site or something, because while I&rsquo;ve <em>heard</em> of doing this kind of
+thing, I&rsquo;ve never actually done it before. Here&rsquo;s a blog post walking through
+what I did. The usual disclaimer applies here: I did this purely for my
+own education and learning experience and am not responsible for anything
+you do with it.</p>
+
+<h3>Step 1: Register your sketchy domain</h3>
+
+<p>I chose <a href="http://freemoviedownload.club">http://freemoviedownload.club</a>.</p>
+
+<h3>Step 2: Set up drive-by downloads</h3>
+
+<p>This involves configuring your web server to automatically set the
+<code>Content-Type</code> header of the resource you want to force download
+to <code>application/octet-stream</code>. That should make most web browsers trigger
+a download file prompt to actually download the file. Safari curiously
+doesn&rsquo;t support prompts for downloaded file location like Chrome and Firefox,
+so in that case, it will immediately download the file to <code>~/Downloads</code>.</p>
+
+<p>I&rsquo;m going to try to force a drive-by download of a jpg file, so I added
+the below config to my <code>.htaccess</code> file in Apache&rsquo;s <code>DocumentRoot</code>.</p>
+
+<figure class='code'><figcaption><span>.htaccess</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Files</span> <span class="err">*.jpg</span><span class="nt">&gt;</span>
+</span><span class='line'>        ForceType application/octet-stream
+</span><span class='line'><span class="nt">&lt;/Files&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That will force browers to download the image, rather than rendering it
+when a browser tries to access <code>http://freemoviedownload.club/image.jpg</code>, for
+example.</p>
+
+<p>At this point, we&rsquo;re technically done. We can send someone a link to a file
+and, assuming they say yes to the prompt (or use Safari), download it to their
+computer.  But for some extra polish, I want to have an actual website with
+content and have the download come from <em>that</em> page.</p>
+
+<h3>Step 3: Redirect</h3>
+
+<p>We can accomplish this with a trivial Javascript redirect that executes
+after the page has loaded. We can even add a delay before the download happens
+to give them time to read the website or whatever. The redirect will need
+to be to the path configured in step 2, but this will give the illusion that
+the download is coming from the <code>index.html</code> page.</p>
+
+<figure class='code'><figcaption><span>index.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'>you have arrived at the official free movie download club! enjoy your download
+</span><span class='line'><span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="kd">function</span> <span class="nx">f</span><span class="p">()</span> <span class="p">{</span> <span class="nb">document</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s1">&#39;dickbutt.jpg&#39;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="nx">setTimeout</span><span class="p">(</span><span class="nx">f</span><span class="p">,</span> <span class="mi">2000</span><span class="p">);</span>
+</span><span class='line'><span class="nt">&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
+&ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
+against Safari and Chrome for Android, in my testing.</p>
+
+<p><img src="images/sketchy.gif" alt="" /></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>
@@ -31,9 +109,6 @@ The lights are awesome, but it is a bit of a drag to have to use an app
 to turn them all off rather than having some physical switch <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>, so I decided
 to fully embrace the IoT trend and use my Raspberry Pi to build a simple
 HTTP-fluent light switch for turning my lights on and off.</p>
-
-<!-- more -->
-
 
 <h3>Hardware</h3>
 
@@ -182,9 +257,6 @@ every once in a while to get commands and tasks to execute on the target
 system. This idea was pretty interesting to me, and a basic implementation
 didn&rsquo;t actually seem <em>too</em> hard to write, so I decided to give it a try, even
 though at this point, I had no experience with network programming.</p>
-
-<!-- more -->
-
 
 <h3>v0.1</h3>
 
@@ -688,11 +760,6 @@ usage: %s &lt;secret&gt;
 <p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
 actually try to reverse engineer it.
 We&rsquo;ll start with <code>main</code>.</p>
-
-<!-- more -->
-
-
-
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
