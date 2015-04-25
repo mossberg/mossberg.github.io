@@ -3,75 +3,92 @@
   <url>
     <loc>http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/</loc>
     <lastmod>2014-12-13T02:38:31-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/11/03/netcat-exec/</loc>
     <lastmod>2014-11-03T00:00:00-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/10/27/crackme/</loc>
     <lastmod>2014-10-27T00:00:00-04:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/09/27/suctf_re/</loc>
     <lastmod>2014-09-27T00:00:00-04:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/09/11/csrf-news/</loc>
     <lastmod>2014-09-11T00:00:00-04:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/03/05/netcat/</loc>
     <lastmod>2014-03-05T00:00:00-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/03/01/ihackedit/</loc>
     <lastmod>2014-03-01T14:00:00-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/01/25/ccdc2014/</loc>
     <lastmod>2014-01-25T23:56:00-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/2014/01/10/banner-hiding/</loc>
     <lastmod>2014-01-10T17:30:00-05:00</lastmod>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/blog/archives/</loc>
-    <lastmod>2015-01-18T15:17:08-05:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/</loc>
-    <lastmod>2015-01-18T15:17:08-05:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/about/</loc>
-    <lastmod>2015-01-18T15:17:08-05:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>http://blog.mark.lc/projects/</loc>
-    <lastmod>2015-01-18T15:17:08-05:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/security/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/reference/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/linux/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/sysadmin/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/web/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/hacking/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/python/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/ctf/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/reverse-engineering/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/android/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/assembly/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/programming/</loc>
+  </url>
+  <url>
+    <loc>http://blog.mark.lc/blog/categories/hardware/</loc>
   </url>
 </urlset>
