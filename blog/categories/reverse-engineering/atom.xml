@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Reverse Engineering | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/reverse-engineering/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T18:53:22-04:00</updated>
+  <updated>2015-04-25T18:54:50-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -234,11 +234,13 @@ with the xor key.</p>
 
 <p>Here&rsquo;s a way to do this with python.</p>
 
-<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span>\<span class="n">x91</span>\<span class="n">xbf</span>\<span class="n">xa4</span>\<span class="n">x85</span>\<span class="n">x85</span>\<span class="n">xc3</span>\<span class="n">xba</span>\<span class="n">xb9</span>\<span class="n">x9f</span>\<span class="n">xa6</span>\<span class="n">xb6</span>\<span class="n">xb1</span>\<span class="n">x93</span>\<span class="n">xb9</span>\<span class="n">x83</span>\<span class="n">x8f</span>\<span class="n">xae</span>\<span class="n">xb1</span>\<span class="n">xae</span>\<span class="n">xc1</span>\<span class="n">xbc</span>\<span class="n">x80</span>\<span class="n">xca</span>\<span class="n">xca</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
-<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
-    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
-<span class="k">print</span> <span class="n">ba</span></code></pre></div></p>
+<p>{% highlight python %}
+str = &lsquo;\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca&rsquo;
+ba = bytearray(str)
+for i, byte in enumerate(ba):
+    ba[i] ^= 0xf7
+print ba
+{% endhighlight %}</p>
 
 <p>Which results in this:</p>
 
@@ -280,18 +282,20 @@ prompted to enter my product key.</p>
 <p>Running <code>file</code> reveals that <code>.apk</code> files are apparently just Zip archives,
 so let&rsquo;s try simply <code>unzip</code>&lsquo;ing it.</p>
 
-<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file suCTF.apk
+<p>{% highlight bash %}
+$ file suCTF.apk
 suCTF.apk: Zip archive data, at least v2.0 to extract
-<span class="nv">$ </span>unzip suCTF.apk
+$ unzip suCTF.apk
 Archive:  suCTF.apk
   inflating: assets/db.db
-  inflating: res/color/abs&lt;strong&gt;primary_text_disable_only_holo_dark.xml
-  inflating: res/color/abs&lt;/strong&gt;primary_text_disable_only_holo_light.xml
-  <span class="p">&amp;</span>hellip<span class="p">;</span>
+  inflating: res/color/abs<strong>primary_text_disable_only_holo_dark.xml
+  inflating: res/color/abs</strong>primary_text_disable_only_holo_light.xml
+  &hellip;
   inflating: classes.dex
   inflating: META-INF/MANIFEST.MF
   inflating: META-INF/CERT.SF
-  inflating: META-INF/CERT.RSA</code></pre></div></p>
+  inflating: META-INF/CERT.RSA
+{% endhighlight %}</p>
 
 <p>Cool! Now we have all the miscellaneous files that comprise the app. There&rsquo;s
 a database file, various <code>.xml</code> design files, and most interestingly, a
@@ -302,37 +306,39 @@ contains the code that runs the app, in compiled form. We can use the nifty
 files are apparently also Zip archives, and we can again <code>unzip</code> it to extract
 its contents.</p>
 
-<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file classes.dex
+<p>{% highlight bash %}
+$ file classes.dex
 classes.dex: Dalvik dex file version 035
-<span class="nv">$ </span>d2j-dex2jar classes.dex
-dex2jar classes.dex -&gt; classes-dex2jar.jar
-<span class="nv">$ </span>unzip classes-dex2jar.jar
-  <span class="p">&amp;</span>hellip<span class="p">;</span>
+$ d2j-dex2jar classes.dex
+dex2jar classes.dex -> classes-dex2jar.jar
+$ unzip classes-dex2jar.jar
+  &hellip;
   inflating: edu/sharif/ctf/BuildConfig.class
   inflating: edu/sharif/ctf/CTFApplication.class
-  inflating: edu/sharif/ctf/R<span class="nv">$attr</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$bool</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$color</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$dimen</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$drawable</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$id</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$integer</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$layout</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$menu</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$string</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$style</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$styleable</span>.class
+  inflating: edu/sharif/ctf/R$attr.class
+  inflating: edu/sharif/ctf/R$bool.class
+  inflating: edu/sharif/ctf/R$color.class
+  inflating: edu/sharif/ctf/R$dimen.class
+  inflating: edu/sharif/ctf/R$drawable.class
+  inflating: edu/sharif/ctf/R$id.class
+  inflating: edu/sharif/ctf/R$integer.class
+  inflating: edu/sharif/ctf/R$layout.class
+  inflating: edu/sharif/ctf/R$menu.class
+  inflating: edu/sharif/ctf/R$string.class
+  inflating: edu/sharif/ctf/R$style.class
+  inflating: edu/sharif/ctf/R$styleable.class
   inflating: edu/sharif/ctf/R.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$4</span>.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$5</span>.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$6</span>.class
+  inflating: edu/sharif/ctf/activities/MainActivity$4.class
+  inflating: edu/sharif/ctf/activities/MainActivity$5.class
+  inflating: edu/sharif/ctf/activities/MainActivity$6.class
   inflating: edu/sharif/ctf/config/AppConfig.class
   inflating: edu/sharif/ctf/db/DBHelper.class
-  inflating: edu/sharif/ctf/fragments/DListFragment<span class="nv">$1</span>.class
-  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$1</span>.class
-  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$OnPictureSelectedListener</span>.class
+  inflating: edu/sharif/ctf/fragments/DListFragment$1.class
+  inflating: edu/sharif/ctf/fragments/ListFragment$1.class
+  inflating: edu/sharif/ctf/fragments/ListFragment$OnPictureSelectedListener.class
   inflating: edu/sharif/ctf/security/KeyVerifier.class
-  <span class="p">&amp;</span>hellip<span class="p">;</span></code></pre></div></p>
+  &hellip;
+{% endhighlight %}</p>
 
 <p>This produces a TON of various <code>.class</code> files, but the most interesting lie
 in the <code>edu/sharif/ctf/</code> directory and are the compiled versions of the actual
@@ -343,33 +349,35 @@ into Java source and start trying to reverse the product key.</p>
 called <code>KeyVerifier.class</code> that seems pretty promising. After decompiling it,
 we find a <code>KeyVerifier</code> class with some pretty cool functions.</p>
 
-<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isValidLicenceKey</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="kt">boolean</span> <span class="n">flag</span><span class="o">;</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">encrypt</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">).</span><span class="na">equals</span><span class="o">(&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="mi">29</span><span class="n">a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;))</span>
-        <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-    <span class="k">else</span>
-        <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-    <span class="k">return</span> <span class="n">flag</span><span class="o">;</span>
-<span class="o">}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<p>{% highlight java %}
+public static boolean isValidLicenceKey(String s, String s1, String s2)
+{
+    boolean flag;
+    if(encrypt(s, s1, s2).equals(&ldquo;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&rdquo;))
+        flag = true;
+    else
+        flag = false;
+    return flag;
+}</p>
 
-<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">encrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="n">String</span> <span class="n">s3</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;&amp;</span><span class="n">rdquo</span><span class="o">;;</span>
-    <span class="n">String</span> <span class="n">s4</span><span class="o">;</span>
-    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">AES</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
-    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">AES</span><span class="o">/</span><span class="n">CBC</span><span class="o">/</span><span class="n">PKCS5Padding</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
-    <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-    <span class="n">s4</span> <span class="o">=</span> <span class="n">bytesToHexString</span><span class="o">(</span><span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-    <span class="n">s3</span> <span class="o">=</span> <span class="n">s4</span><span class="o">;</span>
-<span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="nl">L2:</span>
-    <span class="k">return</span> <span class="n">s3</span><span class="o">;</span>
-    <span class="n">Exception</span> <span class="n">exception</span><span class="o">;</span>
-    <span class="n">exception</span><span class="o">;</span>
-    <span class="n">exception</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-    <span class="k">if</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="k">goto</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">L2</span><span class="o">;</span> <span class="k">else</span> <span class="k">goto</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">L1</span>
-<span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="nl">L1:</span>
-<span class="o">}</span></code></pre></div></p>
+<p>public static String encrypt(String s, String s1, String s2)
+{
+    String s3 = &ldquo;&rdquo;;
+    String s4;
+    SecretKeySpec secretkeyspec = new SecretKeySpec(hexStringToBytes(s1), &ldquo;AES&rdquo;);
+    Cipher cipher = Cipher.getInstance(&ldquo;AES/CBC/PKCS5Padding&rdquo;);
+    cipher.init(1, secretkeyspec, new IvParameterSpec(s2.getBytes()));
+    s4 = bytesToHexString(cipher.doFinal(s.getBytes()));
+    s3 = s4;
+<em>L2:
+    return s3;
+    Exception exception;
+    exception;
+    exception.printStackTrace();
+    if(true) goto </em>L2; else goto <em>L1
+</em>L1:
+}
+{% endhighlight %}</p>
 
 <p>It&rsquo;s pretty clear that <code>isValidLicenceKey()</code> is what processes the product key
 prompt in the app. The <code>encrypt()</code> function shows us that the first paramter
@@ -379,18 +387,20 @@ encryption key, and the last parameter <code>s2</code> is the AES
 After doing a bit of grepping, I confirmed this by decompiling
 <code>activities/MainActivity.class</code> and finding this code snippet:</p>
 
-<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">DialogInterface</span> <span class="n">dialoginterface</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">KeyVerifier</span><span class="o">.</span><span class="na">isValidLicenceKey</span><span class="o">(</span><span class="n">userInput</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityKey</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityIv</span><span class="o">()))</span>
-    <span class="o">{</span>
-        <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">updateLicence</span><span class="o">(</span><span class="mi">2014</span><span class="o">);</span>
-        <span class="n">MainActivity</span><span class="o">.</span><span class="na">isRegisterd</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">Thank</span> <span class="n">you</span><span class="o">,</span> <span class="n">Your</span> <span class="n">application</span> <span class="n">has</span> <span class="n">full</span> <span class="n">licence</span><span class="o">.</span> <span class="n">Enjoy</span> <span class="n">it</span><span class="o">&amp;</span><span class="n">hellip</span><span class="o">;!&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
-    <span class="o">}</span> <span class="k">else</span>
-    <span class="o">{</span>
-        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="o">;</span><span class="n">Your</span> <span class="n">licence</span> <span class="n">key</span> <span class="n">is</span> <span class="n">incorrect</span><span class="o">&amp;</span><span class="n">hellip</span><span class="o">;!</span> <span class="n">Please</span> <span class="k">try</span> <span class="n">again</span> <span class="n">with</span> <span class="n">another</span><span class="o">.&amp;</span><span class="n">rdquo</span><span class="o">;);</span>
-    <span class="o">}</span>
-<span class="o">}</span></code></pre></div></p>
+<p>{% highlight java %}
+public void onClick(DialogInterface dialoginterface, int i)
+{
+    if(KeyVerifier.isValidLicenceKey(userInput.getText().toString(), app.getDataHelper().getConfig().getSecurityKey(), app.getDataHelper().getConfig().getSecurityIv()))
+    {
+        app.getDataHelper().updateLicence(2014);
+        MainActivity.isRegisterd = true;
+        showAlertDialog(context, &ldquo;Thank you, Your application has full licence. Enjoy it&hellip;!&rdquo;);
+    } else
+    {
+        showAlertDialog(context, &ldquo;Your licence key is incorrect&hellip;! Please try again with another.&rdquo;);
+    }
+}
+{% endhighlight %}</p>
 
 <p>With
 this in mind, the code seems to AES encrypt the user input and check if it matches
@@ -402,80 +412,88 @@ output and find the plaintext product key.</p>
 the AES key and IV were stored in the <code>assets/db.db</code> SQLite database I noticed
 earlier.</p>
 
-<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sqlite3 assets/db.db
- <span class="p">&amp;</span>hellip<span class="p">;</span>
- sqlite&gt; <span class="k">select</span> * from config<span class="p">;</span>
- a           b           c           d           e                 f                                 g           h               i&lt;/p&gt;
+<p>{% highlight bash %}
+$ sqlite3 assets/db.db
+ &hellip;
+ sqlite> select * from config;
+ a           b           c           d           e                 f                                 g           h               i</p>
 
-&lt;hr /&gt;
+<hr />
 
-&lt;p&gt; <span class="m">1</span>           <span class="m">2</span>           <span class="m">2014</span>        <span class="m">0</span>           a5efdbd57b84ca36  37eaae0141f1a3adf8a1dee655853714  <span class="m">1000</span>        ctf.sharif.edu  9</code></pre></div></p>
+<p> 1           2           2014        0           a5efdbd57b84ca36  37eaae0141f1a3adf8a1dee655853714  1000        ctf.sharif.edu  9
+ {% endhighlight %}</p>
 
 <p>There are no headers to the columns, but it is pretty obvious that the key
 is the longer and the IV is the shorter of the &ldquo;interesting strings&rdquo; in the
 database. For further confidence, I can verify this from the decompiled code
 in <code>db/DBHelper.class</code>.</p>
 
-<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">AppConfig</span> <span class="nf">getConfig</span><span class="o">()</span>
-<span class="o">{</span>
-    <span class="kt">boolean</span> <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-    <span class="n">AppConfig</span> <span class="n">appconfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AppConfig</span><span class="o">();</span>
-    <span class="n">Cursor</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">myDataBase</span><span class="o">.</span><span class="na">rawQuery</span><span class="o">(</span><span class="n">SELECT_QUERY</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">moveToFirst</span><span class="o">())</span>
-    <span class="o">{</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">0</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">flag</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setInstallDate</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">2</span><span class="o">));</span>
-        <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="o">&amp;</span><span class="n">lt</span><span class="o">;=</span> <span class="mi">0</span><span class="o">)</span>
-            <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setValidLicence</span><span class="o">(</span><span class="n">flag</span><span class="o">);</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityIv</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">4</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityKey</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">5</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setDesc</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">7</span><span class="o">));</span>
-    <span class="o">}</span>
-    <span class="k">return</span> <span class="n">appconfig</span><span class="o">;</span>
-<span class="o">}</span></code></pre></div></p>
+<p>{% highlight java %}
+public AppConfig getConfig()
+{
+    boolean flag = true;
+    AppConfig appconfig = new AppConfig();
+    Cursor cursor = myDataBase.rawQuery(SELECT_QUERY, null);
+    if(cursor.moveToFirst())
+    {
+        appconfig.setId(cursor.getInt(0));
+        appconfig.setName(cursor.getString(flag));
+        appconfig.setInstallDate(cursor.getString(2));
+        if(cursor.getInt(3) &lt;= 0)
+            flag = false;
+        appconfig.setValidLicence(flag);
+        appconfig.setSecurityIv(cursor.getString(4));
+        appconfig.setSecurityKey(cursor.getString(5));
+        appconfig.setDesc(cursor.getString(7));
+    }
+    return appconfig;
+}
+{% endhighlight %}</p>
 
 <p>Using the key, IV and expected encrypted output, I wrote a simple decryption
 program.</p>
 
-<p><div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.util.*</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.Cipher</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.spec.IvParameterSpec</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.spec.SecretKeySpec</span><span class="o">;&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<p>{% highlight java %}
+import java.util.*;
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;</p>
 
-<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">class</span> <span class="nc">blah</span> <span class="o">{</span>
-    <span class="c1">// omitted for brevity</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">bytesToHexString</span><span class="o">(</span><span class="kt">byte</span> <span class="n">abyte0</span><span class="o">[])</span> <span class="o">{</span> <span class="o">&amp;</span><span class="n">hellip</span><span class="o">;</span> <span class="o">}</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">hexStringToBytes</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span> <span class="o">&amp;</span><span class="n">hellip</span><span class="o">;</span> <span class="o">}&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<p>public class blah {
+    // omitted for brevity
+    public static String bytesToHexString(byte abyte0[]) { &hellip; }
+    public static byte[] hexStringToBytes(String s) { &hellip; }</p>
 
-<span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">decrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
-    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="kt">byte</span><span class="o">[]</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-    <span class="k">try</span> <span class="o">{</span>
-        <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
-        <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="n">Cipher</span><span class="o">.</span><span class="na">DECRYPT_MODE</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s</span><span class="o">));</span>
-    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-    <span class="o">}</span>
-    <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
-<span class="o">}</span>
+<pre><code>public static String decrypt(String s, String s1, String s2)
+{
+    SecretKeySpec secretkeyspec = new SecretKeySpec(hexStringToBytes(s1), "AES");
+    Cipher cipher = null;
+    byte[] key = null;
+    try {
+        cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(Cipher.DECRYPT_MODE, secretkeyspec, new IvParameterSpec(s2.getBytes()));
+        key = cipher.doFinal(hexStringToBytes(s));
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    return new String(key);
+}
 
-<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span> <span class="n">args</span><span class="o">[])</span> <span class="o">{</span>
-    <span class="n">String</span> <span class="n">e</span> <span class="o">=</span> <span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">;</span>
-    <span class="n">String</span> <span class="n">iv</span> <span class="o">=</span> <span class="s">&quot;a5efdbd57b84ca36&quot;</span><span class="o">;</span>
-    <span class="n">String</span> <span class="n">key</span> <span class="o">=</span> <span class="s">&quot;37eaae0141f1a3adf8a1dee655853714&quot;</span><span class="o">;</span>
-    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decrypt</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">iv</span><span class="o">));</span>
-<span class="o">}</span>
-<span class="o">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+public static void main(String args[]) {
+    String e = "29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84";
+    String iv = "a5efdbd57b84ca36";
+    String key = "37eaae0141f1a3adf8a1dee655853714";
+    System.out.println(decrypt(e, key, iv));
+}
+</code></pre>
 
-<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;}</span></code></pre></div></p>
+<p>}
+{% endhighlight %}</p>
 
-<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>java blah
-fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div></p>
+<p>{% highlight bash %}
+$ java blah
+fl-ag-IS-se-ri-al-NU-MB-ER
+{% endhighlight %}</p>
 
 <p>Thanks for reading!</p>
 ]]></content>
