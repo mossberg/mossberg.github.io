@@ -67,4 +67,4 @@ That's it! Anyone that browses to the website will automatically get a nice
 "dickbutt.jpg" image downloaded to their machine. Again, particularly effective
 against Safari and Chrome for Android, in my testing.
 
-![](images/sketchy.gif)
+![](/images/sketchy.gif)
