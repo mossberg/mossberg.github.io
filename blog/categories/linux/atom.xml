@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T18:54:50-04:00</updated>
+  <updated>2015-04-25T19:02:37-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -347,73 +347,67 @@ source and see if I could understand how it was implemented.</p>
 <p>Not knowing where to start, I first tried searching the file for &ldquo;-e&rdquo; which
 brought me to:</p>
 
-<p>{% highlight c %}
-case &lsquo;e&rsquo;:           /<em> prog to exec </em>/
-  if (opt_exec)
-ncprint(NCPRINT_ERROR | NCPRINT_EXIT,
-    _(&ldquo;Cannot specify `-e&#8217; option double&rdquo;));
-  opt_exec = strdup(optarg);
-  break;
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">e</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">:</span>           <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">prog</span> <span class="n">to</span> <span class="n">exec</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span>
+    <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Cannot</span> <span class="n">specify</span> <span class="err">`</span><span class="o">-</span><span class="n">e</span><span class="err">&#39;</span> <span class="n">option</span> <span class="kt">double</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+  <span class="n">opt_exec</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">optarg</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></div></p>
 
 <p>This snippet is using the GNU argument parsing library, getopt, to check if
 &ldquo;-e&rdquo; is set, and if not, setting the global <code>char*</code> variable <code>opt_exec</code> to the
 parameter. Then I tried searching for <code>opt_exec</code>, bringing me to:</p>
 
-<p>{% highlight c %}
-if (netcat_mode == NETCAT_LISTEN) {
-  if (opt_exec) {
-ncprint(NCPRINT_VERB2, _(&ldquo;Passing control to the specified program&rdquo;));
-ncexec(&amp;listen_sock);       /<em> this won&rsquo;t return </em>/
-  }
-  core_readwrite(&amp;listen_sock, &amp;stdio_sock);
-  debug_dv((&ldquo;Listen: EXIT&rdquo;));
-}
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">netcat_mode</span> <span class="o">==</span> <span class="n">NETCAT_LISTEN</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">opt_exec</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_VERB2</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Passing</span> <span class="n">control</span> <span class="n">to</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">program</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+<span class="n">ncexec</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">listen_sock</span><span class="p">);</span>       <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">this</span> <span class="n">won</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span> <span class="k">return</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+  <span class="p">}</span>
+  <span class="n">core_readwrite</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">listen_sock</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">stdio_sock</span><span class="p">);</span>
+  <span class="n">debug_dv</span><span class="p">((</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="nl">Listen</span><span class="p">:</span> <span class="n">EXIT</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;));</span>
+<span class="p">}</span></code></pre></div></p>
 
 <p>This code checks if <code>opt_exec</code> is set, and if so calling <code>ncexec()</code>.</p>
 
-<p>{% highlight c linenos %}
-/<em> Execute an external file making its stdin/stdout/stderr the actual socket </em>/</p>
-
-<p>static void ncexec(nc_sock_t <em>ncsock)
-{
-  int saved_stderr;
-  char </em>p;
-  assert(ncsock &amp;&amp; (ncsock->fd >= 0));</p>
-
-<p>  /<em> save the stderr fd because we may need it later </em>/
-  saved_stderr = dup(STDERR_FILENO);</p>
-
-<p>  /<em> duplicate the socket for the child program </em>/
-  dup2(ncsock->fd, STDIN_FILENO);   /<em> the precise order of fiddlage </em>/
-  close(ncsock->fd);            /<em> is apparently crucial; this is </em>/
-  dup2(STDIN_FILENO, STDOUT_FILENO);    /<em> swiped directly out of &ldquo;inetd&rdquo;. </em>/
-  dup2(STDIN_FILENO, STDERR_FILENO);    /<em> also duplicate the stderr channel </em>/</p>
-
-<p>  /<em> change the label for the executed program </em>/
-  if ((p = strrchr(opt_exec, &lsquo;/&rsquo;)))
-    p++;            /<em> shorter argv[0] </em>/
-  else
-    p = opt_exec;</p>
-
-<p>  /<em> replace this process with the new one </em>/</p>
-
-<h1>ifndef USE_OLD_COMPAT</h1>
-
-<p>  execl(&ldquo;/bin/sh&rdquo;, p, &ldquo;-c&rdquo;, opt_exec, NULL);</p>
-
-<h1>else</h1>
-
-<p>  execl(opt_exec, p, NULL);</p>
-
-<h1>endif</h1>
-
-<p>  dup2(saved_stderr, STDERR_FILENO);
-  ncprint(NCPRINT_ERROR | NCPRINT_EXIT, _(&ldquo;Couldn&rsquo;t execute %s: %s&rdquo;),
-      opt_exec, strerror(errno));
-}               /<em> end of ncexec() </em>/
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-c" data-lang="c"><span class="lineno"> 1</span> <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">Execute</span> <span class="n">an</span> <span class="n">external</span> <span class="n">file</span> <span class="n">making</span> <span class="n">its</span> <span class="n">stdin</span><span class="o">/</span><span class="n">stdout</span><span class="o">/</span><span class="n">stderr</span> <span class="n">the</span> <span class="n">actual</span> <span class="n">socket</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno"> 2</span> 
+<span class="lineno"> 3</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="k">static</span> <span class="kt">void</span> <span class="n">ncexec</span><span class="p">(</span><span class="kt">nc_sock_t</span> <span class="o">&lt;</span><span class="n">em</span><span class="o">&gt;</span><span class="n">ncsock</span><span class="p">)</span>
+<span class="lineno"> 4</span> <span class="p">{</span>
+<span class="lineno"> 5</span>   <span class="kt">int</span> <span class="n">saved_stderr</span><span class="p">;</span>
+<span class="lineno"> 6</span>   <span class="kt">char</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;</span><span class="n">p</span><span class="p">;</span>
+<span class="lineno"> 7</span>   <span class="n">assert</span><span class="p">(</span><span class="n">ncsock</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">));</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno"> 8</span> 
+<span class="lineno"> 9</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">save</span> <span class="n">the</span> <span class="n">stderr</span> <span class="n">fd</span> <span class="n">because</span> <span class="n">we</span> <span class="n">may</span> <span class="n">need</span> <span class="n">it</span> <span class="n">later</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">10</span>   <span class="n">saved_stderr</span> <span class="o">=</span> <span class="n">dup</span><span class="p">(</span><span class="n">STDERR_FILENO</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">11</span> 
+<span class="lineno">12</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">duplicate</span> <span class="n">the</span> <span class="n">socket</span> <span class="k">for</span> <span class="n">the</span> <span class="n">child</span> <span class="n">program</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">13</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">,</span> <span class="n">STDIN_FILENO</span><span class="p">);</span>   <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">the</span> <span class="n">precise</span> <span class="n">order</span> <span class="n">of</span> <span class="n">fiddlage</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">14</span>   <span class="n">close</span><span class="p">(</span><span class="n">ncsock</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">);</span>            <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">is</span> <span class="n">apparently</span> <span class="n">crucial</span><span class="p">;</span> <span class="n">this</span> <span class="n">is</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">15</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDOUT_FILENO</span><span class="p">);</span>    <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">swiped</span> <span class="n">directly</span> <span class="n">out</span> <span class="n">of</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">inetd</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;.</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">16</span>   <span class="n">dup2</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>    <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">also</span> <span class="n">duplicate</span> <span class="n">the</span> <span class="n">stderr</span> <span class="n">channel</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">17</span> 
+<span class="lineno">18</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">change</span> <span class="n">the</span> <span class="n">label</span> <span class="k">for</span> <span class="n">the</span> <span class="n">executed</span> <span class="n">program</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">19</span>   <span class="k">if</span> <span class="p">((</span><span class="n">p</span> <span class="o">=</span> <span class="n">strrchr</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">/&amp;</span><span class="n">rsquo</span><span class="p">;)))</span>
+<span class="lineno">20</span>     <span class="n">p</span><span class="o">++</span><span class="p">;</span>            <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">shorter</span> <span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span>
+<span class="lineno">21</span>   <span class="k">else</span>
+<span class="lineno">22</span>     <span class="n">p</span> <span class="o">=</span> <span class="n">opt_exec</span><span class="p">;</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">23</span> 
+<span class="lineno">24</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">replace</span> <span class="n">this</span> <span class="n">process</span> <span class="n">with</span> <span class="n">the</span> <span class="n">new</span> <span class="n">one</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">25</span> 
+<span class="lineno">26</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">ifndef</span> <span class="n">USE_OLD_COMPAT</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">27</span> 
+<span class="lineno">28</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">execl</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">sh</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="n">p</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">-</span><span class="n">c</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="n">opt_exec</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">29</span> 
+<span class="lineno">30</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="k">else</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">31</span> 
+<span class="lineno">32</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">execl</span><span class="p">(</span><span class="n">opt_exec</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
+<span class="lineno">33</span> 
+<span class="lineno">34</span> <span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">endif</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+<span class="lineno">35</span> 
+<span class="lineno">36</span> <span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span>  <span class="n">dup2</span><span class="p">(</span><span class="n">saved_stderr</span><span class="p">,</span> <span class="n">STDERR_FILENO</span><span class="p">);</span>
+<span class="lineno">37</span>   <span class="n">ncprint</span><span class="p">(</span><span class="n">NCPRINT_ERROR</span> <span class="o">|</span> <span class="n">NCPRINT_EXIT</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">Couldn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span> <span class="n">execute</span> <span class="o">%</span><span class="nl">s</span><span class="p">:</span> <span class="o">%</span><span class="n">s</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;),</span>
+<span class="lineno">38</span>       <span class="n">opt_exec</span><span class="p">,</span> <span class="n">strerror</span><span class="p">(</span><span class="n">errno</span><span class="p">));</span>
+<span class="lineno">39</span> <span class="p">}</span>               <span class="o">/&lt;</span><span class="n">em</span><span class="o">&gt;</span> <span class="n">end</span> <span class="n">of</span> <span class="n">ncexec</span><span class="p">()</span> <span class="o">&lt;/</span><span class="n">em</span><span class="o">&gt;/</span></code></pre></div></p>
 
 <p>Here, on lines 13-16 is how the &ldquo;-e&rdquo; parameter really works. <code>dup2()</code> accepts
 two file descriptors and after deallocating the second one (as if <code>close()</code>
@@ -440,18 +434,17 @@ there was an error executing the child.</p>
 <p>I wrote this little python program to see if I understood
 things correctly:</p>
 
-<p>{% highlight python %}</p>
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 
-<h1>!/usr/bin/env python</h1>
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="err">!</span><span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">env</span> <span class="n">python</span><span class="o">&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
 
-<p>import sys</p>
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="kn">import</span> <span class="nn">sys</span><span class="o">&lt;/</span><span class="n">p</span><span class="o">&gt;</span>
 
-<p>inp = sys.stdin.read(5)
-if inp == &lsquo;hello&rsquo;:
-    sys.stdout.write(&lsquo;hi\n&rsquo;)
-else:
-    sys.stdout.write(&lsquo;bye\n&rsquo;)
-{% endhighlight %}</p>
+<span class="o">&lt;</span><span class="n">p</span><span class="o">&gt;</span><span class="n">inp</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">inp</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">hello</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">hi</span>\<span class="n">n</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">bye</span>\<span class="n">n</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;)</span></code></pre></div></p>
 
 <p>It simply reads 5 bytes from stdin and prints &lsquo;hi&rsquo; if those 5 bytes were &lsquo;hello&rsquo;
 otherwise printing &lsquo;bye&rsquo;.</p>

