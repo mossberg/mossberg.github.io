@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Web | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/web/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-04-25T19:02:37-04:00</updated>
+  <updated>2015-04-25T21:09:09-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,78 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
+    <link href="http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <updated>2015-04-25T17:42:10-04:00</updated>
+    <id>http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
+<a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
+a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
+register a stereotypical &ldquo;sketchy&rdquo; domain and set it up as a drive-by
+download site or something, because while I&rsquo;ve <em>heard</em> of doing this kind of
+thing, I&rsquo;ve never actually done it before. Here&rsquo;s a blog post walking through
+what I did. The usual disclaimer applies here: I did this purely for my
+own education and learning experience and am not responsible for anything
+you do with it.</p>
+
+<h3>Step 1: Register your sketchy domain</h3>
+
+<p>I chose <a href="http://freemoviedownload.club">http://freemoviedownload.club</a>.</p>
+
+<h3>Step 2: Set up drive-by downloads</h3>
+
+<p>This involves configuring your web server to automatically set the
+<code>Content-Type</code> header of the resource you want to force download
+to <code>application/octet-stream</code>. That should make most web browsers trigger
+a download file prompt to actually download the file. Safari curiously
+doesn&rsquo;t support prompts for downloaded file location like Chrome and Firefox,
+so in that case, it will immediately download the file to <code>~/Downloads</code>.</p>
+
+<p>I&rsquo;m going to try to force a drive-by download of a jpg file, so I added
+the below config to my <code>.htaccess</code> file in Apache&rsquo;s <code>DocumentRoot</code>.</p>
+
+<pre><code class="xml .htaccess">&lt;Files *.jpg&gt;
+        ForceType application/octet-stream
+&lt;/Files&gt;
+</code></pre>
+
+<p>That will force browers to download the image, rather than rendering it
+when a browser tries to access <code>http://freemoviedownload.club/image.jpg</code>, for
+example.</p>
+
+<p>At this point, we&rsquo;re technically done. We can send someone a link to a file
+and, assuming they say yes to the prompt (or use Safari), download it to their
+computer.  But for some extra polish, I want to have an actual website with
+content and have the download come from <em>that</em> page.</p>
+
+<h3>Step 3: Redirect</h3>
+
+<p>We can accomplish this with a trivial Javascript redirect that executes
+after the page has loaded. We can even add a delay before the download happens
+to give them time to read the website or whatever. The redirect will need
+to be to the path configured in step 2, but this will give the illusion that
+the download is coming from the <code>index.html</code> page.</p>
+
+<p>&#8220;`html index.html
+you have arrived at the official free movie download club! enjoy your download</p>
+
+<script type="text/javascript" charset="utf-8">
+    function f() { document.location = 'dickbutt.jpg' }
+    setTimeout(f, 2000);
+</script>
+
+
+<p>&#8220;`</p>
+
+<p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
+&ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
+against Safari and Chrome for Android, in my testing.</p>
+
+<p><img src="/images/sketchy.gif" alt="" /></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
