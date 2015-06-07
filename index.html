@@ -9,9 +9,10 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
-anniversary prize giveaway. I really didn&rsquo;t need
-a &ldquo;. &hellip;">
+  <meta name="description" content="This post is about an interesting race condition bug I ran into when working
+on a small feature improvement for
+poet a while ago
+that I thought was &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +82,310 @@ a &ldquo;. &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/06/07/off-to-the-python-internals-races/">Off to the (Python Internals) Races</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-06-07'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This post is about an interesting race condition bug I ran into when working
+on a small feature improvement for
+<a href="http://github.com/mossberg/poet">poet</a> a while ago
+that I thought was
+worth writing a blog post about.</p>
+
+<p>In particular, I was improving the download-and-execute capability of poet
+which, if you couldn&rsquo;t tell, downloads a file from the internet and executes
+it on the target. At the original time of writing, I didn&rsquo;t know about
+the python <code>tempfile</code> module and since I recently learned about it, I wanted
+to integrate it into poet as it would be a significant improvement to
+the original implementation. The initial patch looked like this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">r</span> <span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+</span><span class='line'><span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</span><span class='line'>    <span class="n">os</span><span class="o">.</span><span class="n">fchmod</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="n">stat</span><span class="o">.</span><span class="n">S_IRWXU</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>  <span class="c"># ensure that file was actually written to disk</span>
+</span><span class='line'>    <span class="n">sp</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">devnull</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">),</span> <span class="n">stderr</span><span class="o">=</span><span class="n">sp</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This code downloads a file from the internet, writes it to a tempfile on
+disk, sets the permissions to executable, executes it in a subprocess.
+In testing this code, I observed some puzzling behavior: the file was
+never actually getting executed because it was suddenly ceasing to
+exist! I noticed though that when I used
+<code>subprocess.call()</code> or used <code>.wait()</code> on the <code>Popen()</code>, it would work
+fine, however I intentionally didn&rsquo;t want the client to block while the
+file executed its arbitrary payload, so I couldn&rsquo;t use those functions.</p>
+
+<p>The fact that the execution would work when the <code>Popen</code> call waited for
+the process and didn&rsquo;t work otherwise suggests that there was something
+going on between the time it took to execute the child and the time it took
+for the <code>with</code> block to end and delete the file, which is <code>tempfile</code>&rsquo;s
+default behavior. More specifically, the
+file must have been deleted at some point before the <code>exec</code> syscall loaded
+the file from disk into memory. Let&rsquo;s take a look at the implementation of
+<code>subprocess.Popen()</code> to see if we can gain some more insight:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">_execute_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">executable</span><span class="p">,</span> <span class="n">preexec_fn</span><span class="p">,</span> <span class="n">close_fds</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">cwd</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">universal_newlines</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">startupinfo</span><span class="p">,</span> <span class="n">creationflags</span><span class="p">,</span> <span class="n">shell</span><span class="p">,</span> <span class="n">to_close</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">p2cread</span><span class="p">,</span> <span class="n">p2cwrite</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">c2pread</span><span class="p">,</span> <span class="n">c2pwrite</span><span class="p">,</span>
+</span><span class='line'>                           <span class="n">errread</span><span class="p">,</span> <span class="n">errwrite</span><span class="p">):</span>
+</span><span class='line'>            <span class="sd">&quot;&quot;&quot;Execute program (POSIX version)&quot;&quot;&quot;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="o">&lt;</span><span class="n">snip</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>                <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>                    <span class="o">&lt;</span><span class="n">snip</span><span class="o">&gt;</span>
+</span><span class='line'>                    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>                        <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">fork</span><span class="p">()</span>
+</span><span class='line'>                    <span class="k">except</span><span class="p">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="n">gc_was_enabled</span><span class="p">:</span>
+</span><span class='line'>                            <span class="n">gc</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+</span><span class='line'>                        <span class="k">raise</span>
+</span><span class='line'>                    <span class="bp">self</span><span class="o">.</span><span class="n">_child_created</span> <span class="o">=</span> <span class="bp">True</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>                        <span class="c"># Child</span>
+</span><span class='line'>                        <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>                            <span class="c"># Close parent&#39;s pipe ends</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">p2cwrite</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">p2cwrite</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">c2pread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">c2pread</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">errread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">errread</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">errpipe_read</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="c"># When duping fds, if there arises a situation</span>
+</span><span class='line'>                            <span class="c"># where one of the fds is either 0, 1 or 2, it</span>
+</span><span class='line'>                            <span class="c"># is possible that it is overwritten (#12607).</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">c2pwrite</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">c2pwrite</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">dup</span><span class="p">(</span><span class="n">c2pwrite</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">errwrite</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">errwrite</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">errwrite</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">dup</span><span class="p">(</span><span class="n">errwrite</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="c"># Dup fds for child</span>
+</span><span class='line'>                            <span class="k">def</span> <span class="nf">_dup2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+</span><span class='line'>                                <span class="c"># dup2() removes the CLOEXEC flag but</span>
+</span><span class='line'>                                <span class="c"># we must do it ourselves if dup2()</span>
+</span><span class='line'>                                <span class="c"># would be a no-op (issue #10806).</span>
+</span><span class='line'>                                <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+</span><span class='line'>                                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_cloexec_flag</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+</span><span class='line'>                                <span class="k">elif</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                    <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">_dup2</span><span class="p">(</span><span class="n">p2cread</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">_dup2</span><span class="p">(</span><span class="n">c2pwrite</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">_dup2</span><span class="p">(</span><span class="n">errwrite</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="c"># Close pipe fds.  Make sure we don&#39;t close the</span>
+</span><span class='line'>                            <span class="c"># same fd more than once, or standard fds.</span>
+</span><span class='line'>                            <span class="n">closed</span> <span class="o">=</span> <span class="p">{</span> <span class="bp">None</span> <span class="p">}</span>
+</span><span class='line'>                            <span class="k">for</span> <span class="n">fd</span> <span class="ow">in</span> <span class="p">[</span><span class="n">p2cread</span><span class="p">,</span> <span class="n">c2pwrite</span><span class="p">,</span> <span class="n">errwrite</span><span class="p">]:</span>
+</span><span class='line'>                                <span class="k">if</span> <span class="n">fd</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">closed</span> <span class="ow">and</span> <span class="n">fd</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+</span><span class='line'>                                    <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+</span><span class='line'>                                    <span class="n">closed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">cwd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">preexec_fn</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">preexec_fn</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="c"># Close all other fds, if asked for - after</span>
+</span><span class='line'>                            <span class="c"># preexec_fn(), which may open FDs.</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">close_fds</span><span class="p">:</span>
+</span><span class='line'>                                <span class="bp">self</span><span class="o">.</span><span class="n">_close_fds</span><span class="p">(</span><span class="n">but</span><span class="o">=</span><span class="n">errpipe_write</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                            <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">execvp</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span> <span class="n">args</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">else</span><span class="p">:</span>
+</span><span class='line'>                                <span class="n">os</span><span class="o">.</span><span class="n">execvpe</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                        <span class="k">except</span><span class="p">:</span>
+</span><span class='line'>                            <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_value</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+</span><span class='line'>                            <span class="c"># Save the traceback and attach it to the exception object</span>
+</span><span class='line'>                            <span class="n">exc_lines</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exception</span><span class="p">(</span><span class="n">exc_type</span><span class="p">,</span>
+</span><span class='line'>                                                                   <span class="n">exc_value</span><span class="p">,</span>
+</span><span class='line'>                                                                   <span class="n">tb</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">exc_value</span><span class="o">.</span><span class="n">child_traceback</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">exc_lines</span><span class="p">)</span>
+</span><span class='line'>                            <span class="n">os</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">errpipe_write</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">exc_value</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'>                        <span class="c"># This exitcode won&#39;t be reported to applications, so it</span>
+</span><span class='line'>                        <span class="c"># really doesn&#39;t matter what we return.</span>
+</span><span class='line'>                        <span class="n">os</span><span class="o">.</span><span class="n">_exit</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="c"># Parent</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="n">gc_was_enabled</span><span class="p">:</span>
+</span><span class='line'>                        <span class="n">gc</span><span class="o">.</span><span class="n">enable</span><span class="p">()</span>
+</span><span class='line'>                <span class="k">finally</span><span class="p">:</span>
+</span><span class='line'>                    <span class="c"># be sure the FD is closed no matter what</span>
+</span><span class='line'>                    <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">errpipe_write</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="c"># Wait for exec to fail or succeed; possibly raising exception</span>
+</span><span class='line'>                <span class="c"># Exception limited to 1M</span>
+</span><span class='line'>                <span class="n">data</span> <span class="o">=</span> <span class="n">_eintr_retry_call</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">read</span><span class="p">,</span> <span class="n">errpipe_read</span><span class="p">,</span> <span class="mi">1048576</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="o">&lt;</span><span class="n">snip</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>_execute_child()</code> function is called by the <code>subprocess.Popen</code> class
+constructor and implements child process execution. There&rsquo;s a lot of
+code here, but key parts to notice here are the <code>os.fork()</code> call which
+creates the child process, and the relative lengths of the following
+<code>if</code> blocks. The check <code>if self.pid == 0</code> contains the code for executing
+the child process and is significantly more involved than the code
+for handling the parent process.</p>
+
+<p>From this, we can deduce that when the <code>subprocess.Popen()</code> call executes
+in my code, after forking, while the child is preparing to call
+<code>os.execve</code>, the parent simply returns, and immediately exits the <code>with</code>
+block. This automatically invokes the <code>f.close()</code> function which deletes
+the temp file. By the time the child calls <code>os.execve</code>, the file has been
+deleted on disk. Oops.</p>
+
+<p>I fixed this by adding the <code>delete=False</code> argument to the
+<code>NamedTemporaryFile</code> constructor to suppress the auto-delete functionality.
+Of course this means that the downloaded files will have to be cleaned up
+manually, but this allows the client to not block when executing the file
+and have the code still be pretty clean.</p>
+
+<p>Main takeaway here: don&rsquo;t try to <code>Popen</code> a <code>NamedTemporaryFile</code> as the
+last statement in the tempfile&rsquo;s <code>with</code> block.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1952,53 +2257,6 @@ echo $SHELL
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/25/ccdc2014/">CCDC Regional Qualifiers 2014</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-01-25T23:56:00-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:56 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
-
-<p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
-
-<h2>Overview</h2>
-
-<p>Basically, the way this competition works is each team is given the IT infrastructure of a small business and it is their task to lock down the security of the infrastructure. They have to do this while under attack from a Red Team of hackers who are trying to break in and exfiltrate sensitive data (credit card info, <a href="https://en.wikipedia.org/wiki/Personally_identifiable_information">PII</a>, etc.), or just generally mess with and pwn you. In this case, we were managing an e-commerce website that included a web server running a CMS, a DNS (and MySQL, interestingly) server, a firewall, a mail server, and a FTP server.</p>
-
-<h2>Approach</h2>
-
-<p>Personally, myself and a teammate tag teamed securing the DNS/database server. This was an important box to secure because if it got pwnt, an attacker would be able to disrupt the DNS of the e-commerce site, disrupt email, and most importantly, potentially dump the database and exfiltrate sensitive information. Throughout the course of the competition, we implemented basic security measures such as changing default passwords for important system and database accounts, and killing unnecessary network services (such as ntpd, sshd, and apache in our case) as well as more involve measures such as skin-tight iptables rules that controlled specifically what traffic would be able to reach our box, and audit rules that would monitor directories/binaries that an attacker on the system would probably modify or execute.</p>
-
-<h2>Expectations</h2>
-
-<p>At the beginning of the competition, I had a bit of an adrenaline rush going because I was constantly waiting for the red team to come out of nowhere and own us in some place that we hadn&rsquo;t thought of, or secured yet, or <em>something</em>. Over time that rush wore off because&hellip;the red team never seemed to show up. At no point in the competition did we see any signs of unauthorized access on our box, or even potentially malicious traffic reaching it. Although I do appreciate it, this was a bit of a letdown, given my expectations of getting totally wrecked by the red team.</p>
-
-<h2>Results</h2>
-
-<p>Ultimately, our team did well enough that we were able to place among the top teams competing and qualify for the Northeast regional competition to be held in March in New Hampshire. Definitely excited for that; I&rsquo;ve learned a ton about cyber defense by getting involved with the team and I&rsquo;m looking forward to putting it to use at the real event!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2021,6 +2279,10 @@ echo $SHELL
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/06/07/off-to-the-python-internals-races/">Off to the (Python Internals) Races</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a>
       </li>
     
@@ -2036,15 +2298,11 @@ echo $SHELL
         <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (2)</a></li><li><a href='/blog/categories/python'>python (3)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
 </section>
 
   

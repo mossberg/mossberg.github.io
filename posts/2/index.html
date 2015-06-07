@@ -9,7 +9,7 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker &hellip;">
+  <meta name="description" content="Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +79,53 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/25/ccdc2014/">CCDC Regional Qualifiers 2014</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2014-01-25T23:56:00-05:00'><span class='date'><span class='date-month'>Jan</span> <span class='date-day'>25</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>11:56 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
+
+<p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
+
+<h2>Overview</h2>
+
+<p>Basically, the way this competition works is each team is given the IT infrastructure of a small business and it is their task to lock down the security of the infrastructure. They have to do this while under attack from a Red Team of hackers who are trying to break in and exfiltrate sensitive data (credit card info, <a href="https://en.wikipedia.org/wiki/Personally_identifiable_information">PII</a>, etc.), or just generally mess with and pwn you. In this case, we were managing an e-commerce website that included a web server running a CMS, a DNS (and MySQL, interestingly) server, a firewall, a mail server, and a FTP server.</p>
+
+<h2>Approach</h2>
+
+<p>Personally, myself and a teammate tag teamed securing the DNS/database server. This was an important box to secure because if it got pwnt, an attacker would be able to disrupt the DNS of the e-commerce site, disrupt email, and most importantly, potentially dump the database and exfiltrate sensitive information. Throughout the course of the competition, we implemented basic security measures such as changing default passwords for important system and database accounts, and killing unnecessary network services (such as ntpd, sshd, and apache in our case) as well as more involve measures such as skin-tight iptables rules that controlled specifically what traffic would be able to reach our box, and audit rules that would monitor directories/binaries that an attacker on the system would probably modify or execute.</p>
+
+<h2>Expectations</h2>
+
+<p>At the beginning of the competition, I had a bit of an adrenaline rush going because I was constantly waiting for the red team to come out of nowhere and own us in some place that we hadn&rsquo;t thought of, or secured yet, or <em>something</em>. Over time that rush wore off because&hellip;the red team never seemed to show up. At no point in the competition did we see any signs of unauthorized access on our box, or even potentially malicious traffic reaching it. Although I do appreciate it, this was a bit of a letdown, given my expectations of getting totally wrecked by the red team.</p>
+
+<h2>Results</h2>
+
+<p>Ultimately, our team did well enough that we were able to place among the top teams competing and qualify for the Northeast regional competition to be held in March in New Hampshire. Definitely excited for that; I&rsquo;ve learned a ton about cyber defense by getting involved with the team and I&rsquo;m looking forward to putting it to use at the real event!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -197,6 +244,10 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/06/07/off-to-the-python-internals-races/">Off to the (Python Internals) Races</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a>
       </li>
     
@@ -212,15 +263,11 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
         <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/10/27/crackme/">Beginner Crackme</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (2)</a></li><li><a href='/blog/categories/python'>python (3)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
 </section>
 
   
