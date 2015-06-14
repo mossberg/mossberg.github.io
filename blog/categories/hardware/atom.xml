@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hardware | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/hardware/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-06-07T13:02:24-04:00</updated>
+  <updated>2015-06-14T19:44:00-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,123 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Building a Simple IoT Light Switch, Pt. 2]]></title>
+    <link href="http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
+    <updated>2015-06-14T15:13:07-04:00</updated>
+    <id>http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch</id>
+    <content type="html"><![CDATA[<p>This is a pretty late post, but I wanted to show off the hardware I designed
+as a follow up to the first
+<a href="/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
+In that post I presented a prototype of a smart light switch I designed that
+consisted of a button which triggered a small Python server running on a
+Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an
+extraordinarily simple design that worked well enough, how it was very
+inconvenient to transport since I had to rewire the breadboard to the raspi
+GPIO pins every time I moved. Since it seemed production ready
+for my needs, I decided to solve this problem by using this as an opportunity
+to learn PCB design and actually design a production board.</p>
+
+<p>Special thanks go to <a href="http://nickkubasti.com/">Nick Kubasti</a> for teaching me
+how to use KiCad and to <a href="http://thejohnsullivan.com/">John Sullivan</a> for helping
+me with the final lab work.</p>
+
+<p>The basic circuit I designed is below. It is merely a GPIO pin hooked up to
+ground with a switch in between, and an LED and resistor for fun.</p>
+
+<p><img src="/images/iot2/switch1.png" alt="" /></p>
+
+<p>The code behind this configures the GPIO pin to use a pull up resistor, which
+pulls the pin&rsquo;s voltage up to VCC when the button is not pressed, and down to
+GND when it is. This lets the code poll for when the pin&rsquo;s value is <code>False</code>.
+A more complete schematic including the pull up resistor is below. Note that
+I won&rsquo;t have to implement the pull up part in my design because the Raspberry
+Pi implements that internally.</p>
+
+<p><img src="/images/iot2/switch2.png" alt="" /></p>
+
+<p>My initial idea was to have a little board that would plug straight down into
+the Pi&rsquo;s GPIO female headers with a little button and LED at the end. However,
+that was really wasteful since that would block all of the pin even though
+I was only using three of them (input, GND, VCC). Nick suggested a board design
+that had two sets of headers: one set of male ones for plugging downwards as I
+had originally thought, and one set of female ones facing upward that all the
+unused pins would be forwarded to. This way, even though the downward facing
+male pins are all plugged in, they can all still be accessed since the board
+traces simply connect the unused male pins to the corresponding female ones.
+The exception to this is GPIO pin 11, which is the one actually being used for
+the switch. I just need to remember for future projects that pin 11 is
+reserved. That was probably really hard to understand, so here&rsquo;s the schematic,
+created with KiCad.</p>
+
+<p><img src="/images/iot2/schematic.png" alt="" /></p>
+
+<p>On the left you can see the two sets of 13 x 2 headers. The ones on the left
+will be the male ones that plug downward into the Pi&rsquo;s female headers. The
+ones on the right will be the female ones that wires can be plugged into.
+All those wires going around the top and bottom are the forwarded connections.
+The one pin exclusively in use on the left is pin 11, which is connected to
+the circuit. All the rest are unused, and wires are used to connect them to
+their corresponding female header. Pins 1 and 9 are technically in use, but
+since they correspond to VCC and GND, it&rsquo;s fine to forward them too.</p>
+
+<p>The actual circuit is in the bottom left. It&rsquo;s very similar to the above
+circuit diagrams, pin 11 is connected to GND (pin 9) via a switch, and
+3.3V VCC (pin 1) is connected to an LED, resistor, and the same GND (pin 9).</p>
+
+<p>The next step after creating the schematic, and assigning actual parts to each
+of the components, was to design the printed circuit board (PCB). This involves
+laying out the components as they will appear on the physical
+silicon wafer.</p>
+
+<p><img src="/images/iot2/pcb.png" alt="" /></p>
+
+<p>This was a completely new area to me and it was challenging and fun to
+actually draw out the board&rsquo;s traces, taking care not to intersect them,
+and using the different layers when necessary. You might notice that there&rsquo;s
+a seemingly random set of 1 x 2 headers in the middle of the area where the
+switch goes. I added those because I noticed that the button and LED were going
+to actually extend off the end of the Pi. I was concerned about how pressing
+down on the button would actually flip the Pi a little bit, so Nick had an
+incredible idea and suggested adding space for a pair of dud headers that
+could be used as legs to support the end of the PCB that hung off the side
+of the Pi.</p>
+
+<p>After this, I was then able to pretty easily use KiCad to generate some
+Gerber files to send to the fab. I chose to use
+<a href="https://oshpark.com/">OshPark</a> based on Nick&rsquo;s recommendation, and they turned
+out to be a great option. I was able to get three copies of my board, with
+free shipping for &lt;$8!</p>
+
+<p>After waiting a couple of weeks for the boards to come in, John helped me
+solder everything together to finish up this project. During this process
+we noticed one design mistake: the layout of the switch was actually <em>way</em>
+too big for the switch we had on hand, but that didn&rsquo;t turn out to be a serious
+issue.</p>
+
+<p><img src="/images/iot2/mistake.jpg" alt="" /></p>
+
+<p>There are some pictures of the final product:</p>
+
+<p><img src="/images/iot2/final1.jpg" alt="" />
+<img src="/images/iot2/final2.jpg" alt="" />
+<img src="/images/iot2/final3.jpg" alt="" />
+<img src="/images/iot2/final4.jpg" alt="" /></p>
+
+<p>Here&rsquo;s a video of it in action:</p>
+
+<blockquote class="instagram-media" data-instgrm-version="4" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:658px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:8px;"> <div style=" background:#F8F8F8; line-height:0; margin-top:40px; padding:50% 0; text-align:center; width:100%;"> <div style=" background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAMAAAApWqozAAAAGFBMVEUiIiI9PT0eHh4gIB4hIBkcHBwcHBwcHBydr+JQAAAACHRSTlMABA4YHyQsM5jtaMwAAADfSURBVDjL7ZVBEgMhCAQBAf//42xcNbpAqakcM0ftUmFAAIBE81IqBJdS3lS6zs3bIpB9WED3YYXFPmHRfT8sgyrCP1x8uEUxLMzNWElFOYCV6mHWWwMzdPEKHlhLw7NWJqkHc4uIZphavDzA2JPzUDsBZziNae2S6owH8xPmX8G7zzgKEOPUoYHvGz1TBCxMkd3kwNVbU0gKHkx+iZILf77IofhrY1nYFnB/lQPb79drWOyJVa/DAvg9B/rLB4cC+Nqgdz/TvBbBnr6GBReqn/nRmDgaQEej7WhonozjF+Y2I/fZou/qAAAAAElFTkSuQmCC); display:block; height:44px; margin:0 auto -44px; position:relative; top:-22px; width:44px;"></div></div><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="https://instagram.com/p/37ZQ8_n86u/" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_top">A video posted by Mark Mossberg (@mssbrg)</a> on <time style=" font-family:Arial,sans-serif; font-size:14px; line-height:17px;" datetime="2015-06-14T23:29:39+00:00">Jun 14, 2015 at 4:29pm PDT</time></p></div></blockquote>
+
+
+<script async defer src="//platform.instagram.com/en_US/embeds.js"></script>
+
+
+<p>Thanks for reading! I have two extra boards I&rsquo;m not doing anything with, so
+if you happen to have a Raspberry Pi and some Hue lights, I&rsquo;d be happy to give
+you the hardware and software for your own DIY light switch.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>

