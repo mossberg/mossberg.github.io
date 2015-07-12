@@ -24,7 +24,8 @@ On campus I'm involved with [IEEE](http://ieee.neu.edu),
 [CCDC](http://www.nationalccdc.org/) team,
 and [NU Hacks](http://hacks.io). Sometimes I play
 [CTF](http://en.wikipedia.org/wiki/Capture_the_flag#Computer_security),
-occasionally with
+and in February 2015 I played in [SECCON](/images/seccon-shellphish.jpg)
+with
 [Shellphish](https://ctftime.org/team/285).
 
 In my free time I enjoy [slacklining](http://en.wikipedia.org/wiki/Slacklining),
@@ -34,8 +35,7 @@ playing guitar, and working on various [projects](/projects). In April 2014, I p
 
 - twitter: [@markmossberg](https://twitter.com/markmossberg)
 - github: [mossberg](https://github.com/mossberg)
-- linkedin: [markmossberg](https://linkedin.com/in/markmossberg)
 - keybase: [mossberg](https://keybase.io/mossberg)
 - gmail: <a href="" onClick="alert('I\'m not actually a link ¯\\_(ツ)_/¯');">mark.mossberg</a>
 
-*Last updated 1/7/2015*
+*Last updated 7/21/2015*

@@ -7,13 +7,16 @@ footer: false
 ---
 
 [poet](http://github.com/mossberg/poet)  
-Post-exploitation tool for command and control on a Windows, OS X, or Linux host.
+Post-exploitation tool for command and control on Linux and OS X with
+incidental Windows support.
+
+[spym](http://github.com/mossberg/spym)  
+A MIPS ISA toolchain including a (dis)assembler, debugger, and emulator.
+Includes a custom binary format I designed and a Linux kernel module for
+native execution via `execve` syscall.
 
 [librequests](http://github.com/mossberg/librequests)  
 A simple C library for making HTTP requests, influenced by
 [python-requests](http://python-requests.org).
-
-[lockpick](http://github.com/mossberg/lp)  
-Script that unlocks a special kind of door. Ask me for more.
 
 ...and many more on my [github](http://github.com/mossberg).
