@@ -53,12 +53,12 @@ created with KiCad.
 ![](/images/iot2/schematic.png)
 
 On the left you can see the two sets of 13 x 2 headers. The ones on the left
-will be the female ones that plug downward into the Pi's female headers. The
-ones on the right will be the male ones that wires can be plugged into.
+will be the female ones that plug downward into the Pi's male headers. The
+ones on the right will be the male ones that can be used for other projects.
 All those wires going around the top and bottom are the forwarded connections.
 The one pin exclusively in use on the left is pin 11, which is connected to
 the circuit. All the rest are unused, and wires are used to connect them to
-their corresponding female header. Pins 1 and 9 are technically in use, but
+their corresponding male header. Pins 1 and 9 are technically in use, but
 since they correspond to VCC and GND, it's fine to forward them too.
 
 The actual circuit is in the bottom left. It's very similar to the above
