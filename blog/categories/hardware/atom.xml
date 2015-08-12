@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hardware | Mark Mossberg's Blog]]></title>
   <link href="http://blog.mark.lc/blog/categories/hardware/atom.xml" rel="self"/>
   <link href="http://blog.mark.lc/"/>
-  <updated>2015-07-12T13:48:47-04:00</updated>
+  <updated>2015-08-11T22:37:42-04:00</updated>
   <id>http://blog.mark.lc/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -49,14 +49,14 @@ Pi implements that internally.</p>
 <p><img src="/images/iot2/switch2.png" alt="" /></p>
 
 <p>My initial idea was to have a little board that would plug straight down into
-the Pi&rsquo;s GPIO female headers with a little button and LED at the end. However,
-that was really wasteful since that would block all of the pin even though
+the Pi&rsquo;s GPIO male headers with a little button and LED at the end. However,
+that was really wasteful since that would block all of the pins even though
 I was only using three of them (input, GND, VCC). Nick suggested a board design
-that had two sets of headers: one set of male ones for plugging downwards as I
-had originally thought, and one set of female ones facing upward that all the
+that had two sets of headers: one set of female ones for plugging downwards as I
+had originally thought, and one set of male ones facing upward that all the
 unused pins would be forwarded to. This way, even though the downward facing
-male pins are all plugged in, they can all still be accessed since the board
-traces simply connect the unused male pins to the corresponding female ones.
+female pins are all plugged in, they can all still be accessed since the board
+traces simply connect the unused female pins to the corresponding male ones.
 The exception to this is GPIO pin 11, which is the one actually being used for
 the switch. I just need to remember for future projects that pin 11 is
 reserved. That was probably really hard to understand, so here&rsquo;s the schematic,
@@ -65,8 +65,8 @@ created with KiCad.</p>
 <p><img src="/images/iot2/schematic.png" alt="" /></p>
 
 <p>On the left you can see the two sets of 13 x 2 headers. The ones on the left
-will be the male ones that plug downward into the Pi&rsquo;s female headers. The
-ones on the right will be the female ones that wires can be plugged into.
+will be the female ones that plug downward into the Pi&rsquo;s female headers. The
+ones on the right will be the male ones that wires can be plugged into.
 All those wires going around the top and bottom are the forwarded connections.
 The one pin exclusively in use on the left is pin 11, which is connected to
 the circuit. All the rest are unused, and wires are used to connect them to
