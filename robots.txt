@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: http://blog.mark.lc/sitemap.xml 
+Sitemap: http://mark.systems/sitemap.xml 

@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: Reverse Engineering - Mark Mossberg&#8217;s Blog</title>
+  <title>Asking What if With Open - Mark Mossberg&#8217;s Blog</title>
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="Category: reverse engineering">
+  <meta name="description" content="for a variadic function, there is no way to tell how many arguments you
+were actually passed. need some out of band method. open(3) -> flag &amp; &hellip;&#8221;>
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://mark.systems/blog/categories/reverse-engineering/">
+  <link rel="canonical" href="http://mark.systems/blog/2015/08/18/asking-what-if-with-open/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Mark Mossberg's Blog" type="application/atom+xml">
@@ -78,50 +79,100 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Reverse Engineering</h1>
+    
+      <h1 class="entry-title">Asking What if With Open</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-08-18T00:10:29-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:10 am</span></time>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>for a variadic function, there is no way to tell how many arguments you
+were actually passed. need some out of band method.
+    open(3) -> flag &amp; O_CREAT
+    printf(3) -> format string characters</p>
 
-  
-  <h2>2014</h2>
+<p>open has a 2 arg and a 3 arg form
+3 arg form is if you use o_creat, you need to specify th emode
+but i wondered, who is enforcing that?
+the compiler doesn&rsquo;t care, to it, it&rsquo;s just another variadic function
+what&rsquo;s to prevent a programmer from mistakenly doing open(&ldquo;path&rdquo;, O_CREATE) and forgetting the third arg
+let&rsquo;s dig
+first, it&rsquo;ll pass into libc.
+libc doesn&rsquo;t do any checks. it simply detects whether to get a third arg
+via thing &amp; O_CREAT and calls va_arg to get the third arg. va_arg is a dumb
+macro that basically just dereferences memory in the right spot on the stack
+if it wasn&rsquo;t given, oh well, va_args is going to return random memory
+so if libc doesn&rsquo;t check , who&rsquo;s next? well, it&rsquo;s the kernel!
+look at fs/open.c to walk through the function calls to find where mode
+is validated. mode is actually not used much. there&rsquo;s an interesting line
+where it&rsquo;s anded with something and then or&rsquo;d with something. i presume that
+and is chopping off the high bits since the valid values of mode
+are up to 00700, there&rsquo;s no reason to keep higher than the 4th octal digit
+that&rsquo;s a form of validation. but it will still cause incorrect results because you&rsquo;ve
+essentially used a random number as your mode&hellip;
+and indeed that&rsquo;s what happened! the kernel</p>
 
-<article>
-  
-<h1><a href="/blog/2014/10/27/crackme/">Beginner Crackme</a></h1>
-<time datetime="2014-10-27T00:00:00-04:00" pubdate><span class='month'>Oct</span> <span class='day'>27</span> <span class='year'>2014</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/assembly/'>assembly</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse engineering</a>, <a class='category' href='/blog/categories/security/'>security</a></span>
-</footer>
-
-
-</article>
-
-
-
-<article>
-  
-<h1><a href="/blog/2014/09/27/suctf_re/">SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a></h1>
-<time datetime="2014-09-27T00:00:00-04:00" pubdate><span class='month'>Sep</span> <span class='day'>27</span> <span class='year'>2014</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/ctf/'>ctf</a>, <a class='category' href='/blog/categories/hacking/'>hacking</a>, <a class='category' href='/blog/categories/reverse-engineering/'>reverse engineering</a></span>
-</footer>
-
-
-</article>
-
+<p>interesting implications. no error anyway, the only way you&rsquo;d see it is if
+you looked at the permissions of the created file. security implications?
+could there be projects out there that possibly create files that got
+randomly set to too openly viewable? WRITEABLE?</p>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Mark Mossberg</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2015-08-18T00:10:29-04:00'><span class='date'><span class='date-month'>Aug</span> <span class='date-day'>18</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>12:10 am</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://mark.systems/blog/2015/08/18/asking-what-if-with-open/" data-via="" data-counturl="http://mark.systems/blog/2015/08/18/asking-what-if-with-open/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/08/14/learning-trivia-about-mach0/" title="Previous Post: buffers and binary formats">&laquo; buffers and binary formats</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -183,7 +234,10 @@
       var disqus_shortname = 'markmossberg';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://mark.systems/blog/2015/08/18/asking-what-if-with-open/';
+        var disqus_url = 'http://mark.systems/blog/2015/08/18/asking-what-if-with-open/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Python | Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/blog/categories/python/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Off to the (Python Internals) Races]]></title>
-    <link href="http://blog.mark.lc/blog/2015/06/07/off-to-the-python-internals-races/"/>
+    <link href="http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races/"/>
     <updated>2015-06-07T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/06/07/off-to-the-python-internals-races</id>
+    <id>http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races</id>
     <content type="html"><![CDATA[<p>This post is about an interesting race condition bug I ran into when working
 on a small feature improvement for
 <a href="http://github.com/mossberg/poet">poet</a> a while ago
@@ -189,9 +189,9 @@ last statement in the tempfile&rsquo;s <code>with</code> block.</p>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>
-    <link href="http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch/"/>
+    <link href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/"/>
     <updated>2015-01-18T13:32:48-05:00</updated>
-    <id>http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch</id>
+    <id>http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>I&rsquo;m lucky enough to own a <a href="http://www.meethue.com">Philips Hue</a> wireless
 lighting unit (thanks <a href="http://acm.ccs.neu.edu">NUACM</a>!) which essentially is
 this really awesome Internet of Things (IoT) product that lets me replace
@@ -288,9 +288,9 @@ leave that for another day. Thanks for reading, here it is in action!</p>
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
-    <link href="http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <link href="http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
     <updated>2014-12-13T02:38:31-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <id>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
     <content type="html"><![CDATA[<h3>Introduction</h3>
 
 <p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
@@ -602,9 +602,9 @@ Hopefully this was interesting/helpful for some people, and as always thanks for
   
   <entry>
     <title type="html"><![CDATA[iHackedIT]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <link href="http://mark.systems/blog/2014/03/01/ihackedit/"/>
     <updated>2014-03-01T14:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <id>http://mark.systems/blog/2014/03/01/ihackedit</id>
     <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
 
 <h2>Introduction</h2>

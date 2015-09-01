@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Ctf | Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/blog/categories/ctf/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/blog/categories/ctf/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Beginner Crackme]]></title>
-    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <link href="http://mark.systems/blog/2014/10/27/crackme/"/>
     <updated>2014-10-27T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <id>http://mark.systems/blog/2014/10/27/crackme</id>
     <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
 a crackme style exercise to practice reading x86 assembly and basic
 reverse engineering.</p>
@@ -252,9 +252,9 @@ ok
   
   <entry>
     <title type="html"><![CDATA[SU-CTF 2014 - "Commerical Application!"]]></title>
-    <link href="http://blog.mark.lc/blog/2014/09/27/suctf_re/"/>
+    <link href="http://mark.systems/blog/2014/09/27/suctf_re/"/>
     <updated>2014-09-27T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/09/27/suctf_re</id>
+    <id>http://mark.systems/blog/2014/09/27/suctf_re</id>
     <content type="html"><![CDATA[<p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
 I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
 one of the 200 point challenges in the third (of five) difficulty tiers.</p>

@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Hardware | Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/blog/categories/hardware/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/blog/categories/hardware/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch, Pt. 2]]></title>
-    <link href="http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
+    <link href="http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
     <updated>2015-06-14T15:13:07-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch</id>
+    <id>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>This is a pretty late post, but I wanted to show off the hardware I designed
 as a follow up to the first
 <a href="/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
@@ -132,9 +132,9 @@ you the hardware and software for your own DIY light switch.</p>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>
-    <link href="http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch/"/>
+    <link href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/"/>
     <updated>2015-01-18T13:32:48-05:00</updated>
-    <id>http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch</id>
+    <id>http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>I&rsquo;m lucky enough to own a <a href="http://www.meethue.com">Philips Hue</a> wireless
 lighting unit (thanks <a href="http://acm.ccs.neu.edu">NUACM</a>!) which essentially is
 this really awesome Internet of Things (IoT) product that lets me replace

@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Security | Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/blog/categories/security/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/blog/categories/security/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
-    <link href="http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <link href="http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
     <updated>2014-12-13T02:38:31-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <id>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
     <content type="html"><![CDATA[<h3>Introduction</h3>
 
 <p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
@@ -329,9 +329,9 @@ Hopefully this was interesting/helpful for some people, and as always thanks for
   
   <entry>
     <title type="html"><![CDATA[Beginner Crackme]]></title>
-    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <link href="http://mark.systems/blog/2014/10/27/crackme/"/>
     <updated>2014-10-27T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <id>http://mark.systems/blog/2014/10/27/crackme</id>
     <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
 a crackme style exercise to practice reading x86 assembly and basic
 reverse engineering.</p>
@@ -566,9 +566,9 @@ ok
   
   <entry>
     <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
-    <link href="http://blog.mark.lc/blog/2014/09/11/csrf-news/"/>
+    <link href="http://mark.systems/blog/2014/09/11/csrf-news/"/>
     <updated>2014-09-11T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/09/11/csrf-news</id>
+    <id>http://mark.systems/blog/2014/09/11/csrf-news</id>
     <content type="html"><![CDATA[<p><em>Exploiting a classic CSRF vulnerability</em></p>
 
 <p>When I took over responsibility as the webmaster for
@@ -746,9 +746,9 @@ successfully faking requests as the authenticated user.</p>
   
   <entry>
     <title type="html"><![CDATA[iHackedIT]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <link href="http://mark.systems/blog/2014/03/01/ihackedit/"/>
     <updated>2014-03-01T14:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <id>http://mark.systems/blog/2014/03/01/ihackedit</id>
     <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
 
 <h2>Introduction</h2>
@@ -866,9 +866,9 @@ echo $SHELL
   
   <entry>
     <title type="html"><![CDATA[CCDC Regional Qualifiers 2014]]></title>
-    <link href="http://blog.mark.lc/blog/2014/01/25/ccdc2014/"/>
+    <link href="http://mark.systems/blog/2014/01/25/ccdc2014/"/>
     <updated>2014-01-25T23:56:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/01/25/ccdc2014</id>
+    <id>http://mark.systems/blog/2014/01/25/ccdc2014</id>
     <content type="html"><![CDATA[<p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
 
 <p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>

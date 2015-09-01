@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Web | Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/blog/categories/web/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/blog/categories/web/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
-    <link href="http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <link href="http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101/"/>
     <updated>2015-04-25T17:42:10-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <id>http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101</id>
     <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
 <a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
 a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
@@ -87,9 +87,9 @@ against Safari and Chrome for Android, in my testing.</p>
   
   <entry>
     <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
-    <link href="http://blog.mark.lc/blog/2014/09/11/csrf-news/"/>
+    <link href="http://mark.systems/blog/2014/09/11/csrf-news/"/>
     <updated>2014-09-11T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/09/11/csrf-news</id>
+    <id>http://mark.systems/blog/2014/09/11/csrf-news</id>
     <content type="html"><![CDATA[<p><em>Exploiting a classic CSRF vulnerability</em></p>
 
 <p>When I took over responsibility as the webmaster for
@@ -267,9 +267,9 @@ successfully faking requests as the authenticated user.</p>
   
   <entry>
     <title type="html"><![CDATA[iHackedIT]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <link href="http://mark.systems/blog/2014/03/01/ihackedit/"/>
     <updated>2014-03-01T14:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <id>http://mark.systems/blog/2014/03/01/ihackedit</id>
     <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
 
 <h2>Introduction</h2>

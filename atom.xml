@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Mark Mossberg's Blog]]></title>
-  <link href="http://blog.mark.lc/atom.xml" rel="self"/>
-  <link href="http://blog.mark.lc/"/>
-  <updated>2015-08-11T22:44:03-04:00</updated>
-  <id>http://blog.mark.lc/</id>
+  <link href="http://mark.systems/atom.xml" rel="self"/>
+  <link href="http://mark.systems/"/>
+  <updated>2015-08-31T23:55:32-04:00</updated>
+  <id>http://mark.systems/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -14,13 +14,227 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Asking What if With Open]]></title>
+    <link href="http://mark.systems/blog/2015/08/18/asking-what-if-with-open/"/>
+    <updated>2015-08-18T00:10:29-04:00</updated>
+    <id>http://mark.systems/blog/2015/08/18/asking-what-if-with-open</id>
+    <content type="html"><![CDATA[<p>for a variadic function, there is no way to tell how many arguments you
+were actually passed. need some out of band method.
+    open(3) -> flag &amp; O_CREAT
+    printf(3) -> format string characters</p>
+
+<p>open has a 2 arg and a 3 arg form
+3 arg form is if you use o_creat, you need to specify th emode
+but i wondered, who is enforcing that?
+the compiler doesn&rsquo;t care, to it, it&rsquo;s just another variadic function
+what&rsquo;s to prevent a programmer from mistakenly doing open(&ldquo;path&rdquo;, O_CREATE) and forgetting the third arg
+let&rsquo;s dig
+first, it&rsquo;ll pass into libc.
+libc doesn&rsquo;t do any checks. it simply detects whether to get a third arg
+via thing &amp; O_CREAT and calls va_arg to get the third arg. va_arg is a dumb
+macro that basically just dereferences memory in the right spot on the stack
+if it wasn&rsquo;t given, oh well, va_args is going to return random memory
+so if libc doesn&rsquo;t check , who&rsquo;s next? well, it&rsquo;s the kernel!
+look at fs/open.c to walk through the function calls to find where mode
+is validated. mode is actually not used much. there&rsquo;s an interesting line
+where it&rsquo;s anded with something and then or&rsquo;d with something. i presume that
+and is chopping off the high bits since the valid values of mode
+are up to 00700, there&rsquo;s no reason to keep higher than the 4th octal digit
+that&rsquo;s a form of validation. but it will still cause incorrect results because you&rsquo;ve
+essentially used a random number as your mode&hellip;
+and indeed that&rsquo;s what happened! the kernel</p>
+
+<p>interesting implications. no error anyway, the only way you&rsquo;d see it is if
+you looked at the permissions of the created file. security implications?
+could there be projects out there that possibly create files that got
+randomly set to too openly viewable? WRITEABLE?</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Buffers and Binary Formats]]></title>
+    <link href="http://mark.systems/blog/2015/08/14/learning-trivia-about-mach0/"/>
+    <updated>2015-08-14T11:55:42-04:00</updated>
+    <id>http://mark.systems/blog/2015/08/14/learning-trivia-about-mach0</id>
+    <content type="html"><![CDATA[<p>main point: everything isn&rsquo;t linux. in my experience most people know
+linux the best because it&rsquo;s a good learning tool, it&rsquo;s what&rsquo;s used in school
+etc, however it&rsquo;s important not to assume every os works that way. there
+are other os&rsquo;s out there that do things differently!</p>
+
+<p>local buffers
+on linux the buffer is literally encoded into the instructino
+however on os x, in mach0, buffer actually still takes up space in a data
+section and is copied onto the stack versus an immediate move.</p>
+
+<p>notice how on linux your local buffer won&rsquo;t take space in the rodata
+if you look at the rodata, it&rsquo;s not there</p>
+
+<p>if you run strings on mach0 you see the string there</p>
+
+<p>this might be a lot faster on linux then?</p>
+
+<p>overview</p>
+
+<p>local buffers, defined for beginner c programmers. diff bt local buf + global buf (runtime va binary)
+linux local buffers
+    test program, disassemble, observe how string isn&rsquo;t in data sections, it&rsquo;s in the text
+mach0
+    it&rsquo;s actually different. observe how string isn&rsquo;t in text, it&rsquo;s still in
+    data. observe how the text moves it onto the stack</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Solving Cmu Binary Bomb With R2]]></title>
+    <link href="http://mark.systems/blog/2015/08/13/solving-cmu-binary-bomb-with-r2/"/>
+    <updated>2015-08-13T11:03:51-04:00</updated>
+    <id>http://mark.systems/blog/2015/08/13/solving-cmu-binary-bomb-with-r2</id>
+    <content type="html"><![CDATA[<p>aa</p>
+
+<p>why isn&rsquo;t sym.read_six_numebrs showing up?</p>
+
+<p>oh you need aaa?</p>
+
+<p>tons of options
+here are the common ones</p>
+
+<p>aaa
+afl and grep
+is
+i
+pdf needs @
+sf doesn&rsquo;t need @
+afna (where am i)
+afi
+afo</p>
+
+<p>find r2 works well with tmux</p>
+
+<p>whoa visual mode is magical
+but honestly&hellip;this is one of the things a gui is meant for</p>
+
+<p>wait now disas visual mode with : for r2 commands is where it&rsquo;s at</p>
+
+<p>debugging
+start with -d</p>
+
+<p>oo = restart/reload program
+dc = continue
+ds = step
+dr = regs</p>
+
+<p>phase 1: simple strcmp
+Public speaking is very easy.</p>
+
+<p>phase2</p>
+
+<p>phase_2(<em>,
+    int arr[6]
+    read_six(</em>, arr)
+    if arr[0] != 1; bomb</p>
+
+<pre><code>ebx = 1 // counter
+esi = arr
+
+eax = ebx + 1
+
+looping through array
+loops from 1 to 5. at the last iter, ebx will be 6
+eax is also ebx + 1
+the multiplcation is (loop iteration + 1) * 
+
+for i in range(1,6)
+    if arr[i] != arr[i-1] * i + 1
+        bomb
+ebx   1 2 3 4 5
+eax   2 3 4 5 6
+
+arr 1 2 6 24 120 720 &lt;&lt; winner!
+
+
+1 2 6
+
+eax = 2
+eax *= arr[0]
+if each != arr[1]; bomb
+ebx++
+if ebx 
+
+
+
+local_6 is the array
+
+local_10 
+</code></pre>
+
+<p>read_six_numbers(<em>, int[6])
+    sscanf(</em>, &ldquo;%d %d %d&hellip;.&rdquo;, int[0], int[1], &hellip;)
+    if ret > 5; return else bomb</p>
+
+<p>phase 3</p>
+
+<p>local3 is first number
+local 11 is second character
+local 1 is 2nd number</p>
+
+<p>local3 must be &lt;= 7</p>
+
+<p>does some fucking ridiculous relatively jump, redeferencing a random pointer
+into the .rodata plus a controlled value</p>
+
+<p>8be0
+8c00
+8c16
+8c28
+8c40
+8c52
+8c64
+8c78</p>
+
+<p>could you hack the binary bomb?
+it&rsquo;s giving you some amount of direct control over ip
+you need to find somewhere in memory that has a pointer to somewhere you
+can start a rop chain or something</p>
+
+<p>nope. you can only do &lt;=7, which is odd because there&rsquo;s 8 jump pointers</p>
+
+<p>so if i try to go for the first one</p>
+
+<p>0 q 777</p>
+
+<p>i feel like there&rsquo;s some other stuff in those options though</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Playing With Vdso]]></title>
+    <link href="http://mark.systems/blog/2015/08/12/playing-with-vdso/"/>
+    <updated>2015-08-12T12:29:58-04:00</updated>
+    <id>http://mark.systems/blog/2015/08/12/playing-with-vdso</id>
+    <content type="html"><![CDATA[<p>carve vdso out of a process
+you can look at it with all the regular binutils! cool!
+look at all its symbols.
+disas time, look at how it works
+time is a very simple function
+    check arg is null</p>
+
+<p>in gdb if you break on time you get 2 breakpoints. this makes sense! there&rsquo;s
+one in libc and one in vdso!</p>
+
+<p>but wait, if you disas vdso.elf there&rsquo;s no &lsquo;time:&rsquo; function, just &lsquo;__vdso_time&rsquo;
+readelf/nm says time is a weak symbol but the other ones that are actually
+available with disas show up as global/text</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch, Pt. 2]]></title>
-    <link href="http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
+    <link href="http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
     <updated>2015-06-14T15:13:07-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/06/14/building-a-simple-iot-light-switch</id>
+    <id>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>This is a pretty late post, but I wanted to show off the hardware I designed
 as a follow up to the first
-<a href="http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
+<a href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
 In that post I presented a prototype of a smart light switch I designed that
 consisted of a button which triggered a small Python server running on a
 Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an
@@ -37,7 +251,7 @@ me with the final lab work.</p>
 <p>The basic circuit I designed is below. It is merely a GPIO pin hooked up to
 ground with a switch in between, and an LED and resistor for fun.</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/switch1.png" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/switch1.png" alt="" /></p>
 
 <p>The code behind this configures the GPIO pin to use a pull up resistor, which
 pulls the pin&rsquo;s voltage up to VCC when the button is not pressed, and down to
@@ -46,7 +260,7 @@ A more complete schematic including the pull up resistor is below. Note that
 I won&rsquo;t have to implement the pull up part in my design because the Raspberry
 Pi implements that internally.</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/switch2.png" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/switch2.png" alt="" /></p>
 
 <p>My initial idea was to have a little board that would plug straight down into
 the Pi&rsquo;s GPIO male headers with a little button and LED at the end. However,
@@ -62,7 +276,7 @@ the switch. I just need to remember for future projects that pin 11 is
 reserved. That was probably really hard to understand, so here&rsquo;s the schematic,
 created with KiCad.</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/schematic.png" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/schematic.png" alt="" /></p>
 
 <p>On the left you can see the two sets of 13 x 2 headers. The ones on the left
 will be the female ones that plug downward into the Pi&rsquo;s male headers. The
@@ -82,7 +296,7 @@ of the components, was to design the printed circuit board (PCB). This involves
 laying out the components as they will appear on the physical
 silicon wafer.</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/pcb.png" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/pcb.png" alt="" /></p>
 
 <p>This was a completely new area to me and it was challenging and fun to
 actually draw out the board&rsquo;s traces, taking care not to intersect them,
@@ -107,14 +321,14 @@ we noticed one design mistake: the layout of the switch was actually <em>way</em
 too big for the switch we had on hand, but that didn&rsquo;t turn out to be a serious
 issue.</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/mistake.jpg" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/mistake.jpg" alt="" /></p>
 
 <p>There are some pictures of the final product:</p>
 
-<p><img src="http://blog.mark.lc/images/iot2/final1.jpg" alt="" />
-<img src="http://blog.mark.lc/images/iot2/final2.jpg" alt="" />
-<img src="http://blog.mark.lc/images/iot2/final3.jpg" alt="" />
-<img src="http://blog.mark.lc/images/iot2/final4.jpg" alt="" /></p>
+<p><img src="http://mark.systems/images/iot2/final1.jpg" alt="" />
+<img src="http://mark.systems/images/iot2/final2.jpg" alt="" />
+<img src="http://mark.systems/images/iot2/final3.jpg" alt="" />
+<img src="http://mark.systems/images/iot2/final4.jpg" alt="" /></p>
 
 <p>Here&rsquo;s a video of it in action:</p>
 
@@ -132,9 +346,9 @@ you the hardware and software for your own DIY light switch.</p>
   
   <entry>
     <title type="html"><![CDATA[Off to the (Python Internals) Races]]></title>
-    <link href="http://blog.mark.lc/blog/2015/06/07/off-to-the-python-internals-races/"/>
+    <link href="http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races/"/>
     <updated>2015-06-07T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/06/07/off-to-the-python-internals-races</id>
+    <id>http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races</id>
     <content type="html"><![CDATA[<p>This post is about an interesting race condition bug I ran into when working
 on a small feature improvement for
 <a href="http://github.com/mossberg/poet">poet</a> a while ago
@@ -416,9 +630,9 @@ last statement in the tempfile&rsquo;s <code>with</code> block.</p>
   
   <entry>
     <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
-    <link href="http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <link href="http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101/"/>
     <updated>2015-04-25T17:42:10-04:00</updated>
-    <id>http://blog.mark.lc/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <id>http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101</id>
     <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
 <a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
 a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
@@ -488,15 +702,15 @@ the download is coming from the <code>index.html</code> page.</p>
 &ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
 against Safari and Chrome for Android, in my testing.</p>
 
-<p><img src="http://blog.mark.lc/images/sketchy.gif" alt="" /></p>
+<p><img src="http://mark.systems/images/sketchy.gif" alt="" /></p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>
-    <link href="http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch/"/>
+    <link href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/"/>
     <updated>2015-01-18T13:32:48-05:00</updated>
-    <id>http://blog.mark.lc/blog/2015/01/18/a-simple-iot-light-switch</id>
+    <id>http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>I&rsquo;m lucky enough to own a <a href="http://www.meethue.com">Philips Hue</a> wireless
 lighting unit (thanks <a href="http://acm.ccs.neu.edu">NUACM</a>!) which essentially is
 this really awesome Internet of Things (IoT) product that lets me replace
@@ -519,7 +733,7 @@ with a switch in between. In my code, I&rsquo;ll configure pin 17 to use an inte
 pull up resistor which will bring the voltage up to 3.3V when the button is not
 pressed and down to 0V when it is.</p>
 
-<p><img src="http://blog.mark.lc/images/rpi.jpg" alt="" /></p>
+<p><img src="http://mark.systems/images/rpi.jpg" alt="" /></p>
 
 <h3>Software</h3>
 
@@ -621,9 +835,9 @@ leave that for another day. Thanks for reading, here it is in action!</p>
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
-    <link href="http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <link href="http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
     <updated>2014-12-13T02:38:31-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <id>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
     <content type="html"><![CDATA[<h3>Introduction</h3>
 
 <p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
@@ -957,9 +1171,9 @@ Hopefully this was interesting/helpful for some people, and as always thanks for
   
   <entry>
     <title type="html"><![CDATA[Netcat "-e" Analysis]]></title>
-    <link href="http://blog.mark.lc/blog/2014/11/03/netcat-exec/"/>
+    <link href="http://mark.systems/blog/2014/11/03/netcat-exec/"/>
     <updated>2014-11-03T00:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/11/03/netcat-exec</id>
+    <id>http://mark.systems/blog/2014/11/03/netcat-exec</id>
     <content type="html"><![CDATA[<p>As I mentioned in a <a href="http://blog.mark.lc/blog/2014/03/05/netcat/">previous post</a>, netcat has this cool
 <code>-e</code> parameter that lets you specify an executable to essentially turn into
 a network service, that is, a process that can send and receive data over the
@@ -1108,9 +1322,9 @@ the script, and the script has exited.</p>
   
   <entry>
     <title type="html"><![CDATA[Beginner Crackme]]></title>
-    <link href="http://blog.mark.lc/blog/2014/10/27/crackme/"/>
+    <link href="http://mark.systems/blog/2014/10/27/crackme/"/>
     <updated>2014-10-27T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/10/27/crackme</id>
+    <id>http://mark.systems/blog/2014/10/27/crackme</id>
     <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
 a crackme style exercise to practice reading x86 assembly and basic
 reverse engineering.</p>
@@ -1427,9 +1641,9 @@ ok
   
   <entry>
     <title type="html"><![CDATA[SU-CTF 2014 - "Commerical Application!"]]></title>
-    <link href="http://blog.mark.lc/blog/2014/09/27/suctf_re/"/>
+    <link href="http://mark.systems/blog/2014/09/27/suctf_re/"/>
     <updated>2014-09-27T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/09/27/suctf_re</id>
+    <id>http://mark.systems/blog/2014/09/27/suctf_re</id>
     <content type="html"><![CDATA[<p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
 I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
 one of the 200 point challenges in the third (of five) difficulty tiers.</p>
@@ -1442,10 +1656,10 @@ one of the 200 point challenges in the third (of five) difficulty tiers.</p>
 
 <p>I installed it on my phone, here&rsquo;s what it looks like:</p>
 
-<p><img src="http://blog.mark.lc/images/apk1.png" alt="" />
-<img src="http://blog.mark.lc/images/apk2.png" alt="" />
-<img src="http://blog.mark.lc/images/apk3.png" alt="" />
-<img src="http://blog.mark.lc/images/apk4.png" alt="" /></p>
+<p><img src="http://mark.systems/images/apk1.png" alt="" />
+<img src="http://mark.systems/images/apk2.png" alt="" />
+<img src="http://mark.systems/images/apk3.png" alt="" />
+<img src="http://mark.systems/images/apk4.png" alt="" /></p>
 
 <p>I can tap on &ldquo;Picture-01&rdquo; and sliding to the right reveals this picture, but
 if I try to tap on &ldquo;Picture-02&rdquo; or &ldquo;Pictures-03&rdquo; the app says I need to
@@ -1664,9 +1878,9 @@ fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div>
   
   <entry>
     <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
-    <link href="http://blog.mark.lc/blog/2014/09/11/csrf-news/"/>
+    <link href="http://mark.systems/blog/2014/09/11/csrf-news/"/>
     <updated>2014-09-11T00:00:00-04:00</updated>
-    <id>http://blog.mark.lc/blog/2014/09/11/csrf-news</id>
+    <id>http://mark.systems/blog/2014/09/11/csrf-news</id>
     <content type="html"><![CDATA[<p><em>Exploiting a classic CSRF vulnerability</em></p>
 
 <p>When I took over responsibility as the webmaster for
@@ -1813,12 +2027,12 @@ only guess &ldquo;posts&rdquo;, you can write anything into the body of the news
 
 <p>End result looks something like this.</p>
 
-<p><img src="http://blog.mark.lc/images/ieee_csrf.gif" alt="" /></p>
+<p><img src="http://mark.systems/images/ieee_csrf.gif" alt="" /></p>
 
 <p>There was an identical bug in the code that handles editing users. Let&rsquo;s
 have some fun!</p>
 
-<p><img src="http://blog.mark.lc/images/ieee_csrf2.gif" alt="" /></p>
+<p><img src="http://mark.systems/images/ieee_csrf2.gif" alt="" /></p>
 
 <p>In both of these gifs, the admin user was logged in, and then they opened
 a malicious html file, simulating visiting a malicious website. The mere act of
@@ -1847,9 +2061,9 @@ successfully faking requests as the authenticated user.</p>
   
   <entry>
     <title type="html"><![CDATA[Netcat Refresher]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/05/netcat/"/>
+    <link href="http://mark.systems/blog/2014/03/05/netcat/"/>
     <updated>2014-03-05T00:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/05/netcat</id>
+    <id>http://mark.systems/blog/2014/03/05/netcat</id>
     <content type="html"><![CDATA[<p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
 
 <h2>Introduction</h2>
@@ -1959,9 +2173,9 @@ J
   
   <entry>
     <title type="html"><![CDATA[iHackedIT]]></title>
-    <link href="http://blog.mark.lc/blog/2014/03/01/ihackedit/"/>
+    <link href="http://mark.systems/blog/2014/03/01/ihackedit/"/>
     <updated>2014-03-01T14:00:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/03/01/ihackedit</id>
+    <id>http://mark.systems/blog/2014/03/01/ihackedit</id>
     <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
 
 <h2>Introduction</h2>
@@ -2106,9 +2320,9 @@ echo $SHELL
   
   <entry>
     <title type="html"><![CDATA[CCDC Regional Qualifiers 2014]]></title>
-    <link href="http://blog.mark.lc/blog/2014/01/25/ccdc2014/"/>
+    <link href="http://mark.systems/blog/2014/01/25/ccdc2014/"/>
     <updated>2014-01-25T23:56:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/01/25/ccdc2014</id>
+    <id>http://mark.systems/blog/2014/01/25/ccdc2014</id>
     <content type="html"><![CDATA[<p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
 
 <p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
@@ -2133,9 +2347,9 @@ echo $SHELL
   
   <entry>
     <title type="html"><![CDATA[Banner Hiding on Ubuntu 12.04]]></title>
-    <link href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/"/>
+    <link href="http://mark.systems/blog/2014/01/10/banner-hiding/"/>
     <updated>2014-01-10T17:30:00-05:00</updated>
-    <id>http://blog.mark.lc/blog/2014/01/10/banner-hiding</id>
+    <id>http://mark.systems/blog/2014/01/10/banner-hiding</id>
     <content type="html"><![CDATA[<p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
 
 <blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>
