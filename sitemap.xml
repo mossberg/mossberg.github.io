@@ -1,22 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://mark.systems/blog/2015/08/18/asking-what-if-with-open/</loc>
-    <lastmod>2015-08-18T00:10:29-04:00</lastmod>
-  </url>
-  <url>
-    <loc>http://mark.systems/blog/2015/08/14/learning-trivia-about-mach0/</loc>
-    <lastmod>2015-08-14T11:55:42-04:00</lastmod>
-  </url>
-  <url>
-    <loc>http://mark.systems/blog/2015/08/13/solving-cmu-binary-bomb-with-r2/</loc>
-    <lastmod>2015-08-13T11:03:51-04:00</lastmod>
-  </url>
-  <url>
-    <loc>http://mark.systems/blog/2015/08/12/playing-with-vdso/</loc>
-    <lastmod>2015-08-12T12:29:58-04:00</lastmod>
-  </url>
-  <url>
     <loc>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
@@ -118,8 +102,5 @@
   </url>
   <url>
     <loc>http://mark.systems/blog/categories/hardware/</loc>
-  </url>
-  <url>
-    <loc>http://mark.systems/posts/2/</loc>
   </url>
 </urlset>
