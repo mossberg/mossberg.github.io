@@ -9,9 +9,8 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="This is a pretty late post, but I wanted to show off the hardware I designed
-as a follow up to the first
-&ldquo;Building a Simple IoT Light Switch& &hellip;">
+  <meta name="description" content="Recently, I bombed a whiteboard coding interview question harder than
+ever before. It was really bad. I had a bunch of miscellaneous thoughts &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -81,6 +80,145 @@ as a follow up to the first
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/09/06/completely-bombing-a-coding-interview-a-post-mortem/">Bombing a Coding Interview: A Post-Mortem</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2015-09-06T09:36:40-04:00'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>6</span><span class='date-suffix'>th</span>, <span class='date-year'>2015</span></span> <span class='time'>9:36 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently, I bombed a whiteboard coding interview question harder than
+ever before. It was really bad. I had a bunch of miscellaneous thoughts
+scattered all around the white board, but I <em>barely</em> had any code to show
+when time elapsed, and the code I had wasn&rsquo;t even close to a solution. The
+worst part was that in hindsight, it wasn&rsquo;t even a particularly
+hard problem. In this
+post I want to dump some thoughts on the experience so I can learn from it.</p>
+
+<p>Before that, some meta thoughts. It can be hard to reflect on and document
+failures like this, because it often requires accepting uncomfortable or
+inconvenient truths about yourself &ndash; in my case, that my algorithmic thinking
+skills are much more poorly developed than other areas of my knowledge.
+Conversely, it&rsquo;s much easier to make excuses and absolve yourself of
+responsibility. The main excuses I felt myself thinking afterwards were:</p>
+
+<ul>
+<li>&ldquo;This interview was towards the end of a long day of other challenging
+interviews. I didn&rsquo;t do well because I was burnt out.&rdquo;</li>
+<li>&ldquo;My interviewers said very little the whole time. I didn&rsquo;t do well because
+they should have given me more hints/helped me work through it more/put me on
+the right track.&rdquo;</li>
+</ul>
+
+
+<p>The first sentences of those were true, but the second were definitely
+subconsciously made up to help me comfort myself. While there perhaps may
+have been bits of truth in those second sentences, it&rsquo;s not healthy
+to lean on them at crutches. Ultimately, they prevent me from
+facing two realities.</p>
+
+<ol>
+<li>I was solely responsible for my &ldquo;less than desirable&rdquo; performance.</li>
+<li>Because of this, the only thing stopping me from improving is myself!</li>
+</ol>
+
+
+<p>Ok, now let&rsquo;s look at the interview question.</p>
+
+<p>I was essentially given a variant of the
+<a href="https://uva.onlinejudge.org/index.php?option=com_onlinejudge&amp;Itemid=8&amp;category=3&amp;page=show_problem&amp;problem=41">Skyline</a>
+problem. This seems to be a fairly well known programming problem, but
+I had never seen it before.  Paraphrasing, it was essentially:</p>
+
+<blockquote><p>Given an unsorted array of box structures (defined below), write a function
+that prints out each vertex of the skyline created by the collective boxes.</p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">struct</span> <span class="n">box</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">x</span><span class="p">;</span> <span class="c1">// x coordinate of bottom left corner of box</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Referencing the image below, my function would need to print out the coordinates
+of each of the &ldquo;x&rdquo;&rsquo;s.</p>
+
+<p><img src="/images/skyline.png" alt="" /></p>
+
+<p>I didn&rsquo;t really know where to start, so I just began manually examining
+the white board drawing of the boxes. I identified that my starting point would
+be the <code>struct box</code> with the minimum <code>x</code> field and then started trying to
+determine the set of conditions for detecting a &ldquo;rise&rdquo; or &ldquo;drop&rdquo;. This became
+complex and I was having a lot of troubling reasoning about how to deal
+with all the possibilities related to boxes that were inside each other and how
+certain configurations would affect the skyline, or not.</p>
+
+<p>A big mistake here was spending too much time concerned with the details
+related to the conditions of the rise/drop. I didn&rsquo;t even know how I was going
+to process the unsorted array, but I just sorted of pushed that off for later.
+I drafted up some measly code for locating the array element
+with the smallest <code>x</code> field via iterative search, and ended up getting in the
+mindset that somehow my function would need to fundamentally work by making
+various passes along this array to locate elements of interest (or something
+like that). That was a fundamentally flawed approach,
+and unfortunately, I got really stuck going down this path and ran out
+of time.</p>
+
+<p>I remember trying to voice my thoughts to the interviewers, but
+not really being able to say anything because all I had was vague, abstract
+idea for a general approach, but nothing I could really put into words.
+Since I wasn&rsquo;t saying much, it makes sense that they weren&rsquo;t really saying
+much either.  Maybe it would&rsquo;ve helped to even directly ask them if it
+seemed like I was on the right track.</p>
+
+<p>I also remember thinking at one point that there was <em>something</em> crazy about an
+approach based on making passes over the input array. It just didn&rsquo;t seem
+right. What I <em>should</em> have done was scrap the idea right there and taken a
+step back to consider completely different strategies. It probably would have
+helped if I had considered creating a secondary data structure to help
+organize the box data in a more useful way. Brian Gordon wrote a great
+<a href="https://briangordon.github.io/2014/08/the-skyline-problem.html">post</a>
+describing solutions to this problem, and started off with a naive solution
+involving creating a heightmap that was populated by iterating over the boxes.
+I&rsquo;m pretty confident that if I was hinted at creating helper data structures, I
+would&rsquo;ve been able to produce at least a naive solution without much trouble,
+but unfortunately that just never came to mind.</p>
+
+<p>This isn&rsquo;t the first time I&rsquo;ve struggled with an interview type problems that
+involved creating extra structures beyond what&rsquo;s given, but this reflection is
+still helpful in affirming that this type of problem is a focus
+area for me. I also see now that directly asking the interviewers for a hint,
+or even if I&rsquo;m on the right track might not be a bad idea. Worst case, they
+say nothing, and I&rsquo;m right where I was before. Lastly, I can know going
+forward that if I intuitively feel like there&rsquo;s something wrong with an
+approach I&rsquo;m exploring, it might be a good idea to completely drop it and
+consider different approaches. Hopefully keeping these in mind will help
+me improve for future interviews!</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2094,138 +2232,6 @@ successfully faking requests as the authenticated user.</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/05/netcat/">Netcat Refresher</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-03-05'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
-
-<h2>Introduction</h2>
-
-<p><a href="https://en.wikipedia.org/wiki/Netcat">Netcat</a> is a great tool for all things networking and is commonly nicknamed &ldquo;the TCP/IP Swiss-army knife&rdquo; due to its versatility and utility. An absolute must-know for sysadmins and hackers. In this article, I&rsquo;ll go over a few common uses I have for it that I frequently forget after not using it for a while, primarily for my own personal reference.</p>
-
-<p>Before I begin, I should point out that there are a few variants on netcat that have slightly different options and behaviors but are all essentially the same in &ldquo;spirit and functionality&rdquo;, as the <a href="http://nmap.org/ncat/">ncat</a> man page describes it.</p>
-
-<p>The original netcat comes from the OpenBSD package and was written by &ldquo;Hobbit&rdquo;. This is the default version that comes with OS X and Ubuntu. The version that I use and will cover is the standard GNU Netcat, by Giovanni Giacobbi, which is a rewrite of the original. This available using <a href="http://brew.sh">brew</a> on OS X. On Ubuntu it&rsquo;s called &ldquo;netcat-traditional&rdquo; which you can <code>apt-get</code> and then run with <code>nc.traditional</code>. Lastly, there is <a href="http://nmap.org/ncat">ncat</a>, which is a netcat implementation by our friends from the <a href="http://nmap.org">nmap</a> team. It is designed to modernize netcat and adds features like SSL, IPv6, and proxying which aren&rsquo;t available in the original(s).</p>
-
-<h2>Usage</h2>
-
-<p>At its core, netcat is a tool for creating arbitrary TCP connections, which looks like</p>
-
-<pre><code>$ netcat [host] [port]
-</code></pre>
-
-<p>where host is either an IP Address or a domain name, and port is the TCP port to connect to.</p>
-
-<p>You can also use netcat to do the reverse: listen for arbitrary TCP connections. This looks like</p>
-
-<pre><code>$ netcat -l -p [port] [host]
-</code></pre>
-
-<p>Here, host is an optional parameter which lets you limit what host can create connections.</p>
-
-<h4>Example: Chat</h4>
-
-<p>Using these two behaviors, we can create a crude chat system. One one host, listen for connections on a port.</p>
-
-<pre><code>$ netcat -l -p 1337
-</code></pre>
-
-<p>On the same one, in another terminal, connect to it on that port.</p>
-
-<pre><code>$ nc localhost 1337
-</code></pre>
-
-<p>There won&rsquo;t be a prompt, but when you enter text and press enter, it will appear in the other terminal. You can just as easily do this between different hosts and have a super basic chat setup.</p>
-
-<p><img src="https://draftin.com:443/images/12181?token=V4hz4Qtwi_uM_-4ulkErwUudxL_qY8D2yxx-fPjLSffSc8-FV0FOVRlvd4psBi-fLricHlJLjufBWr6E91R_spQ" alt="" /></p>
-
-<h3>Example: Curl-like behavior</h3>
-
-<p>You can also use netcat to emulate curl and interact with HTTP servers. Connect to the server on port 80 (or whatever port it&rsquo;s running on) and you can then type out the HTTP request to send to it. When you&rsquo;re finished, hit enter twice and it will send.</p>
-
-<pre><code>[mark:~]{ nc example.org 80
-GET / HTTP/1.1
-
-HTTP/1.1 400 Bad Request
-Content-Type: text/html
-Content-Length: 349
-Connection: close
-Date: Wed, 05 Mar 2014 20:15:42 GMT
-Server: ECSF (mdw/1383)
-
-&lt;?xml version="1.0" encoding="iso-8859-1"?&gt;
-&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
-&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"&gt;
-&lt;head&gt;
-&lt;title&gt;400 - Bad Request&lt;/title&gt;
-&lt;/head&gt;
-&lt;body&gt;
-&lt;h1&gt;400 - Bad Request&lt;/h1&gt;
-&lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-
-<p>As you can see here, we sent a bare-bones HTTP request (<code>GET / HTTP/1.1</code>) which was successfully sent to the server. The server responded with a 400, because our request didn&rsquo;t contain enough information, but that&rsquo;s not important; if we had filled in the right headers, it would have responded with the home page for example.org.</p>
-
-<h2>For Hackers</h2>
-
-<p>There are two applications for netcat that I find particularly useful in pen-testing situations.</p>
-
-<h3>Recon</h3>
-
-<p>The first is helpful for the recon stage, which is essentially getting information on your target. Sometimes network services may give away version information when an arbitrary network connection is made. For example, OpenSSH by default gives away it&rsquo;s version information as well as information on the host, when you connect. For example,</p>
-
-<pre><code>$ netcat 1.2.3.4 22
-SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.1
-</code></pre>
-
-<p>is typically what you might see. For an attacker, this is pretty valuable stuff! MySQL behaves similarly.</p>
-
-<pre><code>$ netcat 1.2.3.4 3306
-J
-5.5.33-.?2|&gt;\8��@x\E$"zeic2lmysql_native_password
-</code></pre>
-
-<p>The output isn&rsquo;t as clear as OpenSSH, but we can confirm that MySQL is indeed running, and we can infer that the version is &ldquo;5.5.33&rdquo;. For information on removing these banners, check out my <a href="http://blog.mark.lc/blog/2014/01/10/banner-hiding/">blog post</a> on it.</p>
-
-<h3>Persistence/Access</h3>
-
-<p>The other application is when you have achieved command execution, but not exactly shell access. You can use netcat to create a nifty backdoor which you can externally connect to. To create the backdoor, we&rsquo;ll use the <code>-e</code> flag to tell netcat to execute a binary on receiving a connection. We want a shell, so we&rsquo;ll say <code>-e /bin/sh</code>. The whole command will look like:</p>
-
-<pre><code>$ netcat -l -p 1337 -e /bin/sh
-</code></pre>
-
-<p>which will give you a backdoor on port 1337, which will then let you run commands upon connecting to that port. For a good example, check out my other <a href="http://blog.mark.lc/blog/2014/03/01/ihackedit/">blog post</a> where I actually used this.</p>
-
-<h2>Conclusion</h2>
-
-<p>That was a quick overview of netcat including its basic functionality and some example use cases. Thanks for reading!</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2248,6 +2254,10 @@ J
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/09/06/completely-bombing-a-coding-interview-a-post-mortem/">Bombing a Coding Interview: A Post-Mortem</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/06/14/building-a-simple-iot-light-switch/">Building a Simple IoT Light Switch, Pt. 2</a>
       </li>
     
@@ -2263,15 +2273,11 @@ J
         <a href="/blog/2015/01/18/a-simple-iot-light-switch/">Building a Simple IoT Light Switch</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/12/13/poet-beacon-based-post-exploitation/">Poet: Beacon Based Post-Exploitation</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (2)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (2)</a></li><li><a href='/blog/categories/interview'>interview (1)</a></li><li><a href='/blog/categories/linux'>linux (4)</a></li><li><a href='/blog/categories/programming'>programming (4)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
 </section>
 
   
