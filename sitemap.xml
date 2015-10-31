@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://mark.systems/blog/2015/09/06/completely-bombing-a-coding-interview-a-post-mortem/</loc>
-    <lastmod>2015-09-06T09:36:40-04:00</lastmod>
-  </url>
-  <url>
     <loc>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
@@ -106,8 +102,5 @@
   </url>
   <url>
     <loc>http://mark.systems/blog/categories/hardware/</loc>
-  </url>
-  <url>
-    <loc>http://mark.systems/blog/categories/interview/</loc>
   </url>
 </urlset>
