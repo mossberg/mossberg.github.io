@@ -4,7 +4,7 @@ title: "Bombing a Coding Interview: A Post-Mortem"
 date: 2015-09-06 09:36:40 -0400
 comments: true
 categories: programming interview
-published: true
+published: false
 ---
 
 Recently, I bombed a whiteboard coding interview question harder than
