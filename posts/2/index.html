@@ -335,7 +335,7 @@ ServerSignature Off
 
 <p><a href="http://img.svbtle.com/1gs6rgbxmeliq.png"><img src="https://d23f6h5jpj26xu.cloudfront.net/1gs6rgbxmeliq_small.png" alt="Screen_Shot_2013-12-15_at_2.01.18_AM.png" /></a></p>
 
-<p>Unfortunately, &ldquo;Apache&rdquo; is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do&hellip; get out your hex editors<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, boys, we&rsquo;re going binary patching! Yes, you heard me right, we&rsquo;re going to directly edit the apache2 binary and remove that pesky banner string.</p>
+<p>Unfortunately, &ldquo;Apache&rdquo; is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do&hellip; get out your hex editors<sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup>, we&rsquo;re going binary patching! Yes, you heard me right, we&rsquo;re going to directly edit the apache2 binary and remove that pesky banner string.</p>
 
 <p>First off, I recommend making a copy of the binary so if you really screw something up, you can easily get back to where you were. Then get out hexedit and search in the ASCII section for the string &ldquo;Apache&rdquo;. Eventually you&rsquo;ll see some familiar strings all in a row, with the Apache version numbers, etc. There are a couple of them; they represent the different options with the &ldquo;ServerTokens&rdquo; config. The &ldquo;Prod&rdquo; option corresponds to the first instance of &ldquo;Apache&rdquo; there, so let&rsquo;s change it to &ldquo;LOLche&rdquo;. Make sure to only overwrite the existing bytes and nothing more, because doing otherwise could cause other problems with the binary.</p>
 
@@ -443,7 +443,7 @@ SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - Mark Mossberg -
+  Copyright &copy; 2016 - Mark Mossberg -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
