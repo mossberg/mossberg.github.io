@@ -25,7 +25,7 @@ Technically all you really need is the first line, which will do what we want, b
 
 [![Screen_Shot_2013-12-15_at_2.01.18_AM.png](https://d23f6h5jpj26xu.cloudfront.net/1gs6rgbxmeliq_small.png)](http://img.svbtle.com/1gs6rgbxmeliq.png)
 
-Unfortunately, "Apache" is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do... get out your hex editors[^2], boys, we're going binary patching! Yes, you heard me right, we're going to directly edit the apache2 binary and remove that pesky banner string. 
+Unfortunately, "Apache" is as far as we can go with these configuration files; there is no option to turn the server header completely off. However, there is one other thing we can do... get out your hex editors[^2], we're going binary patching! Yes, you heard me right, we're going to directly edit the apache2 binary and remove that pesky banner string. 
 
 First off, I recommend making a copy of the binary so if you really screw something up, you can easily get back to where you were. Then get out hexedit and search in the ASCII section for the string "Apache". Eventually you'll see some familiar strings all in a row, with the Apache version numbers, etc. There are a couple of them; they represent the different options with the "ServerTokens" config. The "Prod" option corresponds to the first instance of "Apache" there, so let's change it to "LOLche". Make sure to only overwrite the existing bytes and nothing more, because doing otherwise could cause other problems with the binary.
 

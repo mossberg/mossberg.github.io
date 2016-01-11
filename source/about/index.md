@@ -10,12 +10,13 @@ footer: false
 
 ### Hi, I'm Mark Mossberg.
 
-**tl;dr**: I like making and breaking things.
+I'm a senior at [Northeastern University](http://ece.neu.edu),
+studying Computer Engineering and I'm mainly interested in operating
+systems, compilers, and systems security.
 
-I'm a junior at [Northeastern University](http://ece.neu.edu),
-studying Computer Engineering. My main interests include operating
-and embedded systems,
-and systems exploitation and reverse engineering.
+I'm also currently looking for
+a full time job in any of these areas!
+
 You might also catch me trying my hand at web/app development, but
 don't tell anyone ;).
 
@@ -29,7 +30,7 @@ with
 [Shellphish](https://ctftime.org/team/285).
 
 In my free time I enjoy [slacklining](http://en.wikipedia.org/wiki/Slacklining),
-playing guitar, and working on various [projects](/projects). In April 2014, I placed in the top three for a Massachusetts [cybersecurity competition](http://www.bostonglobe.com/metro/2014/05/03/hackers-hone-their-skills-cybersecurity-competition-umass-boston/Jcbnuv3D1Tdc09MYJITs8J/story.html).
+playing guitar, and working on various [projects](/projects).
 
 #### Contact
 
@@ -38,4 +39,4 @@ playing guitar, and working on various [projects](/projects). In April 2014, I p
 - keybase: [mossberg](https://keybase.io/mossberg)
 - gmail: <a href="" onClick="alert('I\'m not actually a link ¯\\_(ツ)_/¯');">mark.mossberg</a>
 
-*Last updated 7/21/2015*
+*Last updated 1/11/2016*
