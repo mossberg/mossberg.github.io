@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
-  <link href="http://mark.systems/blog/categories/linux/atom.xml" rel="self"/>
-  <link href="http://mark.systems/"/>
-  <updated>2016-01-12T11:32:52-05:00</updated>
-  <id>http://mark.systems/</id>
+  <link href="http://vmresu.me/blog/categories/linux/atom.xml" rel="self"/>
+  <link href="http://vmresu.me/"/>
+  <updated>2016-01-24T22:49:31-05:00</updated>
+  <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
-    <link href="http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <link href="http://vmresu.me/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
     <updated>2014-12-13T02:38:31-05:00</updated>
-    <id>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <id>http://vmresu.me/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
     <content type="html"><![CDATA[<h3>Introduction</h3>
 
 <p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
@@ -329,9 +329,9 @@ Hopefully this was interesting/helpful for some people, and as always thanks for
   
   <entry>
     <title type="html"><![CDATA[Netcat "-e" Analysis]]></title>
-    <link href="http://mark.systems/blog/2014/11/03/netcat-exec/"/>
+    <link href="http://vmresu.me/blog/2014/11/03/netcat-exec/"/>
     <updated>2014-11-03T00:00:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/11/03/netcat-exec</id>
+    <id>http://vmresu.me/blog/2014/11/03/netcat-exec</id>
     <content type="html"><![CDATA[<p>As I mentioned in a <a href="http://blog.mark.lc/blog/2014/03/05/netcat/">previous post</a>, netcat has this cool
 <code>-e</code> parameter that lets you specify an executable to essentially turn into
 a network service, that is, a process that can send and receive data over the
@@ -473,9 +473,9 @@ the script, and the script has exited.</p>
   
   <entry>
     <title type="html"><![CDATA[Netcat Refresher]]></title>
-    <link href="http://mark.systems/blog/2014/03/05/netcat/"/>
+    <link href="http://vmresu.me/blog/2014/03/05/netcat/"/>
     <updated>2014-03-05T00:00:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/03/05/netcat</id>
+    <id>http://vmresu.me/blog/2014/03/05/netcat</id>
     <content type="html"><![CDATA[<p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
 
 <h2>Introduction</h2>
@@ -585,9 +585,9 @@ J
   
   <entry>
     <title type="html"><![CDATA[Banner Hiding on Ubuntu 12.04]]></title>
-    <link href="http://mark.systems/blog/2014/01/10/banner-hiding/"/>
+    <link href="http://vmresu.me/blog/2014/01/10/banner-hiding/"/>
     <updated>2014-01-10T17:30:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/01/10/banner-hiding</id>
+    <id>http://vmresu.me/blog/2014/01/10/banner-hiding</id>
     <content type="html"><![CDATA[<p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
 
 <blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>

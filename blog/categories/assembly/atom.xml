@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Assembly | Mark Mossberg's Blog]]></title>
-  <link href="http://mark.systems/blog/categories/assembly/atom.xml" rel="self"/>
-  <link href="http://mark.systems/"/>
-  <updated>2016-01-12T11:32:52-05:00</updated>
-  <id>http://mark.systems/</id>
+  <link href="http://vmresu.me/blog/categories/assembly/atom.xml" rel="self"/>
+  <link href="http://vmresu.me/"/>
+  <updated>2016-01-24T22:49:31-05:00</updated>
+  <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Let's Understand: Setjmp()/longjmp()]]></title>
-    <link href="http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
+    <link href="http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
     <updated>2016-01-11T18:25:35-05:00</updated>
-    <id>http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
+    <id>http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
     <content type="html"><![CDATA[<p>Pretty recently I learned about <code>setjmp()</code> and <code>longjmp()</code>. They&rsquo;re a
 neat pair of libc functions which allow you to save your program&rsquo;s current
 execution context and resume it at an arbitrary point in the future, with
@@ -110,11 +110,11 @@ registers.</p>
 
 <pre><code>General Purpose: eax, ebx, ecx, edx
 Index:           esi, edi
-Pointer:         ebp, eip
+Pointer:         ebp, esp, eip
 </code></pre>
 
 <p>With this in mind, I initially thought that a <code>jmp_buf</code> would be an array
-of 8 ints or something, in order to hold each register.</p>
+of 9 ints or something, in order to hold each register.</p>
 
 <p>As it happens, <code>jmp_buf</code> is instead declared as:</p>
 
@@ -137,28 +137,13 @@ declares an array of 1 <code>struct __jmp_buf_tag</code>. The reason for the arr
 is so the pointer semantics of arrays kick in and the <code>struct __jmp_buf_tag</code>
 is actually passed by reference in calls to <code>setjmp()</code>/<code>longjmp()</code>.</p>
 
-<p>Apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6. Let&rsquo;s dig
-into the source to see why this is. We&rsquo;ll start with <code>setjmp()</code>.</p>
+<p>Apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6.</p>
 
-<pre><code class="asm">setjmp:                   ; annotations by me
-    mov 4(%esp), %eax     ; get pointer to jmp_buf at esp[1] (if esp was int*)
-    mov    %ebx, (%eax)   ; jmp_buf[0] = ebx
-    mov    %esi, 4(%eax)  ; jmp_buf[1] = esi
-    mov    %edi, 8(%eax)  ; jmp_buf[2] = edi
-    mov    %ebp, 12(%eax) ; jmp_buf[3] = ebp
-    lea 4(%esp), %ecx     ; get previous value of esp, before call
-    mov    %ecx, 16(%eax) ; jmp_buf[4] = esp before call
-    mov  (%esp), %ecx     ; get saved caller eip at esp[0](if esp was int*)
-    mov    %ecx, 20(%eax) ; jmp_buf[5] = saved eip
-    xor    %eax, %eax     ; eax = 0
-    ret                   ; pop stack into eip
-</code></pre>
-
-<p>As you can see, <code>setjmp()</code> is written in assembly because
-direct register access isn&rsquo;t available from C (ignoring compiler intrinsics).</p>
-
-<p>In order to understand <code>setjmp()</code>, we need to understand what the state of
-the program stack is at this point, and to do that, we need to understand
+<p>Before we
+can dig into the source to understand why this is,
+we need to understand what the state of
+the program stack is at the point <code>setjmp()</code> is called, and to do that, we need
+to understand
 which calling convention is being used. Since we assume x86 Linux, this will
 be <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a>. The
 relevant parts of cdecl for this case are:</p>
@@ -182,7 +167,7 @@ instruction of <code>setjmp()</code> executes, the stack looks something like th
 | caller stack var 2        |
 | caller stack var ...      |
 | caller stack var n        |
-| pointer to jmp_buf        |
+| pointer to jmp_buf        | // argument to setjmp
 | saved caller eip          | &lt; esp
 +---------------------------+ // setjmp's stack frame
 &gt; low memory &lt;
@@ -190,13 +175,111 @@ instruction of <code>setjmp()</code> executes, the stack looks something like th
 
 <p>At the bottom of the stack is the eip value that the <code>call</code> instruction pushed,
 or where to return to after <code>setjmp()</code> finishes. Above that is the first,
-and only argument, the pointer to the given <code>jmp_buf</code>. esp points to the bottom
-of the stack, and ebp is still pointing to the start of the caller&rsquo;s stack
+and only argument, the pointer to the given <code>jmp_buf</code>. Lastly, above that is
+the caller&rsquo;s stack frame.
+esp points to the bottom
+of the stack as usual, and ebp is still pointing to the start of the caller&rsquo;s
+stack
 frame. Usually the first thing a function does is push
 ebp on the stack, and set ebp to esp to now point to the current stack frame (a.k.a the prologue),
 but since <code>setjmp()</code> is such a minimal function, it doesn&rsquo;t do this.
 Furthermore, since ebp is one of the registers that needs to be saved, <code>setjmp()</code>
 needs it to be unperturbed.</p>
+
+<p>After <code>setjmp()</code> returns, the stack will look something like this:</p>
+
+<pre><code>&gt; high memory &lt;
+| ...                       |
+| saved caller's caller eip | &lt; ebp
+| caller stack var 1        | // caller's stack frame
+| caller stack var 2        |
+| caller stack var ...      |
+| caller stack var n        |
+| pointer to jmp_buf        | &lt; esp
++---------------------------+
+&gt; low memory &lt;
+</code></pre>
+
+<p>It&rsquo;s nearly identical, except eip has been popped off the stack, and is now
+executing the next instruction after the caller&rsquo;s <code>call setjmp</code>. esp has
+also been updated accordingly. This is the state of the program that <code>setjmp()</code>
+will need to record, and that <code>longjmp()</code> will restore.</p>
+
+<p>Before reading the source I tried to reason about what I expected would happen.
+I presume:</p>
+
+<ul>
+<li>General purpose and index registers (eax, ebx, ecx, edx, esi, edi) which don&rsquo;t
+  have any effect on control flow can be trivially saved and restored</li>
+<li>ebp can similarly be saved &ldquo;as is&rdquo;, since its value when
+<code>setjmp()</code> executes is exactly what it needs to be restored to in <code>longjmp()</code></li>
+<li>esp cannot be saved &ldquo;as is&rdquo; because when <code>setjmp()</code> executes, there is the
+extra eip on the stack that is not there after the function returns. Therefore,
+the value for esp that should be saved is esp+4 to match the expected
+state of the stack after return</li>
+<li>The eip that should be saved is the address of the instruction after the
+<code>call setjmp</code> instruction, which can be retrieved from the top of the
+stack by dereferencing esp</li>
+</ul>
+
+
+<p>With all that out of the way, let&rsquo;s read the source (all annotations by me).</p>
+
+<pre><code class="asm">setjmp:
+    mov 4(%esp), %eax     ; get pointer to jmp_buf, passed as argument on stack
+    mov    %ebx, (%eax)   ; jmp_buf[0] = ebx
+    mov    %esi, 4(%eax)  ; jmp_buf[1] = esi
+    mov    %edi, 8(%eax)  ; jmp_buf[2] = edi
+    mov    %ebp, 12(%eax) ; jmp_buf[3] = ebp
+    lea 4(%esp), %ecx     ; get previous value of esp, before call
+    mov    %ecx, 16(%eax) ; jmp_buf[4] = esp before call
+    mov  (%esp), %ecx     ; get saved caller eip from top of stack
+    mov    %ecx, 20(%eax) ; jmp_buf[5] = saved eip
+    xor    %eax, %eax     ; eax = 0
+    ret                   ; pop stack into eip
+</code></pre>
+
+<p>The first line retrieves the argument off the stack, placing a pointer to
+the <code>jmp_buf</code> (remember, an array of 6 unsigned ints) in eax. It then moves
+ebx, esi,
+edi, and ebp &ldquo;as is&rdquo; into the int array. It adds 4 to esp with a <code>lea</code> and
+stores that next. Next, it dereferences esp and stores that in the last slot
+in the array. Lastly, it zeroes out eax and returns.</p>
+
+<p>Now let&rsquo;s look at <code>longjmp()</code>.</p>
+
+<pre><code class="asm">longjmp:
+    mov  4(%esp),%edx ; get pointer to jmp_buf, passed as argument 1 on stack
+    mov  8(%esp),%eax ; get int val in eax, passed as argument 2 on stack
+    test    %eax,%eax ; is int val == 0?
+    jnz 1f
+    inc     %eax      ; if so, eax++
+1:
+    mov   (%edx),%ebx ; ebx = jmp_buf[0]
+    mov  4(%edx),%esi ; esi = jmp_buf[1]
+    mov  8(%edx),%edi ; edi = jmp_buf[2]
+    mov 12(%edx),%ebp ; ebp = jmp_buf[3]
+    mov 16(%edx),%ecx ; ecx = jmp_buf[4]
+    mov     %ecx,%esp ; esp = ecx
+    mov 20(%edx),%ecx ; ecx = jmp_buf[5]
+    jmp *%ecx         ; eip = ecx
+</code></pre>
+
+<p>The first two lines retrieve the arguments (pointer to <code>jmp_buf</code>, int return
+val) from the stack into edx and eax, respectively. The int val is
+incremented to 1 if it is 0, according to the spec. Next, ebx, esi, edi, and
+ebp are reset
+to their saved state, stored in the <code>jmp_buf</code>, in a straightforward manner.
+TODO esp is
+eip is reset to the saved state via a relative jump</p>
+
+<p>The final state of the <code>jmp_buf</code> after <code>setjmp()</code> returns looks like:</p>
+
+<pre><code>   0    1    2    3    4    5
+[ ebx, esi, edi, ebp, esp, eip ]
+</code></pre>
+
+<p>So I was mostly correct, but it seems like eax, ecx, and edx were not saved.</p>
 
 <p>todo:
 - explain setjmp
@@ -206,6 +289,9 @@ what jmp_buf looks like in terms of elements
 easy registers ebx esi edi
 why ebp is easy
 hard registers esp, eip</p>
+
+<p>As you can see, <code>setjmp()</code> is written in assembly because
+direct register access isn&rsquo;t available from C (ignoring compiler intrinsics).</p>
 
 <p>ebx, ecx, edx, esi, and edi don&rsquo;t have particularly special meaning here and
 can be thought of as arbitrary 32 bit storage locations. However eax, ebp, and eip
@@ -234,9 +320,9 @@ execute.</li>
   
   <entry>
     <title type="html"><![CDATA[Beginner Crackme]]></title>
-    <link href="http://mark.systems/blog/2014/10/27/crackme/"/>
+    <link href="http://vmresu.me/blog/2014/10/27/crackme/"/>
     <updated>2014-10-27T00:00:00-04:00</updated>
-    <id>http://mark.systems/blog/2014/10/27/crackme</id>
+    <id>http://vmresu.me/blog/2014/10/27/crackme</id>
     <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
 a crackme style exercise to practice reading x86 assembly and basic
 reverse engineering.</p>

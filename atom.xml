@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Mark Mossberg's Blog]]></title>
-  <link href="http://mark.systems/atom.xml" rel="self"/>
-  <link href="http://mark.systems/"/>
-  <updated>2016-01-12T11:32:52-05:00</updated>
-  <id>http://mark.systems/</id>
+  <link href="http://vmresu.me/atom.xml" rel="self"/>
+  <link href="http://vmresu.me/"/>
+  <updated>2016-01-24T22:49:31-05:00</updated>
+  <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Let's Understand: Setjmp()/longjmp()]]></title>
-    <link href="http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
+    <link href="http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
     <updated>2016-01-11T18:25:35-05:00</updated>
-    <id>http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
+    <id>http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
     <content type="html"><![CDATA[<p>Pretty recently I learned about <code>setjmp()</code> and <code>longjmp()</code>. They&rsquo;re a
 neat pair of libc functions which allow you to save your program&rsquo;s current
 execution context and resume it at an arbitrary point in the future, with
@@ -144,12 +144,12 @@ registers.</p>
 <span class='line-number'>3</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">General</span> <span class="nl">Purpose</span><span class="p">:</span> <span class="n">eax</span><span class="p">,</span> <span class="n">ebx</span><span class="p">,</span> <span class="n">ecx</span><span class="p">,</span> <span class="n">edx</span>
 </span><span class='line'><span class="nl">Index</span><span class="p">:</span>           <span class="n">esi</span><span class="p">,</span> <span class="n">edi</span>
-</span><span class='line'><span class="nl">Pointer</span><span class="p">:</span>         <span class="n">ebp</span><span class="p">,</span> <span class="n">eip</span>
+</span><span class='line'><span class="nl">Pointer</span><span class="p">:</span>         <span class="n">ebp</span><span class="p">,</span> <span class="n">esp</span><span class="p">,</span> <span class="n">eip</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 <p>With this in mind, I initially thought that a <code>jmp_buf</code> would be an array
-of 8 ints or something, in order to hold each register.</p>
+of 9 ints or something, in order to hold each register.</p>
 
 <p>As it happens, <code>jmp_buf</code> is instead declared as:</p>
 
@@ -180,41 +180,13 @@ declares an array of 1 <code>struct __jmp_buf_tag</code>. The reason for the arr
 is so the pointer semantics of arrays kick in and the <code>struct __jmp_buf_tag</code>
 is actually passed by reference in calls to <code>setjmp()</code>/<code>longjmp()</code>.</p>
 
-<p>Apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6. Let&rsquo;s dig
-into the source to see why this is. We&rsquo;ll start with <code>setjmp()</code>.</p>
+<p>Apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nl">setjmp:</span>                   <span class="err">;</span> <span class="nf">annotations</span> <span class="no">by</span> <span class="no">me</span>
-</span><span class='line'>    <span class="nf">mov</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%eax</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">pointer</span> <span class="no">to</span> <span class="no">jmp_buf</span> <span class="no">at</span> <span class="no">esp</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span> <span class="p">(</span><span class="no">if</span> <span class="no">esp</span> <span class="no">was</span> <span class="no">int</span><span class="p">*)</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ebx</span><span class="p">,</span> <span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>   <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span> <span class="err">=</span> <span class="no">ebx</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%esi</span><span class="p">,</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>  <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span> <span class="err">=</span> <span class="no">esi</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%edi</span><span class="p">,</span> <span class="mi">8</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>  <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">2</span><span class="err">]</span> <span class="err">=</span> <span class="no">edi</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ebp</span><span class="p">,</span> <span class="mi">12</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">3</span><span class="err">]</span> <span class="err">=</span> <span class="no">ebp</span>
-</span><span class='line'>    <span class="nf">lea</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%ecx</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">previous</span> <span class="no">value</span> <span class="no">of</span> <span class="no">esp</span><span class="p">,</span> <span class="no">before</span> <span class="no">call</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ecx</span><span class="p">,</span> <span class="mi">16</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">4</span><span class="err">]</span> <span class="err">=</span> <span class="no">esp</span> <span class="no">before</span> <span class="no">call</span>
-</span><span class='line'>    <span class="nf">mov</span>  <span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%ecx</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">saved</span> <span class="no">caller</span> <span class="no">eip</span> <span class="no">at</span> <span class="no">esp</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span><span class="p">(</span><span class="no">if</span> <span class="no">esp</span> <span class="no">was</span> <span class="no">int</span><span class="p">*)</span>
-</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ecx</span><span class="p">,</span> <span class="mi">20</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">5</span><span class="err">]</span> <span class="err">=</span> <span class="no">saved</span> <span class="no">eip</span>
-</span><span class='line'>    <span class="nf">xor</span>    <span class="nv">%eax</span><span class="p">,</span> <span class="nv">%eax</span>     <span class="err">;</span> <span class="no">eax</span> <span class="err">=</span> <span class="mi">0</span>
-</span><span class='line'>    <span class="nf">ret</span>                   <span class="err">;</span> <span class="no">pop</span> <span class="no">stack</span> <span class="no">into</span> <span class="no">eip</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As you can see, <code>setjmp()</code> is written in assembly because
-direct register access isn&rsquo;t available from C (ignoring compiler intrinsics).</p>
-
-<p>In order to understand <code>setjmp()</code>, we need to understand what the state of
-the program stack is at this point, and to do that, we need to understand
+<p>Before we
+can dig into the source to understand why this is,
+we need to understand what the state of
+the program stack is at the point <code>setjmp()</code> is called, and to do that, we need
+to understand
 which calling convention is being used. Since we assume x86 Linux, this will
 be <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a>. The
 relevant parts of cdecl for this case are:</p>
@@ -242,29 +214,170 @@ instruction of <code>setjmp()</code> executes, the stack looks something like th
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="err">&gt;</span> <span class="nf">high</span> <span class="no">memory</span> <span class="err">&lt;</span>
-</span><span class='line'><span class="err">|</span> <span class="na">...</span>                       <span class="err">|</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">saved</span> <span class="no">caller</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">caller</span> <span class="no">eip</span> <span class="err">|</span> <span class="err">&lt;</span> <span class="no">ebp</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">caller</span> <span class="no">stack</span> <span class="no">var</span> <span class="mi">1</span>        <span class="err">|</span> <span class="err">//</span> <span class="no">caller</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">stack</span> <span class="no">frame</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">caller</span> <span class="no">stack</span> <span class="no">var</span> <span class="mi">2</span>        <span class="err">|</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">caller</span> <span class="no">stack</span> <span class="no">var</span> <span class="no">...</span>      <span class="err">|</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">caller</span> <span class="no">stack</span> <span class="no">var</span> <span class="no">n</span>        <span class="err">|</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">pointer</span> <span class="no">to</span> <span class="no">jmp_buf</span>        <span class="err">|</span>
-</span><span class='line'><span class="err">|</span> <span class="nf">saved</span> <span class="no">caller</span> <span class="no">eip</span>          <span class="err">|</span> <span class="err">&lt;</span> <span class="no">esp</span>
-</span><span class='line'><span class="err">+---------------------------+</span> <span class="err">//</span> <span class="nf">setjmp</span><span class="err">&#39;</span><span class="no">s</span> <span class="no">stack</span> <span class="no">frame</span>
-</span><span class='line'><span class="err">&gt;</span> <span class="nf">low</span> <span class="no">memory</span> <span class="err">&lt;</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&gt;</span> <span class="n">high</span> <span class="n">memory</span> <span class="o">&lt;</span>
+</span><span class='line'><span class="o">|</span> <span class="p">...</span>                       <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">saved</span> <span class="n">caller</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">caller</span> <span class="n">eip</span> <span class="o">|</span> <span class="o">&lt;</span> <span class="n">ebp</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">1</span>        <span class="o">|</span> <span class="c1">// caller&#39;s stack frame</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">2</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="p">...</span>      <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="n">n</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">pointer</span> <span class="n">to</span> <span class="kt">jmp_buf</span>        <span class="o">|</span> <span class="c1">// argument to setjmp</span>
+</span><span class='line'><span class="o">|</span> <span class="n">saved</span> <span class="n">caller</span> <span class="n">eip</span>          <span class="o">|</span> <span class="o">&lt;</span> <span class="n">esp</span>
+</span><span class='line'><span class="o">+---------------------------+</span> <span class="c1">// setjmp&#39;s stack frame</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">low</span> <span class="n">memory</span> <span class="o">&lt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 <p>At the bottom of the stack is the eip value that the <code>call</code> instruction pushed,
 or where to return to after <code>setjmp()</code> finishes. Above that is the first,
-and only argument, the pointer to the given <code>jmp_buf</code>. esp points to the bottom
-of the stack, and ebp is still pointing to the start of the caller&rsquo;s stack
+and only argument, the pointer to the given <code>jmp_buf</code>. Lastly, above that is
+the caller&rsquo;s stack frame.
+esp points to the bottom
+of the stack as usual, and ebp is still pointing to the start of the caller&rsquo;s
+stack
 frame. Usually the first thing a function does is push
 ebp on the stack, and set ebp to esp to now point to the current stack frame (a.k.a the prologue),
 but since <code>setjmp()</code> is such a minimal function, it doesn&rsquo;t do this.
 Furthermore, since ebp is one of the registers that needs to be saved, <code>setjmp()</code>
 needs it to be unperturbed.</p>
+
+<p>After <code>setjmp()</code> returns, the stack will look something like this:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&gt;</span> <span class="n">high</span> <span class="n">memory</span> <span class="o">&lt;</span>
+</span><span class='line'><span class="o">|</span> <span class="p">...</span>                       <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">saved</span> <span class="n">caller</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">caller</span> <span class="n">eip</span> <span class="o">|</span> <span class="o">&lt;</span> <span class="n">ebp</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">1</span>        <span class="o">|</span> <span class="c1">// caller&#39;s stack frame</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">2</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="p">...</span>      <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="n">n</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">pointer</span> <span class="n">to</span> <span class="kt">jmp_buf</span>        <span class="o">|</span> <span class="o">&lt;</span> <span class="n">esp</span>
+</span><span class='line'><span class="o">+---------------------------+</span>
+</span><span class='line'><span class="o">&gt;</span> <span class="n">low</span> <span class="n">memory</span> <span class="o">&lt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It&rsquo;s nearly identical, except eip has been popped off the stack, and is now
+executing the next instruction after the caller&rsquo;s <code>call setjmp</code>. esp has
+also been updated accordingly. This is the state of the program that <code>setjmp()</code>
+will need to record, and that <code>longjmp()</code> will restore.</p>
+
+<p>Before reading the source I tried to reason about what I expected would happen.
+I presume:</p>
+
+<ul>
+<li>General purpose and index registers (eax, ebx, ecx, edx, esi, edi) which don&rsquo;t
+  have any effect on control flow can be trivially saved and restored</li>
+<li>ebp can similarly be saved &ldquo;as is&rdquo;, since its value when
+<code>setjmp()</code> executes is exactly what it needs to be restored to in <code>longjmp()</code></li>
+<li>esp cannot be saved &ldquo;as is&rdquo; because when <code>setjmp()</code> executes, there is the
+extra eip on the stack that is not there after the function returns. Therefore,
+the value for esp that should be saved is esp+4 to match the expected
+state of the stack after return</li>
+<li>The eip that should be saved is the address of the instruction after the
+<code>call setjmp</code> instruction, which can be retrieved from the top of the
+stack by dereferencing esp</li>
+</ul>
+
+
+<p>With all that out of the way, let&rsquo;s read the source (all annotations by me).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nl">setjmp:</span>
+</span><span class='line'>    <span class="nf">mov</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%eax</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">pointer</span> <span class="no">to</span> <span class="no">jmp_buf</span><span class="p">,</span> <span class="no">passed</span> <span class="no">as</span> <span class="no">argument</span> <span class="no">on</span> <span class="no">stack</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ebx</span><span class="p">,</span> <span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>   <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span> <span class="err">=</span> <span class="no">ebx</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%esi</span><span class="p">,</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>  <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span> <span class="err">=</span> <span class="no">esi</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%edi</span><span class="p">,</span> <span class="mi">8</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span>  <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">2</span><span class="err">]</span> <span class="err">=</span> <span class="no">edi</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ebp</span><span class="p">,</span> <span class="mi">12</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">3</span><span class="err">]</span> <span class="err">=</span> <span class="no">ebp</span>
+</span><span class='line'>    <span class="nf">lea</span> <span class="mi">4</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%ecx</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">previous</span> <span class="no">value</span> <span class="no">of</span> <span class="no">esp</span><span class="p">,</span> <span class="no">before</span> <span class="no">call</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ecx</span><span class="p">,</span> <span class="mi">16</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">4</span><span class="err">]</span> <span class="err">=</span> <span class="no">esp</span> <span class="no">before</span> <span class="no">call</span>
+</span><span class='line'>    <span class="nf">mov</span>  <span class="p">(</span><span class="nv">%esp</span><span class="p">),</span> <span class="nv">%ecx</span>     <span class="err">;</span> <span class="no">get</span> <span class="no">saved</span> <span class="no">caller</span> <span class="no">eip</span> <span class="no">from</span> <span class="no">top</span> <span class="no">of</span> <span class="no">stack</span>
+</span><span class='line'>    <span class="nf">mov</span>    <span class="nv">%ecx</span><span class="p">,</span> <span class="mi">20</span><span class="p">(</span><span class="nv">%eax</span><span class="p">)</span> <span class="err">;</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">5</span><span class="err">]</span> <span class="err">=</span> <span class="no">saved</span> <span class="no">eip</span>
+</span><span class='line'>    <span class="nf">xor</span>    <span class="nv">%eax</span><span class="p">,</span> <span class="nv">%eax</span>     <span class="err">;</span> <span class="no">eax</span> <span class="err">=</span> <span class="mi">0</span>
+</span><span class='line'>    <span class="nf">ret</span>                   <span class="err">;</span> <span class="no">pop</span> <span class="no">stack</span> <span class="no">into</span> <span class="no">eip</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first line retrieves the argument off the stack, placing a pointer to
+the <code>jmp_buf</code> (remember, an array of 6 unsigned ints) in eax. It then moves
+ebx, esi,
+edi, and ebp &ldquo;as is&rdquo; into the int array. It adds 4 to esp with a <code>lea</code> and
+stores that next. Next, it dereferences esp and stores that in the last slot
+in the array. Lastly, it zeroes out eax and returns.</p>
+
+<p>Now let&rsquo;s look at <code>longjmp()</code>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'><span class="nl">longjmp:</span>
+</span><span class='line'>    <span class="nf">mov</span>  <span class="mi">4</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span><span class="nv">%edx</span> <span class="err">;</span> <span class="no">get</span> <span class="no">pointer</span> <span class="no">to</span> <span class="no">jmp_buf</span><span class="p">,</span> <span class="no">passed</span> <span class="no">as</span> <span class="no">argument</span> <span class="mi">1</span> <span class="no">on</span> <span class="no">stack</span>
+</span><span class='line'>    <span class="nf">mov</span>  <span class="mi">8</span><span class="p">(</span><span class="nv">%esp</span><span class="p">),</span><span class="nv">%eax</span> <span class="err">;</span> <span class="no">get</span> <span class="no">int</span> <span class="no">val</span> <span class="no">in</span> <span class="no">eax</span><span class="p">,</span> <span class="no">passed</span> <span class="no">as</span> <span class="no">argument</span> <span class="mi">2</span> <span class="no">on</span> <span class="no">stack</span>
+</span><span class='line'>    <span class="nf">test</span>    <span class="nv">%eax</span><span class="p">,</span><span class="nv">%eax</span> <span class="err">;</span> <span class="no">is</span> <span class="no">int</span> <span class="no">val</span> <span class="err">==</span> <span class="mi">0</span><span class="err">?</span>
+</span><span class='line'>    <span class="nf">jnz</span> <span class="mi">1</span><span class="no">f</span>
+</span><span class='line'>    <span class="nf">inc</span>     <span class="nv">%eax</span>      <span class="err">;</span> <span class="no">if</span> <span class="no">so</span><span class="p">,</span> <span class="no">eax</span><span class="err">++</span>
+</span><span class='line'><span class="err">1:</span>
+</span><span class='line'>    <span class="nf">mov</span>   <span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%ebx</span> <span class="err">;</span> <span class="no">ebx</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">0</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">mov</span>  <span class="mi">4</span><span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%esi</span> <span class="err">;</span> <span class="no">esi</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">1</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">mov</span>  <span class="mi">8</span><span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%edi</span> <span class="err">;</span> <span class="no">edi</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">2</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">mov</span> <span class="mi">12</span><span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%ebp</span> <span class="err">;</span> <span class="no">ebp</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">3</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">mov</span> <span class="mi">16</span><span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%ecx</span> <span class="err">;</span> <span class="no">ecx</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">4</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">mov</span>     <span class="nv">%ecx</span><span class="p">,</span><span class="nv">%esp</span> <span class="err">;</span> <span class="no">esp</span> <span class="err">=</span> <span class="no">ecx</span>
+</span><span class='line'>    <span class="nf">mov</span> <span class="mi">20</span><span class="p">(</span><span class="nv">%edx</span><span class="p">),</span><span class="nv">%ecx</span> <span class="err">;</span> <span class="no">ecx</span> <span class="err">=</span> <span class="no">jmp_buf</span><span class="err">[</span><span class="mi">5</span><span class="err">]</span>
+</span><span class='line'>    <span class="nf">jmp</span> <span class="p">*</span><span class="nv">%ecx</span>         <span class="err">;</span> <span class="no">eip</span> <span class="err">=</span> <span class="no">ecx</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The first two lines retrieve the arguments (pointer to <code>jmp_buf</code>, int return
+val) from the stack into edx and eax, respectively. The int val is
+incremented to 1 if it is 0, according to the spec. Next, ebx, esi, edi, and
+ebp are reset
+to their saved state, stored in the <code>jmp_buf</code>, in a straightforward manner.
+TODO esp is
+eip is reset to the saved state via a relative jump</p>
+
+<p>The final state of the <code>jmp_buf</code> after <code>setjmp()</code> returns looks like:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='asm'><span class='line'>   <span class="err">0</span>    <span class="err">1</span>    <span class="err">2</span>    <span class="err">3</span>    <span class="err">4</span>    <span class="err">5</span>
+</span><span class='line'><span class="err">[</span> <span class="nf">ebx</span><span class="p">,</span> <span class="no">esi</span><span class="p">,</span> <span class="no">edi</span><span class="p">,</span> <span class="no">ebp</span><span class="p">,</span> <span class="no">esp</span><span class="p">,</span> <span class="no">eip</span> <span class="err">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So I was mostly correct, but it seems like eax, ecx, and edx were not saved.</p>
 
 <p>todo:
 - explain setjmp
@@ -274,6 +387,9 @@ what jmp_buf looks like in terms of elements
 easy registers ebx esi edi
 why ebp is easy
 hard registers esp, eip</p>
+
+<p>As you can see, <code>setjmp()</code> is written in assembly because
+direct register access isn&rsquo;t available from C (ignoring compiler intrinsics).</p>
 
 <p>ebx, ecx, edx, esi, and edi don&rsquo;t have particularly special meaning here and
 can be thought of as arbitrary 32 bit storage locations. However eax, ebp, and eip
@@ -302,12 +418,12 @@ execute.</li>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch, Pt. 2]]></title>
-    <link href="http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
+    <link href="http://vmresu.me/blog/2015/06/14/building-a-simple-iot-light-switch/"/>
     <updated>2015-06-14T15:13:07-04:00</updated>
-    <id>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch</id>
+    <id>http://vmresu.me/blog/2015/06/14/building-a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>This is a pretty late post, but I wanted to show off the hardware I designed
 as a follow up to the first
-<a href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
+<a href="http://vmresu.me/blog/2015/01/18/a-simple-iot-light-switch/">&ldquo;Building a Simple IoT Light Switch&rdquo;</a>.
 In that post I presented a prototype of a smart light switch I designed that
 consisted of a button which triggered a small Python server running on a
 Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an
@@ -324,7 +440,7 @@ me with the final lab work.</p>
 <p>The basic circuit I designed is below. It is merely a GPIO pin hooked up to
 ground with a switch in between, and an LED and resistor for fun.</p>
 
-<p><img src="http://mark.systems/images/iot2/switch1.png" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/switch1.png" alt="" /></p>
 
 <p>The code behind this configures the GPIO pin to use a pull up resistor, which
 pulls the pin&rsquo;s voltage up to VCC when the button is not pressed, and down to
@@ -333,7 +449,7 @@ A more complete schematic including the pull up resistor is below. Note that
 I won&rsquo;t have to implement the pull up part in my design because the Raspberry
 Pi implements that internally.</p>
 
-<p><img src="http://mark.systems/images/iot2/switch2.png" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/switch2.png" alt="" /></p>
 
 <p>My initial idea was to have a little board that would plug straight down into
 the Pi&rsquo;s GPIO male headers with a little button and LED at the end. However,
@@ -349,7 +465,7 @@ the switch. I just need to remember for future projects that pin 11 is
 reserved. That was probably really hard to understand, so here&rsquo;s the schematic,
 created with KiCad.</p>
 
-<p><img src="http://mark.systems/images/iot2/schematic.png" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/schematic.png" alt="" /></p>
 
 <p>On the left you can see the two sets of 13 x 2 headers. The ones on the left
 will be the female ones that plug downward into the Pi&rsquo;s male headers. The
@@ -369,7 +485,7 @@ of the components, was to design the printed circuit board (PCB). This involves
 laying out the components as they will appear on the physical
 silicon wafer.</p>
 
-<p><img src="http://mark.systems/images/iot2/pcb.png" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/pcb.png" alt="" /></p>
 
 <p>This was a completely new area to me and it was challenging and fun to
 actually draw out the board&rsquo;s traces, taking care not to intersect them,
@@ -394,14 +510,14 @@ we noticed one design mistake: the layout of the switch was actually <em>way</em
 too big for the switch we had on hand, but that didn&rsquo;t turn out to be a serious
 issue.</p>
 
-<p><img src="http://mark.systems/images/iot2/mistake.jpg" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/mistake.jpg" alt="" /></p>
 
 <p>There are some pictures of the final product:</p>
 
-<p><img src="http://mark.systems/images/iot2/final1.jpg" alt="" />
-<img src="http://mark.systems/images/iot2/final2.jpg" alt="" />
-<img src="http://mark.systems/images/iot2/final3.jpg" alt="" />
-<img src="http://mark.systems/images/iot2/final4.jpg" alt="" /></p>
+<p><img src="http://vmresu.me/images/iot2/final1.jpg" alt="" />
+<img src="http://vmresu.me/images/iot2/final2.jpg" alt="" />
+<img src="http://vmresu.me/images/iot2/final3.jpg" alt="" />
+<img src="http://vmresu.me/images/iot2/final4.jpg" alt="" /></p>
 
 <p>Here&rsquo;s a video of it in action:</p>
 
@@ -419,9 +535,9 @@ you the hardware and software for your own DIY light switch.</p>
   
   <entry>
     <title type="html"><![CDATA[Off to the (Python Internals) Races]]></title>
-    <link href="http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races/"/>
+    <link href="http://vmresu.me/blog/2015/06/07/off-to-the-python-internals-races/"/>
     <updated>2015-06-07T00:00:00-04:00</updated>
-    <id>http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races</id>
+    <id>http://vmresu.me/blog/2015/06/07/off-to-the-python-internals-races</id>
     <content type="html"><![CDATA[<p>This post is about an interesting race condition bug I ran into when working
 on a small feature improvement for
 <a href="http://github.com/mossberg/poet">poet</a> a while ago
@@ -703,9 +819,9 @@ last statement in the tempfile&rsquo;s <code>with</code> block.</p>
   
   <entry>
     <title type="html"><![CDATA[Building a Sketchy Website 101]]></title>
-    <link href="http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101/"/>
+    <link href="http://vmresu.me/blog/2015/04/25/building-a-sketchy-website-101/"/>
     <updated>2015-04-25T17:42:10-04:00</updated>
-    <id>http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101</id>
+    <id>http://vmresu.me/blog/2015/04/25/building-a-sketchy-website-101</id>
     <content type="html"><![CDATA[<p>Back in April, I won a free &ldquo;.club&rdquo; domain through gandi.net&rsquo;s
 <a href="https://15.gandi.net">anniversary</a> prize giveaway. I really didn&rsquo;t need
 a &ldquo;.club&rdquo; domain in particular, so I thought it would be pretty fun to
@@ -775,15 +891,15 @@ the download is coming from the <code>index.html</code> page.</p>
 &ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
 against Safari and Chrome for Android, in my testing.</p>
 
-<p><img src="http://mark.systems/images/sketchy.gif" alt="" /></p>
+<p><img src="http://vmresu.me/images/sketchy.gif" alt="" /></p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Building a Simple IoT Light Switch]]></title>
-    <link href="http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/"/>
+    <link href="http://vmresu.me/blog/2015/01/18/a-simple-iot-light-switch/"/>
     <updated>2015-01-18T13:32:48-05:00</updated>
-    <id>http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch</id>
+    <id>http://vmresu.me/blog/2015/01/18/a-simple-iot-light-switch</id>
     <content type="html"><![CDATA[<p>I&rsquo;m lucky enough to own a <a href="http://www.meethue.com">Philips Hue</a> wireless
 lighting unit (thanks <a href="http://acm.ccs.neu.edu">NUACM</a>!) which essentially is
 this really awesome Internet of Things (IoT) product that lets me replace
@@ -806,7 +922,7 @@ with a switch in between. In my code, I&rsquo;ll configure pin 17 to use an inte
 pull up resistor which will bring the voltage up to 3.3V when the button is not
 pressed and down to 0V when it is.</p>
 
-<p><img src="http://mark.systems/images/rpi.jpg" alt="" /></p>
+<p><img src="http://vmresu.me/images/rpi.jpg" alt="" /></p>
 
 <h3>Software</h3>
 
@@ -908,9 +1024,9 @@ leave that for another day. Thanks for reading, here it is in action!</p>
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
-    <link href="http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
+    <link href="http://vmresu.me/blog/2014/12/13/poet-beacon-based-post-exploitation/"/>
     <updated>2014-12-13T02:38:31-05:00</updated>
-    <id>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
+    <id>http://vmresu.me/blog/2014/12/13/poet-beacon-based-post-exploitation</id>
     <content type="html"><![CDATA[<h3>Introduction</h3>
 
 <p>For the past eight months or so, I&rsquo;ve been working sporadically on a side
@@ -1244,9 +1360,9 @@ Hopefully this was interesting/helpful for some people, and as always thanks for
   
   <entry>
     <title type="html"><![CDATA[Netcat "-e" Analysis]]></title>
-    <link href="http://mark.systems/blog/2014/11/03/netcat-exec/"/>
+    <link href="http://vmresu.me/blog/2014/11/03/netcat-exec/"/>
     <updated>2014-11-03T00:00:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/11/03/netcat-exec</id>
+    <id>http://vmresu.me/blog/2014/11/03/netcat-exec</id>
     <content type="html"><![CDATA[<p>As I mentioned in a <a href="http://blog.mark.lc/blog/2014/03/05/netcat/">previous post</a>, netcat has this cool
 <code>-e</code> parameter that lets you specify an executable to essentially turn into
 a network service, that is, a process that can send and receive data over the
@@ -1395,9 +1511,9 @@ the script, and the script has exited.</p>
   
   <entry>
     <title type="html"><![CDATA[Beginner Crackme]]></title>
-    <link href="http://mark.systems/blog/2014/10/27/crackme/"/>
+    <link href="http://vmresu.me/blog/2014/10/27/crackme/"/>
     <updated>2014-10-27T00:00:00-04:00</updated>
-    <id>http://mark.systems/blog/2014/10/27/crackme</id>
+    <id>http://vmresu.me/blog/2014/10/27/crackme</id>
     <content type="html"><![CDATA[<p>As part of an Intro to Security course I&rsquo;m taking, my professor gave us
 a crackme style exercise to practice reading x86 assembly and basic
 reverse engineering.</p>
@@ -1714,9 +1830,9 @@ ok
   
   <entry>
     <title type="html"><![CDATA[SU-CTF 2014 - "Commerical Application!"]]></title>
-    <link href="http://mark.systems/blog/2014/09/27/suctf_re/"/>
+    <link href="http://vmresu.me/blog/2014/09/27/suctf_re/"/>
     <updated>2014-09-27T00:00:00-04:00</updated>
-    <id>http://mark.systems/blog/2014/09/27/suctf_re</id>
+    <id>http://vmresu.me/blog/2014/09/27/suctf_re</id>
     <content type="html"><![CDATA[<p>This weekend I decided to try playing <a href="https://ctftime.org/event/159">SU-CTF</a>.
 I&rsquo;m pretty bad at CTF to be honest, so I was pretty thrilled to get
 one of the 200 point challenges in the third (of five) difficulty tiers.</p>
@@ -1729,10 +1845,10 @@ one of the 200 point challenges in the third (of five) difficulty tiers.</p>
 
 <p>I installed it on my phone, here&rsquo;s what it looks like:</p>
 
-<p><img src="http://mark.systems/images/apk1.png" alt="" />
-<img src="http://mark.systems/images/apk2.png" alt="" />
-<img src="http://mark.systems/images/apk3.png" alt="" />
-<img src="http://mark.systems/images/apk4.png" alt="" /></p>
+<p><img src="http://vmresu.me/images/apk1.png" alt="" />
+<img src="http://vmresu.me/images/apk2.png" alt="" />
+<img src="http://vmresu.me/images/apk3.png" alt="" />
+<img src="http://vmresu.me/images/apk4.png" alt="" /></p>
 
 <p>I can tap on &ldquo;Picture-01&rdquo; and sliding to the right reveals this picture, but
 if I try to tap on &ldquo;Picture-02&rdquo; or &ldquo;Pictures-03&rdquo; the app says I need to
@@ -1951,9 +2067,9 @@ fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div>
   
   <entry>
     <title type="html"><![CDATA[Abusing Admin Privileges via CSRF]]></title>
-    <link href="http://mark.systems/blog/2014/09/11/csrf-news/"/>
+    <link href="http://vmresu.me/blog/2014/09/11/csrf-news/"/>
     <updated>2014-09-11T00:00:00-04:00</updated>
-    <id>http://mark.systems/blog/2014/09/11/csrf-news</id>
+    <id>http://vmresu.me/blog/2014/09/11/csrf-news</id>
     <content type="html"><![CDATA[<p><em>Exploiting a classic CSRF vulnerability</em></p>
 
 <p>When I took over responsibility as the webmaster for
@@ -2100,12 +2216,12 @@ only guess &ldquo;posts&rdquo;, you can write anything into the body of the news
 
 <p>End result looks something like this.</p>
 
-<p><img src="http://mark.systems/images/ieee_csrf.gif" alt="" /></p>
+<p><img src="http://vmresu.me/images/ieee_csrf.gif" alt="" /></p>
 
 <p>There was an identical bug in the code that handles editing users. Let&rsquo;s
 have some fun!</p>
 
-<p><img src="http://mark.systems/images/ieee_csrf2.gif" alt="" /></p>
+<p><img src="http://vmresu.me/images/ieee_csrf2.gif" alt="" /></p>
 
 <p>In both of these gifs, the admin user was logged in, and then they opened
 a malicious html file, simulating visiting a malicious website. The mere act of
@@ -2134,9 +2250,9 @@ successfully faking requests as the authenticated user.</p>
   
   <entry>
     <title type="html"><![CDATA[Netcat Refresher]]></title>
-    <link href="http://mark.systems/blog/2014/03/05/netcat/"/>
+    <link href="http://vmresu.me/blog/2014/03/05/netcat/"/>
     <updated>2014-03-05T00:00:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/03/05/netcat</id>
+    <id>http://vmresu.me/blog/2014/03/05/netcat</id>
     <content type="html"><![CDATA[<p><em>Quick overview of the legendary Unix tool, netcat, with examples and applications</em></p>
 
 <h2>Introduction</h2>
@@ -2246,9 +2362,9 @@ J
   
   <entry>
     <title type="html"><![CDATA[iHackedIT]]></title>
-    <link href="http://mark.systems/blog/2014/03/01/ihackedit/"/>
+    <link href="http://vmresu.me/blog/2014/03/01/ihackedit/"/>
     <updated>2014-03-01T14:00:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/03/01/ihackedit</id>
+    <id>http://vmresu.me/blog/2014/03/01/ihackedit</id>
     <content type="html"><![CDATA[<p><em>Discovering, patching, and exploiting a simple command injection webapp</em></p>
 
 <h2>Introduction</h2>
@@ -2393,9 +2509,9 @@ echo $SHELL
   
   <entry>
     <title type="html"><![CDATA[CCDC Regional Qualifiers 2014]]></title>
-    <link href="http://mark.systems/blog/2014/01/25/ccdc2014/"/>
+    <link href="http://vmresu.me/blog/2014/01/25/ccdc2014/"/>
     <updated>2014-01-25T23:56:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/01/25/ccdc2014</id>
+    <id>http://vmresu.me/blog/2014/01/25/ccdc2014</id>
     <content type="html"><![CDATA[<p><em>Thoughts on the Collegiate Cyber Defense Competition 2014 regional qualifiers</em></p>
 
 <p>Today, from approximately 10:00 am to 6:00 pm, I competed with 7 other students on Northeastern University&rsquo;s Cyber Defense team in the Northeast Collegiate Cyber Defense Competition. It was a great experience, and although it wasn&rsquo;t exactly what I expected, I still had a lot of fun.</p>
@@ -2420,9 +2536,9 @@ echo $SHELL
   
   <entry>
     <title type="html"><![CDATA[Banner Hiding on Ubuntu 12.04]]></title>
-    <link href="http://mark.systems/blog/2014/01/10/banner-hiding/"/>
+    <link href="http://vmresu.me/blog/2014/01/10/banner-hiding/"/>
     <updated>2014-01-10T17:30:00-05:00</updated>
-    <id>http://mark.systems/blog/2014/01/10/banner-hiding</id>
+    <id>http://vmresu.me/blog/2014/01/10/banner-hiding</id>
     <content type="html"><![CDATA[<p>In most cases, the first phase of any sort of cyber-attack is the &ldquo;fingerprinting&rdquo; phase. This essentially involves an attacker attempting to ascertain as much information as possible about the target in question, say, a web server also running an ssh service. Some basic pieces of info that the attacker would be interesting in gathering would be the OS installed on the server, and the types of web and ssh servers running as well as version numbers for all of these. With this info, at the very least, the attacker would be able to google <em>&ldquo;[web/ssh server] [version] vulnerabilities&rdquo;</em>, so you can see how it might be a good idea to keep this sort of info hidden. Of course, there is a valid <a href="http://en.wikipedia.org/wiki/Security_through_obscurity">security through obscurity</a> argument to be made here, and even the Apache docs<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup> themselves state that</p>
 
 <blockquote><p>&hellip;disabling the Server: header does nothing at all to make your server more secure; the idea of &ldquo;security through obscurity&rdquo; is a myth and leads to a false sense of safety.</p></blockquote>

@@ -1,110 +1,110 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/</loc>
+    <loc>http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/</loc>
     <lastmod>2016-01-11T18:25:35-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/</loc>
+    <loc>http://vmresu.me/blog/2015/06/14/building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2015/06/07/off-to-the-python-internals-races/</loc>
+    <loc>http://vmresu.me/blog/2015/06/07/off-to-the-python-internals-races/</loc>
     <lastmod>2015-06-07T00:00:00-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2015/04/25/building-a-sketchy-website-101/</loc>
+    <loc>http://vmresu.me/blog/2015/04/25/building-a-sketchy-website-101/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2015/01/18/a-simple-iot-light-switch/</loc>
+    <loc>http://vmresu.me/blog/2015/01/18/a-simple-iot-light-switch/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/12/13/poet-beacon-based-post-exploitation/</loc>
+    <loc>http://vmresu.me/blog/2014/12/13/poet-beacon-based-post-exploitation/</loc>
     <lastmod>2014-12-13T02:38:31-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/11/03/netcat-exec/</loc>
+    <loc>http://vmresu.me/blog/2014/11/03/netcat-exec/</loc>
     <lastmod>2014-11-03T00:00:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/10/27/crackme/</loc>
+    <loc>http://vmresu.me/blog/2014/10/27/crackme/</loc>
     <lastmod>2014-10-27T00:00:00-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/09/27/suctf_re/</loc>
+    <loc>http://vmresu.me/blog/2014/09/27/suctf_re/</loc>
     <lastmod>2014-09-27T00:00:00-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/09/11/csrf-news/</loc>
+    <loc>http://vmresu.me/blog/2014/09/11/csrf-news/</loc>
     <lastmod>2014-09-11T00:00:00-04:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/03/05/netcat/</loc>
+    <loc>http://vmresu.me/blog/2014/03/05/netcat/</loc>
     <lastmod>2014-03-05T00:00:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/03/01/ihackedit/</loc>
+    <loc>http://vmresu.me/blog/2014/03/01/ihackedit/</loc>
     <lastmod>2014-03-01T14:00:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/01/25/ccdc2014/</loc>
+    <loc>http://vmresu.me/blog/2014/01/25/ccdc2014/</loc>
     <lastmod>2014-01-25T23:56:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/2014/01/10/banner-hiding/</loc>
+    <loc>http://vmresu.me/blog/2014/01/10/banner-hiding/</loc>
     <lastmod>2014-01-10T17:30:00-05:00</lastmod>
   </url>
   <url>
-    <loc>http://mark.systems/blog/archives/</loc>
+    <loc>http://vmresu.me/blog/archives/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/</loc>
+    <loc>http://vmresu.me/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/about/</loc>
+    <loc>http://vmresu.me/about/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/projects/</loc>
+    <loc>http://vmresu.me/projects/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/security/</loc>
+    <loc>http://vmresu.me/blog/categories/security/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/reference/</loc>
+    <loc>http://vmresu.me/blog/categories/reference/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/linux/</loc>
+    <loc>http://vmresu.me/blog/categories/linux/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/sysadmin/</loc>
+    <loc>http://vmresu.me/blog/categories/sysadmin/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/web/</loc>
+    <loc>http://vmresu.me/blog/categories/web/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/hacking/</loc>
+    <loc>http://vmresu.me/blog/categories/hacking/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/python/</loc>
+    <loc>http://vmresu.me/blog/categories/python/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/ctf/</loc>
+    <loc>http://vmresu.me/blog/categories/ctf/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/reverse-engineering/</loc>
+    <loc>http://vmresu.me/blog/categories/reverse-engineering/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/android/</loc>
+    <loc>http://vmresu.me/blog/categories/android/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/assembly/</loc>
+    <loc>http://vmresu.me/blog/categories/assembly/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/programming/</loc>
+    <loc>http://vmresu.me/blog/categories/programming/</loc>
   </url>
   <url>
-    <loc>http://mark.systems/blog/categories/hardware/</loc>
+    <loc>http://vmresu.me/blog/categories/hardware/</loc>
   </url>
 </urlset>

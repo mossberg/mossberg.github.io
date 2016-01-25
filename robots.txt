@@ -1,4 +1,4 @@
 User-agent: *
 Disallow: 
 
-Sitemap: http://mark.systems/sitemap.xml 
+Sitemap: http://vmresu.me/sitemap.xml 
