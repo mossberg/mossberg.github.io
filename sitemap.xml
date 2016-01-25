@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://mark.systems/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/</loc>
+    <lastmod>2016-01-11T18:25:35-05:00</lastmod>
+  </url>
+  <url>
     <loc>http://mark.systems/blog/2015/06/14/building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
