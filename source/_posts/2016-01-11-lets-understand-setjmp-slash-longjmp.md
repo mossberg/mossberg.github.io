@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Let's understand: setjmp()/longjmp()"
-date: 2016-01-11 18:25:35 -0500
+date: 2016-02-09
 comments: true
 categories: assembly linux
 published: true
