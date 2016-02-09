@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-01-28T00:46:32-05:00</updated>
+  <updated>2016-02-09T00:35:34-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -12,6 +12,336 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Let's Understand: Setjmp()/longjmp()]]></title>
+    <link href="http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
+    <updated>2016-01-11T18:25:35-05:00</updated>
+    <id>http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
+    <content type="html"><![CDATA[<p>Pretty recently I learned about <code>setjmp()</code> and <code>longjmp()</code>. They&rsquo;re a
+neat pair of libc functions which allow you to save your program&rsquo;s current
+execution context and resume it at an arbitrary point in the future (with
+some caveats<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>).
+If you&rsquo;re wondering why this is particularly useful, to quote
+the <a href="http://linux.die.net/man/3/setjmp">manpage</a>, one of their main use cases
+is &ldquo;&hellip;for dealing with errors and
+interrupts encountered in a low-level subroutine of a program.&rdquo; These functions
+can be used for more sophisticated error handling than simple error
+code return values.</p>
+
+<p>I was curious
+how these functions worked, so I decided to take a look
+at <a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386">musl libc&rsquo;s</a>
+implementation for x86.
+First, I&rsquo;ll explain their interfaces and show an example usage program.
+Next, since this post isn&rsquo;t aimed at the assembly wizard, I&rsquo;ll cover some
+basics of x86 and Linux calling convention to provide some required background
+knowledge.
+Lastly, I&rsquo;ll walk through the source, line by line.</p>
+
+<h2>Interfaces</h2>
+
+<pre><code class="c">int setjmp(jmp_buf env);
+</code></pre>
+
+<p><code>setjmp()</code> takes a single <code>jmp_buf</code> opaque type, returns 0, and continues
+execution afterward normally. A <code>jmp_buf</code> is the
+structure that <code>setjmp()</code> will save the calling execution context in. We&rsquo;ll
+examine it more closely later on.</p>
+
+<pre><code class="c">void longjmp(jmp_buf env, int val);
+</code></pre>
+
+<p><code>longjmp()</code> takes a <code>jmp_buf</code> and an <code>int</code>, simply returning back the given
+<code>int</code> value (unless it was 0, in which case it returns 1). The unusual aspect
+is that when it returns, the program&rsquo;s execution resumes as if <code>setjmp()</code> had
+just been called. This allows the user to jump back an arbitrary amount of
+frames on the current call stack (presumably out of some deep routine which had
+an error). The return value allows the code following the <code>setjmp()</code> call to
+differentiate if <code>setjmp()</code> or <code>longjmp()</code> had just been called, and proceed
+accordingly.</p>
+
+<p>Here&rsquo;s a simple example.</p>
+
+<pre><code class="c">#include &lt;setjmp.h&gt;
+#include &lt;stdio.h&gt;
+
+void fancy_func(jmp_buf env);
+
+int main() {
+    jmp_buf env;
+    int ret = setjmp(env);
+    if (ret == 0) {
+        puts("just returning from setjmp!");
+        fancy_func(env);
+    } else {
+        puts("now returning from longjmp and exiting!");
+    }
+
+}
+
+void fancy_func(jmp_buf env) {
+    puts("doing fancy stuff");
+    longjmp(env, 1);
+}
+</code></pre>
+
+<p>Output:</p>
+
+<pre><code>$ ./main
+just returning from setjmp!
+doing fancy stuff
+now returning from longjmp and exiting!
+</code></pre>
+
+<p>The above code creates a <code>jmp_buf</code> and calls <code>setjmp()</code>, saving the current
+execution context. Since <code>setjmp()</code> returns 0, the code follows the
+first branch, calling  <code>fancy_func()</code> and
+forwarding on the <code>jmp_buf</code>. <code>fancy_func()</code> does some fancy stuff, then calls
+<code>longjmp()</code>, passing in the <code>jmp_buf</code> and 1. Execution returns to the if
+statement on line 9, except this time, <code>ret</code> is 1 instead of 0, because
+we&rsquo;re returning from <code>longjmp()</code>.  Now the code
+follows the <code>else</code> path which prints and exits. <sup id="fnref:2"><a href="#fn:2" rel="footnote">2</a></sup></p>
+
+<h2>Background Knowledge</h2>
+
+<p>I&rsquo;ve mentioned &ldquo;execution context&rdquo; a few times, but let&rsquo;s make that a little
+more concrete. In this case, a program&rsquo;s execution context can be defined by
+the state of the processor&rsquo;s registers.</p>
+
+<p>On x86, the relevant registers are the general purpose, index, and pointer
+registers.</p>
+
+<pre><code>General Purpose: eax, ebx, ecx, edx
+Index:           esi, edi
+Pointer:         ebp, esp, eip
+</code></pre>
+
+<p>ebx, ecx, edx, esi, and edi don&rsquo;t have particularly special meaning here and
+can be thought of as arbitrary 32 bit storage locations. However eax, ebp, and eip
+are a little different.</p>
+
+<ul>
+<li>eax is used for function return values (specified by the
+<a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a> calling
+convention)</li>
+<li>ebp, the frame pointer, contains a pointer to the start of the current stack
+frame.</li>
+<li>eip, the instruction pointer, contains a pointer to the next instruction to
+execute.</li>
+</ul>
+
+
+<p>With this in mind, I initially thought that a <code>jmp_buf</code> would be an array
+of 9 ints or something, in order to hold each register.</p>
+
+<p>As it happens, <code>jmp_buf</code> is instead declared as (<a href="http://git.musl-libc.org/cgit/musl/tree/include/setjmp.h#n12">link</a>):</p>
+
+<pre><code class="c">typedef struct __jmp_buf_tag {
+    __jmp_buf __jb;
+    unsigned long __fl;
+    unsigned long __ss[128/sizeof(long)];
+} jmp_buf[1];
+</code></pre>
+
+<p>And for x86, <code>__jmp_buf</code> is declared as (<a href="http://git.musl-libc.org/cgit/musl/tree/arch/i386/bits/setjmp.h#n1">link</a>):</p>
+
+<pre><code class="c">typedef unsigned long __jmp_buf[6];
+</code></pre>
+
+<p>I had never seen this syntax of using bracket operators at the end of a typedef
+but searched and found out that the <code>__jmp_buf</code> declaration
+declares a fixed size array of 6 unsigned longs, and the <code>jmp_buf</code> declaration
+declares an array of 1 <code>struct __jmp_buf_tag</code>. The reason for the array of 1
+is so the pointer semantics of arrays kick in and the <code>struct __jmp_buf_tag</code>
+is actually passed by reference in calls to <code>setjmp()</code>/<code>longjmp()</code> (as opposed
+to being copied).</p>
+
+<p>Anyway, apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6 (longs).</p>
+
+<p>Before we
+can dig into the source to understand why this is,
+we need to understand what the state of
+the program stack is at the point <code>setjmp()</code> is called, and to do that, we need
+to understand
+which calling convention is being used. Since we assume x86 Linux, this will
+be <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a>. The
+relevant parts of cdecl for this case are:</p>
+
+<ul>
+<li>arguments passed on the stack</li>
+<li>integer values and memory addresses returned in eax (as mentioned above)</li>
+<li>eax, ecx, edx are caller saved, the rest are callee saved</li>
+</ul>
+
+
+<p><code>setjmp()</code>&rsquo;s code executes immediately
+after <code>setjmp()</code>&rsquo;s <code>call</code> instruction, so at the point the first
+instruction of <code>setjmp()</code> executes, the stack looks something like this.</p>
+
+<pre><code>&gt; high memory &lt;
+| ...                       |
+| caller's caller saved eip | &lt; ebp
+| caller stack var 1        | // caller's stack frame
+| caller stack var 2        |
+| caller stack var ...      |
+| caller stack var n        |
+| pointer to jmp_buf        | // argument to setjmp
+| saved caller eip          | &lt; esp
++---------------------------+ // setjmp's stack frame
+&gt; low memory &lt;
+</code></pre>
+
+<p>(In this illustration, the stack grows down.)</p>
+
+<p>At the top of the stack is the eip value that the <code>call</code> instruction pushed,
+or where to return to after <code>setjmp()</code> finishes. Above that is the first,
+and only argument, the pointer to the given <code>jmp_buf</code>. Lastly, above that is
+the caller&rsquo;s stack frame.
+esp points to the top
+of the stack as usual, and ebp is still pointing to the start of the caller&rsquo;s
+stack
+frame. Usually the first thing a function does is push
+ebp on the stack, and set ebp to esp to now point to the current stack frame (a.k.a the prologue),
+but since <code>setjmp()</code> is such a minimal function, it doesn&rsquo;t do this.
+Furthermore, since ebp is one of the registers that needs to be saved, <code>setjmp()</code>
+needs it to be unperturbed.</p>
+
+<p>After <code>setjmp()</code> returns, the stack will look something like this:</p>
+
+<pre><code>&gt; high memory &lt;
+| ...                       |
+| saved caller's caller eip | &lt; ebp
+| caller stack var 1        | // caller's stack frame
+| caller stack var 2        |
+| caller stack var ...      |
+| caller stack var n        |
+| pointer to jmp_buf        | &lt; esp
++---------------------------+
+&gt; low memory &lt;
+</code></pre>
+
+<p>It&rsquo;s nearly identical, except eip has been popped off the stack, and is now
+executing the next instruction after the caller&rsquo;s <code>call setjmp</code>. esp has
+also been updated accordingly. This is the state of the program that <code>setjmp()</code>
+will need to record, and that <code>longjmp()</code> will restore.</p>
+
+<p>Before reading the source I tried to reason about what I expected would happen.
+I presume:</p>
+
+<ul>
+<li>General purpose and index registers (eax, ebx, ecx, edx, esi, edi) which don&rsquo;t
+  have any effect on control flow can be trivially saved and restored</li>
+<li>ebp can similarly be saved &ldquo;as is&rdquo;, since its value when
+<code>setjmp()</code> executes is exactly what it needs to be restored to in <code>longjmp()</code></li>
+<li>esp cannot be saved &ldquo;as is&rdquo; because when <code>setjmp()</code> executes, there is the
+extra eip on the stack that is not there after the function returns. Therefore,
+the value for esp that should be saved is esp+4 to match the expected
+state of the stack after return</li>
+<li>The eip that should be saved is the address of the instruction after the
+<code>call setjmp</code> instruction, which can be retrieved from the top of the
+stack by dereferencing esp</li>
+</ul>
+
+
+<p>With all that out of the way, let&rsquo;s read the source (all annotations by me)
+(<a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386/setjmp.s">link</a>).
+Since this type of low level register manipulation isn&rsquo;t available from C
+(modulo compiler intrinsics), both of these functions are necessarily written
+in assembly.</p>
+
+<pre><code class="asm">setjmp:
+    mov 4(%esp), %eax     ; get pointer to jmp_buf, passed as argument on stack
+    mov    %ebx, (%eax)   ; jmp_buf[0] = ebx
+    mov    %esi, 4(%eax)  ; jmp_buf[1] = esi
+    mov    %edi, 8(%eax)  ; jmp_buf[2] = edi
+    mov    %ebp, 12(%eax) ; jmp_buf[3] = ebp
+    lea 4(%esp), %ecx     ; get previous value of esp, before call
+    mov    %ecx, 16(%eax) ; jmp_buf[4] = esp before call
+    mov  (%esp), %ecx     ; get saved caller eip from top of stack
+    mov    %ecx, 20(%eax) ; jmp_buf[5] = saved eip
+    xor    %eax, %eax     ; eax = 0
+    ret                   ; pop stack into eip
+</code></pre>
+
+<p>The first line retrieves the argument off the stack, placing a pointer to
+the <code>jmp_buf</code> (remember, an array of 6 unsigned longs) in eax. It then moves
+ebx, esi,
+edi, and ebp &ldquo;as is&rdquo; into the int array. It adds 4 to esp with a <code>lea</code> and
+stores that next. Next, it dereferences esp and stores that in the last slot
+in the array. Lastly, it zeroes out eax and returns.</p>
+
+<p>The final state of the <code>jmp_buf</code> after <code>setjmp()</code> returns looks like:</p>
+
+<pre><code>   0    1    2    3    4    5
+[ ebx, esi, edi, ebp, esp, eip ]
+</code></pre>
+
+<p>Now let&rsquo;s look at <code>longjmp()</code> (<a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386/longjmp.s">link</a>).</p>
+
+<pre><code class="asm">longjmp:
+    mov  4(%esp),%edx ; get pointer to jmp_buf, passed as argument 1 on stack
+    mov  8(%esp),%eax ; get int val in eax, passed as argument 2 on stack
+    test    %eax,%eax ; is int val == 0?
+    jnz 1f
+    inc     %eax      ; if so, eax++
+1:
+    mov   (%edx),%ebx ; ebx = jmp_buf[0]
+    mov  4(%edx),%esi ; esi = jmp_buf[1]
+    mov  8(%edx),%edi ; edi = jmp_buf[2]
+    mov 12(%edx),%ebp ; ebp = jmp_buf[3]
+    mov 16(%edx),%ecx ; ecx = jmp_buf[4]
+    mov     %ecx,%esp ; esp = ecx
+    mov 20(%edx),%ecx ; ecx = jmp_buf[5]
+    jmp *%ecx         ; eip = ecx
+</code></pre>
+
+<p>The first two lines retrieve the arguments (pointer to <code>jmp_buf</code>, int return
+val) from the stack into edx and eax, respectively. The int val is
+incremented to 1 if it is 0, according to the spec. Next, ebx, esi, edi, and
+ebp are reset
+to their saved state, stored in the <code>jmp_buf</code>, in a straightforward manner.
+As you can see, both <code>setjmp()</code> and <code>longjmp()</code> need to precisely agree on
+where each particular register is saved in the <code>jmp_buf</code>.
+esp is mysteriously restored in an indirect manner, via ecx<sup id="fnref:3"><a href="#fn:3" rel="footnote">3</a></sup> and
+finally, eip is reset to the saved state via an indirect jump.</p>
+
+<p>So I was mostly correct, but it seems like eax, ecx, and edx were not saved
+in the <code>jmp_buf</code>!
+If we look back on the details of cdecl, it becomes clear why.</p>
+
+<ul>
+<li>eax doesn&rsquo;t need to be saved, because it is reserved for the return value</li>
+<li>ecx and edx are <strong>caller saved</strong>. This means that a callee subroutine is
+free to trash these registers, and it is the responsibility for the caller
+to save and restore them after the subroutine returns. Because of this,
+if the function that calls <code>setjmp()</code> needs to use ecx or edx after the
+call, it will <strong>already</strong> have code to save and restore those registers before
+and after the function call. Since <code>longjmp()</code> resumes execution as if
+<code>setjmp()</code> had immediately returned, execution will automatically hit the
+code that restores ecx and edx, making it unnecessary to save them in the
+<code>jmp_buf</code>.</li>
+</ul>
+
+
+<p>This is just one example of how great musl libc is at providing an
+<em>understandable</em> resource for learning the internals of systems software. I
+often find myself referencing it when I&rsquo;m curious about libc internals, and
+if you&rsquo;re not familiar with it, I highly recommend checking it out!</p>
+<div class="footnotes">
+<hr/>
+<ol>
+<li id="fn:1">
+<p>Mainly, that the function which called <code>setjmp()</code> cannot have returned before the corresponding <code>longjmp()</code> call.<a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
+<li id="fn:2">
+<p>A slight aside: This situation where a function returns different values based on the execution context also appears in <code>fork()</code>, in which the caller uses the return value to differentiate whether it is now executing in the child or parent process.  <a href="#fnref:2" rev="footnote">&#8617;</a></p></li>
+<li id="fn:3">
+<p>I actually have no good explanation for this and am pretty curious why it&rsquo;s done this way. Something like <code>mov $esp, [$edx+16]</code> is a perfectly valid instruction (tested with <code>rasm2</code>)! I asked on the musl <a href="http://www.openwall.com/lists/musl/2016/01/12/11">mailing list</a>, but no one responded :(. If you have an explanation, please let me know!<a href="#fnref:3" rev="footnote">&#8617;</a></p></li>
+</ol>
+</div>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Poet: Beacon Based Post-Exploitation]]></title>
