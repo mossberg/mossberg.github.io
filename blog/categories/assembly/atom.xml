@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Assembly | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/assembly/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-02-09T08:39:57-05:00</updated>
+  <updated>2016-02-09T08:54:24-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -157,7 +157,7 @@ is so the pointer semantics of arrays kick in and the <code>struct __jmp_buf_tag
 is actually passed by reference in calls to <code>setjmp()</code>/<code>longjmp()</code> (as opposed
 to being copied).</p>
 
-<p>Anyway, apparently my guess of 8 ints was incorrect, and it&rsquo;s actually 6 (longs).</p>
+<p>Anyway, apparently my guess of 9 ints was incorrect, and it&rsquo;s actually 6 (longs).</p>
 
 <p>Before we
 can dig into the source to understand why this is,
