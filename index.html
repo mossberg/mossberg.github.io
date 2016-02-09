@@ -317,15 +317,17 @@ instruction of <code>setjmp()</code> executes, the stack looks something like th
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
+<span class='line-number'>12</span>
 </pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">&gt;</span> <span class="n">high</span> <span class="n">memory</span> <span class="o">&lt;</span>
 </span><span class='line'><span class="o">|</span> <span class="p">...</span>                       <span class="o">|</span>
-</span><span class='line'><span class="o">|</span> <span class="n">caller</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">caller</span> <span class="n">saved</span> <span class="n">eip</span> <span class="o">|</span> <span class="o">&lt;</span> <span class="n">ebp</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">caller</span> <span class="n">saved</span> <span class="n">eip</span> <span class="o">|</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">caller</span> <span class="n">saved</span> <span class="n">ebp</span> <span class="o">|</span> <span class="o">&lt;</span> <span class="n">ebp</span>
 </span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">1</span>        <span class="o">|</span> <span class="c1">// caller&#39;s stack frame</span>
 </span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="mi">2</span>        <span class="o">|</span>
 </span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="p">...</span>      <span class="o">|</span>
 </span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">stack</span> <span class="n">var</span> <span class="n">n</span>        <span class="o">|</span>
 </span><span class='line'><span class="o">|</span> <span class="n">pointer</span> <span class="n">to</span> <span class="kt">jmp_buf</span>        <span class="o">|</span> <span class="c1">// argument to setjmp</span>
-</span><span class='line'><span class="o">|</span> <span class="n">saved</span> <span class="n">caller</span> <span class="n">eip</span>          <span class="o">|</span> <span class="o">&lt;</span> <span class="n">esp</span>
+</span><span class='line'><span class="o">|</span> <span class="n">caller</span> <span class="n">saved</span> <span class="n">eip</span>          <span class="o">|</span> <span class="o">&lt;</span> <span class="n">esp</span>
 </span><span class='line'><span class="o">+---------------------------+</span> <span class="c1">// setjmp&#39;s stack frame</span>
 </span><span class='line'><span class="o">&gt;</span> <span class="n">low</span> <span class="n">memory</span> <span class="o">&lt;</span>
 </span></code></pre></td></tr></table></div></figure>

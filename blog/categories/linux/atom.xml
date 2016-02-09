@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-02-09T08:54:24-05:00</updated>
+  <updated>2016-02-09T08:57:50-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -181,13 +181,14 @@ instruction of <code>setjmp()</code> executes, the stack looks something like th
 
 <pre><code>&gt; high memory &lt;
 | ...                       |
-| caller's caller saved eip | &lt; ebp
+| caller's caller saved eip |
+| caller's caller saved ebp | &lt; ebp
 | caller stack var 1        | // caller's stack frame
 | caller stack var 2        |
 | caller stack var ...      |
 | caller stack var n        |
 | pointer to jmp_buf        | // argument to setjmp
-| saved caller eip          | &lt; esp
+| caller saved eip          | &lt; esp
 +---------------------------+ // setjmp's stack frame
 &gt; low memory &lt;
 </code></pre>
