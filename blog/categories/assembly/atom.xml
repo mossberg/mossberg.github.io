@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Assembly | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/assembly/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-02-09T00:35:34-05:00</updated>
+  <updated>2016-02-09T08:39:57-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Let's Understand: Setjmp()/longjmp()]]></title>
-    <link href="http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp/"/>
-    <updated>2016-01-11T18:25:35-05:00</updated>
-    <id>http://vmresu.me/blog/2016/01/11/lets-understand-setjmp-slash-longjmp</id>
+    <link href="http://vmresu.me/blog/2016/02/09/lets-understand-setjmp-slash-longjmp/"/>
+    <updated>2016-02-09T00:00:00-05:00</updated>
+    <id>http://vmresu.me/blog/2016/02/09/lets-understand-setjmp-slash-longjmp</id>
     <content type="html"><![CDATA[<p>Pretty recently I learned about <code>setjmp()</code> and <code>longjmp()</code>. They&rsquo;re a
 neat pair of libc functions which allow you to save your program&rsquo;s current
 execution context and resume it at an arbitrary point in the future (with
