@@ -150,7 +150,7 @@ is so the pointer semantics of arrays kick in and the `struct __jmp_buf_tag`
 is actually passed by reference in calls to `setjmp()`/`longjmp()` (as opposed
 to being copied).
 
-Anyway, apparently my guess of 8 ints was incorrect, and it's actually 6 (longs).
+Anyway, apparently my guess of 9 ints was incorrect, and it's actually 6 (longs).
 
 Before we
 can dig into the source to understand why this is,
@@ -172,13 +172,14 @@ instruction of `setjmp()` executes, the stack looks something like this.
 ```
 > high memory <
 | ...                       |
-| caller's caller saved eip | < ebp
+| caller's caller saved eip |
+| caller's caller saved ebp | < ebp
 | caller stack var 1        | // caller's stack frame
 | caller stack var 2        |
 | caller stack var ...      |
 | caller stack var n        |
 | pointer to jmp_buf        | // argument to setjmp
-| saved caller eip          | < esp
+| caller saved eip          | < esp
 +---------------------------+ // setjmp's stack frame
 > low memory <
 ```
