@@ -204,7 +204,8 @@ After `setjmp()` returns, the stack will look something like this:
 ```
 > high memory <
 | ...                       |
-| saved caller's caller eip | < ebp
+| caller's caller saved eip |
+| caller's caller saved ebp | < ebp
 | caller stack var 1        | // caller's stack frame
 | caller stack var 2        |
 | caller stack var ...      |
