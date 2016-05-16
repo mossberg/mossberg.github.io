@@ -66,9 +66,6 @@
     <loc>http://vmresu.me/about/</loc>
   </url>
   <url>
-    <loc>http://vmresu.me/projects/</loc>
-  </url>
-  <url>
     <loc>http://vmresu.me/blog/categories/security/</loc>
   </url>
   <url>
@@ -106,5 +103,8 @@
   </url>
   <url>
     <loc>http://vmresu.me/blog/categories/hardware/</loc>
+  </url>
+  <url>
+    <loc>http://vmresu.me/posts/2/</loc>
   </url>
 </urlset>
