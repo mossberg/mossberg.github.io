@@ -18,7 +18,3 @@ systems, compilers, and systems security.
 
 - twitter: [@markmossberg](https://twitter.com/markmossberg)
 - github: [mossberg](https://github.com/mossberg)
-- keybase: [mossberg](https://keybase.io/mossberg)
-- gmail: <a href="">mark.mossberg</a>
-
-*Last updated 5/16/2016*
