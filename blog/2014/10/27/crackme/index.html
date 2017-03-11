@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Beginner Crackme - Mark Mossberg&#8217;s Blog</title>
+  <title>Beginner Crackme - Mark Mossberg's Blog</title>
   <meta name="author" content="Mark Mossberg">
 
   
@@ -49,7 +49,7 @@ a crackme style exercise to practice reading x86 assembly and basic &hellip;">
 
 <body   >
   <header role="banner"><hgroup>
-  <h1><a href="/">Mark Mossberg&#8217;s Blog</a></h1>
+  <h1><a href="/">Mark Mossberg's Blog</a></h1>
   
     <h2>Hacker Nonsense</h2>
   
@@ -387,10 +387,10 @@ which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7
 instruction (offset 36), and
 the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
 pointer to our input string, we can reasonably guess
-that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+that this function is xor'ing each character of our input with 0xf7 and writing
 the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
 we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
-pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+pretty easy to extract the password we need by xor'ing each byte of the secret
 with the xor key.</p>
 
 <p>Here&rsquo;s a way to do this with python.</p>
@@ -447,10 +447,10 @@ ok
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/09/27/suctf_re/" title="Previous Post: SU-CTF 2014 - "Commerical Application!"">&laquo; SU-CTF 2014 - &#8220;Commerical Application!&#8221;</a>
+        <a class="basic-alignment left" href="/blog/2014/09/27/suctf_re/" title="Previous Post: SU-CTF 2014 - "Commerical Application!"">&laquo; SU-CTF 2014 - "Commerical Application!"</a>
       
       
-        <a class="basic-alignment right" href="/blog/2014/11/03/netcat-exec/" title="Next Post: Netcat "-e" Analysis">Netcat &#8220;-e&#8221; Analysis &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2014/11/03/netcat-exec/" title="Next Post: Netcat "-e" Analysis">Netcat "-e" Analysis &raquo;</a>
       
     </p>
   </footer>
@@ -478,7 +478,7 @@ ok
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2016/02/09/lets-understand-setjmp-slash-longjmp/">Let&#8217;s Understand: Setjmp()/longjmp()</a>
+        <a href="/blog/2016/02/09/lets-understand-setjmp-slash-longjmp/">Let's Understand: Setjmp()/longjmp()</a>
       </li>
     
       <li class="post">
@@ -511,7 +511,7 @@ ok
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2016 - Mark Mossberg -
+  Copyright &copy; 2017 - Mark Mossberg -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

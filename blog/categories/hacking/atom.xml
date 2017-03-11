@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Hacking | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/hacking/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-05-16T14:15:42-04:00</updated>
+  <updated>2017-03-11T15:12:28-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -66,7 +66,7 @@ to give them time to read the website or whatever. The redirect will need
 to be to the path configured in step 2, but this will give the illusion that
 the download is coming from the <code>index.html</code> page.</p>
 
-<p>&#8220;`html index.html
+<p>```html index.html
 you have arrived at the official free movie download club! enjoy your download</p>
 
 <script type="text/javascript" charset="utf-8">
@@ -75,7 +75,7 @@ you have arrived at the official free movie download club! enjoy your download</
 </script>
 
 
-<p>&#8220;`</p>
+<p>```</p>
 
 <p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
 &ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
@@ -612,10 +612,10 @@ which moves a byte from the input string into eax, the <code>xor eax, 0xfffffff7
 instruction (offset 36), and
 the <code>add rdi, 0x1</code> instruction (offset 54) which increments the char*
 pointer to our input string, we can reasonably guess
-that this function is xor&#8217;ing each character of our input with 0xf7 and writing
+that this function is xor'ing each character of our input with 0xf7 and writing
 the result into a buffer which begins at <code>rsp</code> (also pointed to by <code>rcx</code>). Since
 we now know the secret (<code>\x91\xbf\xa4\x85...</code>) and the xor key (<code>0xf7</code>) it&rsquo;s
-pretty easy to extract the password we need by xor&#8217;ing each byte of the secret
+pretty easy to extract the password we need by xor'ing each byte of the secret
 with the xor key.</p>
 
 <p>Here&rsquo;s a way to do this with python.</p>

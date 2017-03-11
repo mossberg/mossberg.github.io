@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Web | Mark Mossberg's Blog]]></title>
   <link href="http://vmresu.me/blog/categories/web/atom.xml" rel="self"/>
   <link href="http://vmresu.me/"/>
-  <updated>2016-05-16T14:15:42-04:00</updated>
+  <updated>2017-03-11T15:12:28-05:00</updated>
   <id>http://vmresu.me/</id>
   <author>
     <name><![CDATA[Mark Mossberg]]></name>
@@ -66,7 +66,7 @@ to give them time to read the website or whatever. The redirect will need
 to be to the path configured in step 2, but this will give the illusion that
 the download is coming from the <code>index.html</code> page.</p>
 
-<p>&#8220;`html index.html
+<p>```html index.html
 you have arrived at the official free movie download club! enjoy your download</p>
 
 <script type="text/javascript" charset="utf-8">
@@ -75,7 +75,7 @@ you have arrived at the official free movie download club! enjoy your download</
 </script>
 
 
-<p>&#8220;`</p>
+<p>```</p>
 
 <p>That&rsquo;s it! Anyone that browses to the website will automatically get a nice
 &ldquo;dickbutt.jpg&rdquo; image downloaded to their machine. Again, particularly effective
