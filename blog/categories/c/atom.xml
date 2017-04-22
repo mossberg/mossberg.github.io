@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: C | Mark Mossberg's Blog]]></title>
+  <link href="http://vmresu.me/blog/categories/c/atom.xml" rel="self"/>
+  <link href="http://vmresu.me/"/>
+  <updated>2017-04-21T22:03:12-04:00</updated>
+  <id>http://vmresu.me/</id>
+  <author>
+    <name><![CDATA[Mark Mossberg]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Struct Stat Notes]]></title>
+    <link href="http://vmresu.me/blog/2017/04/20/stat/"/>
+    <updated>2017-04-20T00:00:00-04:00</updated>
+    <id>http://vmresu.me/blog/2017/04/20/stat</id>
+    <content type="html"><![CDATA[<blockquote><p>Note: i&rsquo;m going to try a significantly more informal blogging style</p></blockquote>
+
+<p><code>struct stat</code> on Linux is pretty interesting</p>
+
+<ul>
+<li>the struct definition in the man page is not exactly accurate</li>
+<li>glibc explicitly pads the struct with unused members which is intersting. I guess to reserve space for expansion of fields
+
+<ul>
+<li>if you want to see the real definition, a trick you can use is writing a test program that uses a struct stat, and compiling with <code>-E</code> to stop after preprocessing then look in that output for the definition</li>
+</ul>
+</li>
+<li>you can look in the glibc sources and the linux sources and see that they actually have to make their struct definitions match! (i think). since kernel space is populating the struct memory and usespace is using it, they need to exactly agree on where what members are
+
+<ul>
+<li>you can find some snarky comments in linux about the padding, which is pretty funny. for example (arch/arm/include/uapi/asm/stat.h)</li>
+</ul>
+</li>
+<li>because the structs are explicitly padded, if you do a struct designator initialization, you CANNOT omit the designators. if you do, the padded members will be initialized instead of the fields you wanted!</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

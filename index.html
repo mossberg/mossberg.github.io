@@ -9,8 +9,7 @@
   <meta name="author" content="Mark Mossberg">
 
   
-  <meta name="description" content="Pretty recently I learned about setjmp() and longjmp(). They&rsquo;re a
-neat pair of libc functions which allow you to save your program&rsquo;s &hellip;">
+  <meta name="description" content="Note: i&rsquo;m going to try a significantly more informal blogging style struct stat on Linux is pretty interesting the struct definition in the man &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -79,6 +78,55 @@ neat pair of libc functions which allow you to save your program&rsquo;s &hellip
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2017/04/20/stat/">Struct Stat Notes</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-04-20'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>20</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>12:00 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><blockquote><p>Note: i&rsquo;m going to try a significantly more informal blogging style</p></blockquote>
+
+<p><code>struct stat</code> on Linux is pretty interesting</p>
+
+<ul>
+<li>the struct definition in the man page is not exactly accurate</li>
+<li>glibc explicitly pads the struct with unused members which is intersting. I guess to reserve space for expansion of fields
+
+<ul>
+<li>if you want to see the real definition, a trick you can use is writing a test program that uses a struct stat, and compiling with <code>-E</code> to stop after preprocessing then look in that output for the definition</li>
+</ul>
+</li>
+<li>you can look in the glibc sources and the linux sources and see that they actually have to make their struct definitions match! (i think). since kernel space is populating the struct memory and usespace is using it, they need to exactly agree on where what members are
+
+<ul>
+<li>you can find some snarky comments in linux about the padding, which is pretty funny. for example (arch/arm/include/uapi/asm/stat.h)</li>
+</ul>
+</li>
+<li>because the structs are explicitly padded, if you do a struct designator initialization, you CANNOT omit the designators. if you do, the padded members will be initialized instead of the fields you wanted!</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2341,209 +2389,6 @@ fl-ag-IS-se-ri-al-NU-MB-ER</code></pre></div>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/11/csrf-news/">Abusing Admin Privileges via CSRF</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-<time class='entry-date' datetime='2014-09-11'><span class='date'><span class='date-month'>Sep</span> <span class='date-day'>11</span><span class='date-suffix'>th</span>, <span class='date-year'>2014</span></span> <span class='time'>12:00 am</span></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><em>Exploiting a classic CSRF vulnerability</em></p>
-
-<p>When I took over responsibility as the webmaster for
-<a href="http://www.ieee.neu.edu">Northeastern University&rsquo;s IEEE student chapter</a> around
-January 2014 (yes, this is a very belated post), I was suddenly reponsible for
-maintaining a custom LAMP stack Content Management System (CMS) whose core
-functionality was letting an admin post to a news feed on the front page of the
-site.
-This site has since been completely redone, but given that it is notoriously
-difficult to program securely in PHP, I decided to poke around a little and
-see if I could find any cool bugs.</p>
-
-<p>Initially, I started looking for the most blatant web vulns, SQLi and XSS, but
-was pleasantly surprised to find in the <code>register.php</code> file, for example, that
-handles user registration, to find a input sanitation check.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">((</span><span class="nx">isValid</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;newusername&#39;</span><span class="p">]))</span><span class="o">&amp;&amp;</span><span class="p">(</span><span class="nx">isValid</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;newpassword&#39;</span><span class="p">])))</span>
-<span class="p">{</span>
-    <span class="c1">// continue with registration</span>
-<span class="p">}</span></code></pre></div>
-
-
-<p>where <code>isValid()</code> looks like</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">function</span> <span class="nf">isValid</span><span class="p">(</span><span class="nv">$varx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="nv">$valid</span> <span class="o">=</span> <span class="k">true</span><span class="p">;</span>
-    <span class="nv">$bad_stuff</span> <span class="o">=</span> <span class="k">array</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">,</span><span class="s2">&quot;(&quot;</span><span class="p">,</span><span class="s2">&quot;)&quot;</span><span class="p">,</span><span class="s2">&quot;&lt;&quot;</span><span class="p">,</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span><span class="s2">&quot;?&quot;</span><span class="p">,</span><span class="s2">&quot;/&quot;</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span><span class="s2">&quot;[&quot;</span><span class="p">,</span><span class="s2">&quot;]&quot;</span><span class="p">,</span><span class="s2">&quot;|&quot;</span><span class="p">,</span><span class="s2">&quot;$&quot;</span><span class="p">,</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span><span class="s2">&quot;:&quot;</span><span class="p">,</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="s2">&quot;@&quot;</span><span class="p">);</span>
-    <span class="k">for</span><span class="p">(</span><span class="nv">$index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nv">$index</span> <span class="o">&lt;</span> <span class="nb">strlen</span><span class="p">(</span><span class="nv">$varx</span><span class="p">);</span> <span class="nv">$index</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
-        <span class="k">if</span><span class="p">(</span><span class="nb">in_array</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span><span class="nv">$index</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="nv">$bad_stuff</span><span class="p">))</span> <span class="p">{</span>
-            <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">substr</span><span class="p">(</span><span class="nv">$varx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="nv">$valid</span> <span class="o">=</span> <span class="k">false</span><span class="p">;</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="nv">$valid</span><span class="p">;</span>
-<span class="p">}</span></code></pre></div>
-
-
-<p>This code has a pretty substantial blacklist of commonly used characters in
-injections and operates by iterating over each character of the questionable
-input and testing if the character is in the blacklist, if so, setting the
-<code>$valid</code> variable to false. This seems to be an effective technique at ensuring
-the input is safe to use, however OWASP tends to <a href="https://www.owasp.org/index.php/Data_Validation#Data_Validation_Strategies">discourage</a>
-this model.</p>
-
-<p>After ruling this out of potential vulns, I looked a little deeper into the code
-that powered the posting of news to the website, <code>add-news.php</code>.</p>
-
-<p>Here we can see that if the HTTP request is a &ldquo;POST&rdquo; and the PHP session variables
-&ldquo;isadmin&rdquo; and &ldquo;isofficer&rdquo; are set to &ldquo;yessir&rdquo; and &ldquo;true&rdquo; respectively, then
-the code that adds news gets executed.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="k">if</span> <span class="p">(</span><span class="nv">$_SERVER</span><span class="p">[</span><span class="s1">&#39;REQUEST_METHOD&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;POST&quot;</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">include</span><span class="p">(</span><span class="s2">&quot;ieee-lib.php&quot;</span><span class="p">);</span>
-        <span class="k">if</span><span class="p">(</span><span class="nb">isset</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isadmin&#39;</span><span class="p">])</span> <span class="o">||</span> <span class="nb">isset</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isofficer&#39;</span><span class="p">]))</span>
-        <span class="p">{</span>
-            <span class="k">if</span><span class="p">(</span><span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isadmin&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;yessir&quot;</span> <span class="o">||</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;isofficer&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="c1">// add news</span></code></pre></div>
-
-
-<p>After these access checks pass, the POST request data is processed and
-ultimately a SQL query string is generated.</p>
-
-<div class="highlight"><pre><code class="language-php" data-lang="php"><span class="c1">// continued from above</span>
-<span class="nv">$title</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;news_title&#39;</span><span class="p">],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
-<span class="nv">$text</span> <span class="o">=</span> <span class="nb">htmlspecialchars</span><span class="p">(</span><span class="nv">$_POST</span><span class="p">[</span><span class="s1">&#39;post&#39;</span><span class="p">],</span> <span class="nx">ENT_QUOTES</span><span class="p">);</span>
-<span class="p">{</span> <span class="o">...</span> <span class="p">}</span> <span class="c1">// some omitted stuff</span>
-<span class="nv">$user_query</span> <span class="o">=</span> <span class="s2">&quot;SELECT user_id, username FROM &quot;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="s1">&#39;sql_prefix&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;users WHERE username = &#39;&quot;</span> <span class="o">.</span> <span class="nv">$_SESSION</span><span class="p">[</span><span class="s1">&#39;username&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;&quot;</span><span class="p">;</span>
-<span class="nv">$user_result</span> <span class="o">=</span> <span class="nb">mysql_query</span><span class="p">(</span><span class="nv">$user_query</span><span class="p">);</span>
-<span class="k">if</span><span class="p">(</span><span class="nv">$user_result</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="c1">//Returns an array with the data from the SQL select statement</span>
-    <span class="nv">$user_row</span> <span class="o">=</span> <span class="nb">mysql_fetch_row</span><span class="p">(</span><span class="nv">$user_result</span><span class="p">);</span>
-
-    <span class="nv">$query1</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO &quot;</span> <span class="o">.</span> <span class="nv">$INFO</span><span class="p">[</span><span class="s1">&#39;sql_prefix&#39;</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;news (news_title, news_type, time_posted, time_meeting, news_body, author_id, author_name, meeting_location) &quot;</span><span class="p">;</span>
-    <span class="nv">$query2</span> <span class="o">=</span> <span class="s2">&quot;VALUES (&#39;&quot;</span> <span class="o">.</span> <span class="nv">$title</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$type_of_news</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nb">time</span><span class="p">()</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$time_of_meeting</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$text</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$user_row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$user_row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">.</span> <span class="s2">&quot;&#39;, &#39;&quot;</span> <span class="o">.</span> <span class="nv">$meetinglocation</span> <span class="o">.</span> <span class="s2">&quot;&#39;)&quot;</span><span class="p">;</span>
-    <span class="nv">$add_news_query</span> <span class="o">=</span> <span class="nv">$query1</span> <span class="o">.</span> <span class="nv">$query2</span><span class="p">;</span>
-    <span class="nv">$add_news_result</span> <span class="o">=</span> <span class="nb">mysql_query</span><span class="p">(</span><span class="nv">$add_news_query</span><span class="p">);</span>
-
-    <span class="k">if</span><span class="p">(</span><span class="nv">$add_news_result</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="nb">header</span><span class="p">(</span><span class="s1">&#39;Location: http://www.ieee.neu.edu/?page=addnews&amp;success=true&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-    <span class="k">else</span>
-    <span class="p">{</span>
-        <span class="nb">header</span><span class="p">(</span><span class="s1">&#39;Location: http://www.ieee.neu.edu/?page=addnews&amp;error=unable_to_post_news&#39;</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-<span class="c1">// done</span></code></pre></div>
-
-
-<p>The important part to notice here is that there is no code that ensures the
-legitimacy of the request, that is, that a currently authenticated admin
-user actually meant to make this request. In this scenario if we can somehow
-find a way to get the admin to
-submit an arbitrary POST request to the <code>add-news.php</code> page, since she already
-has the session all set up in her browser, we can bypass the session checks
-previously shown and add arbitrary news to the website, for example.</p>
-
-<p>You might be wondering how we can get the admin to submit arbitrary POST requests
-without her noticing. The most obvious answer is physical access to the her
-machine while she&rsquo;s away or something, but a much more realistic scenario
-would be if we would get the admin
-to browse to a web page that we (the attacker) control, we can use some nifty
-JavaScript magic to get her to automatically submit the proper POST request
-on our behalf.</p>
-
-<p>This is called <a href="https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF">Cross Site Request Forgery</a>).</p>
-
-<p>It turns out that these types of malicious pages are actually very simple
-to write. Remember, all that&rsquo;s really needed is JavaScript execution, so
-for example if you had previous knowledge of a site that the admin frequented
-that had an XSS vulnerability, that would be a perfect way to chain these attacks.
-Anyway, here&rsquo;s an example malicious page <sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>.</p>
-
-<div class="highlight"><pre><code class="language-html" data-lang="html"><span class="cp">&lt;!DOCTYPE HTML&gt;</span>
-<span class="nt">&lt;html&gt;</span>
-<span class="nt">&lt;body&gt;</span>
-    <span class="nt">&lt;h1&gt;</span>non-malicious website! :)<span class="nt">&lt;/h1&gt;</span>
-    <span class="nt">&lt;form</span> <span class="na">id=</span><span class="s">&quot;thisform&quot;</span> <span class="na">action=</span><span class="s">&quot;http://www.ieee.neu.edu/add-news.php&quot;</span> <span class="na">method=</span><span class="s">&quot;POST&quot;</span>
-          <span class="na">style=</span><span class="s">&quot;display:none;&quot;</span><span class="nt">&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;news_title&quot;</span> <span class="na">value=</span><span class="s">&quot;breaking news: u got hacked&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span> <span class="na">name=</span><span class="s">&quot;post&quot;</span> <span class="na">value=</span><span class="s">&quot;insert website defacement here&quot;</span> <span class="nt">/&gt;</span>
-        <span class="nt">&lt;input</span> <span class="na">type=</span><span class="s">&quot;submit&quot;</span><span class="nt">/&gt;</span>
-    <span class="nt">&lt;/form&gt;</span>
-    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
-        <span class="kd">var</span> <span class="nx">frm</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s2">&quot;thisform&quot;</span><span class="p">);</span>
-        <span class="nx">frm</span><span class="p">.</span><span class="nx">submit</span><span class="p">();</span>
-    <span class="nt">&lt;/script&gt;</span>
-<span class="nt">&lt;/body&gt;</span>
-<span class="nt">&lt;/html&gt;</span></code></pre></div>
-
-
-<p>Nothing fancy here, just a simple hidden form with the values you want to submit
-to the page, and some JS that submits the form.</p>
-
-<p>A caveat: Yes, it is true that you would
-have to guess the proper field names (&ldquo;posts&rdquo;, &ldquo;news_title&rdquo;) but even if you can
-only guess &ldquo;posts&rdquo;, you can write anything into the body of the news post.</p>
-
-<p>End result looks something like this.</p>
-
-<p><img src="/images/ieee_csrf.gif" alt="" /></p>
-
-<p>There was an identical bug in the code that handles editing users. Let&rsquo;s
-have some fun!</p>
-
-<p><img src="/images/ieee_csrf2.gif" alt="" /></p>
-
-<p>In both of these gifs, the admin user was logged in, and then they opened
-a malicious html file, simulating visiting a malicious website. The mere act of
-opening the web page triggered the payload which sent the POST to the server,
-adding the news, and changing the user.</p>
-
-<p>So how do we fix this sort of thing? The most common way involves the server
-requiring a randomly generated, non-predictable token that is associated with
-the user session with each request. An example could be that every time the
-actual admin web interface form is loaded, it contains a hidden field, invisible
-to the admin, with this token that is sent along with the request. The server
-verifies that it sent this token out previously, and that the token hasn&rsquo;t expired,
-and if everything else checks out, the request goes through.
-This crucial missing piece of information will prevent attackers from
-successfully faking requests as the authenticated user.</p>
-<div class="footnotes">
-<hr/>
-<ol>
-<li id="fn:1">
-<p>For more examples of how to trigger your CSRF payload via JavaScript, check out the excellent <a href="http://edgeguides.rubyonrails.org/security.html#cross-site-request-forgery-csrf">Ruby on Rails Security Guide</a><a href="#fnref:1" rev="footnote">&#8617;</a></p></li>
-</ol>
-</div>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/posts/2">&larr; Older</a>
@@ -2566,6 +2411,10 @@ successfully faking requests as the authenticated user.</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2017/04/20/stat/">Struct Stat Notes</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2016/02/09/lets-understand-setjmp-slash-longjmp/">Let's Understand: Setjmp()/longjmp()</a>
       </li>
     
@@ -2581,15 +2430,11 @@ successfully faking requests as the authenticated user.</p>
         <a href="/blog/2015/04/25/building-a-sketchy-website-101/">Building a Sketchy Website 101</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2015/01/18/a-simple-iot-light-switch/">Building a Simple IoT Light Switch</a>
-      </li>
-    
   </ul>
 </section>
 <section>
   <h1>Categories</h1>
-    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (2)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (2)</a></li><li><a href='/blog/categories/linux'>linux (5)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
+    <ul id="category-list"><li><a href='/blog/categories/android'>android (1)</a></li><li><a href='/blog/categories/assembly'>assembly (2)</a></li><li><a href='/blog/categories/c'>c (1)</a></li><li><a href='/blog/categories/ctf'>ctf (2)</a></li><li><a href='/blog/categories/glibc'>glibc (1)</a></li><li><a href='/blog/categories/hacking'>hacking (7)</a></li><li><a href='/blog/categories/hardware'>hardware (2)</a></li><li><a href='/blog/categories/linux'>linux (6)</a></li><li><a href='/blog/categories/programming'>programming (3)</a></li><li><a href='/blog/categories/python'>python (4)</a></li><li><a href='/blog/categories/reference'>reference (2)</a></li><li><a href='/blog/categories/reverse-engineering'>reverse engineering (2)</a></li><li><a href='/blog/categories/security'>security (6)</a></li><li><a href='/blog/categories/sysadmin'>sysadmin (4)</a></li><li><a href='/blog/categories/systems'>systems (1)</a></li><li><a href='/blog/categories/web'>web (3)</a></li></ul>
 </section>
 
   
