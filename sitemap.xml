@@ -3,87 +3,87 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/about/</loc>
+    <loc>https://vmresu.me/about/</loc>
     <lastmod>2019-10-31T12:41:17-07:00</lastmod>
   </url>
   
   <url>
-    <loc>/</loc>
+    <loc>https://vmresu.me/</loc>
     <lastmod>2019-10-31T12:41:17-07:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/</loc>
+    <loc>https://vmresu.me/categories/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/linux-c-systems-glibc/</loc>
+    <loc>https://vmresu.me/categories/linux-c-systems-glibc/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/</loc>
+    <loc>https://vmresu.me/posts/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2017-40-3-stat/</loc>
+    <loc>https://vmresu.me/posts/2017-40-3-stat/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/assembly-linux/</loc>
+    <loc>https://vmresu.me/categories/assembly-linux/</loc>
     <lastmod>2016-02-09T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</loc>
+    <loc>https://vmresu.me/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</loc>
     <lastmod>2016-02-09T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2015-06-14-building-a-simple-iot-light-switch/</loc>
+    <loc>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/hardware/</loc>
+    <loc>https://vmresu.me/categories/hardware/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2015-04-25-building-a-sketchy-website-101/</loc>
+    <loc>https://vmresu.me/posts/2015-04-25-building-a-sketchy-website-101/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/hacking/</loc>
+    <loc>https://vmresu.me/categories/hacking/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/sysadmin/</loc>
+    <loc>https://vmresu.me/categories/sysadmin/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/web/</loc>
+    <loc>https://vmresu.me/categories/web/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>/posts/2015-01-18-a-simple-iot-light-switch/</loc>
+    <loc>https://vmresu.me/posts/2015-01-18-a-simple-iot-light-switch/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
   </url>
   
   <url>
-    <loc>/categories/programming-python-hardware/</loc>
+    <loc>https://vmresu.me/categories/programming-python-hardware/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
   </url>
   
   <url>
-    <loc>/tags/</loc>
+    <loc>https://vmresu.me/tags/</loc>
   </url>
   
 </urlset>

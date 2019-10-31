@@ -2,21 +2,21 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>hardware on Mark Mossberg&#39;s Blog</title>
-    <link>/categories/hardware/</link>
+    <link>https://vmresu.me/categories/hardware/</link>
     <description>Recent content in hardware on Mark Mossberg&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sun, 14 Jun 2015 15:13:07 -0400</lastBuildDate>
     
-	<atom:link href="/categories/hardware/index.xml" rel="self" type="application/rss+xml" />
+	<atom:link href="https://vmresu.me/categories/hardware/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>Building a Simple IoT Light Switch, Pt. 2</title>
-      <link>/posts/2015-06-14-building-a-simple-iot-light-switch/</link>
+      <link>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</link>
       <pubDate>Sun, 14 Jun 2015 15:13:07 -0400</pubDate>
       
-      <guid>/posts/2015-06-14-building-a-simple-iot-light-switch/</guid>
+      <guid>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</guid>
       <description>This is a pretty late post, but I wanted to show off the hardware I designed as a follow up to the first &amp;ldquo;Building a Simple IoT Light Switch&amp;rdquo;. In that post I presented a prototype of a smart light switch I designed that consisted of a button which triggered a small Python server running on a Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an extraordinarily simple design that worked well enough, how it was very inconvenient to transport since I had to rewire the breadboard to the raspi GPIO pins every time I moved.</description>
     </item>
     
