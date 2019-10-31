@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Categories on Mark Mossberg&#39;s Blog</title>
+    <link>/categories/</link>
+    <description>Recent content in Categories on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 20 Apr 2017 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/categories/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>linux c systems glibc</title>
+      <link>/categories/linux-c-systems-glibc/</link>
+      <pubDate>Thu, 20 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/categories/linux-c-systems-glibc/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>assembly linux</title>
+      <link>/categories/assembly-linux/</link>
+      <pubDate>Tue, 09 Feb 2016 00:00:00 +0000</pubDate>
+      
+      <guid>/categories/assembly-linux/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>hardware</title>
+      <link>/categories/hardware/</link>
+      <pubDate>Sun, 14 Jun 2015 15:13:07 -0400</pubDate>
+      
+      <guid>/categories/hardware/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>hacking</title>
+      <link>/categories/hacking/</link>
+      <pubDate>Sat, 25 Apr 2015 17:42:10 -0400</pubDate>
+      
+      <guid>/categories/hacking/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>sysadmin</title>
+      <link>/categories/sysadmin/</link>
+      <pubDate>Sat, 25 Apr 2015 17:42:10 -0400</pubDate>
+      
+      <guid>/categories/sysadmin/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>web</title>
+      <link>/categories/web/</link>
+      <pubDate>Sat, 25 Apr 2015 17:42:10 -0400</pubDate>
+      
+      <guid>/categories/web/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>programming python hardware</title>
+      <link>/categories/programming-python-hardware/</link>
+      <pubDate>Sun, 18 Jan 2015 13:32:48 -0500</pubDate>
+      
+      <guid>/categories/programming-python-hardware/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

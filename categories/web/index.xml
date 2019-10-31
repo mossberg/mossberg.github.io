@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>web on Mark Mossberg&#39;s Blog</title>
+    <link>/categories/web/</link>
+    <description>Recent content in web on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 25 Apr 2015 17:42:10 -0400</lastBuildDate>
+    
+	<atom:link href="/categories/web/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Building a Sketchy Website 101</title>
+      <link>/posts/2015-04-25-building-a-sketchy-website-101/</link>
+      <pubDate>Sat, 25 Apr 2015 17:42:10 -0400</pubDate>
+      
+      <guid>/posts/2015-04-25-building-a-sketchy-website-101/</guid>
+      <description>Back in April, I won a free &amp;ldquo;.club&amp;rdquo; domain through gandi.net&amp;rsquo;s anniversary prize giveaway. I really didn&amp;rsquo;t need a &amp;ldquo;.club&amp;rdquo; domain in particular, so I thought it would be pretty fun to register a stereotypical &amp;ldquo;sketchy&amp;rdquo; domain and set it up as a drive-by download site or something, because while I&amp;rsquo;ve heard of doing this kind of thing, I&amp;rsquo;ve never actually done it before. Here&amp;rsquo;s a blog post walking through what I did.</description>
+    </item>
+    
+  </channel>
+</rss>

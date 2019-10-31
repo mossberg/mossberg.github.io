@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		 
+			
+  
+    <meta name="twitter:card" content="summary"/>
+    
+      <meta name="twitter:image" content="images/avatar.png" />
+    
+  
+  
+  <meta name="twitter:title" content="Let&#39;s understand: setjmp()/longjmp()"/>
+  <meta name="twitter:description" content="Pretty recently I learned about setjmp() and longjmp(). They&rsquo;re a neat pair of libc functions which allow you to save your program&rsquo;s current execution context and resume it at an arbitrary point in the future (with some caveats1). If you&rsquo;re wondering why this is particularly useful, to quote the manpage, one of their main use cases is &ldquo;&hellip;for dealing with errors and interrupts encountered in a low-level subroutine of a program."/>
+  
+    <meta name="twitter:site" content="@offlinemark"/>
+  
+  
+  
+  
+    <meta name="twitter:creator" content="@Mark Mossberg"/>
+  
+
+
+
+		
+		<meta name="author" content="Mark Mossberg">
+		<meta name="description" content="Hacker Nonsense">
+		<meta name="generator" content="Hugo 0.59.0" />
+		<title>Let&#39;s understand: setjmp()/longjmp() &middot; Mark Mossberg&#39;s Blog</title>
+		<link rel="shortcut icon" href="images/favicon.ico">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="css/highlight.css">
+
+		
+		<link rel="stylesheet" href="css/font-awesome.min.css">
+		
+
+		
+		<link href="/index.xml" rel="alternate" type="application/rss+xml" title="Mark Mossberg&#39;s Blog" />
+		
+
+		
+	</head>
+
+    <body>
+       <nav class="main-nav">
+	
+	
+		<a href=''> <span class="arrow">←</span>Home</a>
+	
+	<a href='posts'>Archive</a>
+	<a href='tags'>Tags</a>
+	<a href='about'>About</a>
+
+	
+
+	
+	
+	<a  href="/index.xml">Subscribe</a>
+	
+</nav>
+
+
+        <section id="wrapper" class="post">
+            <article>
+                <header>
+                    <h1>
+                        Let&#39;s understand: setjmp()/longjmp()
+                    </h1>
+                    <h2 class="headline">
+                    Feb 9, 2016
+                    · 2039 words
+                    · 10 minute read
+                      <span class="tags">
+                      
+                      </span>
+                    </h2>
+                </header>
+                
+                <section id="post-body">
+                    
+
+<p>Pretty recently I learned about <code>setjmp()</code> and <code>longjmp()</code>. They&rsquo;re a
+neat pair of libc functions which allow you to save your program&rsquo;s current
+execution context and resume it at an arbitrary point in the future (with
+some caveats<sup class="footnote-ref" id="fnref:1"><a href="#fn:1">1</a></sup>).
+If you&rsquo;re wondering why this is particularly useful, to quote
+the <a href="http://linux.die.net/man/3/setjmp">manpage</a>, one of their main use cases
+is &ldquo;&hellip;for dealing with errors and
+interrupts encountered in a low-level subroutine of a program.&rdquo; These functions
+can be used for more sophisticated error handling than simple error
+code return values.</p>
+
+<p>I was curious
+how these functions worked, so I decided to take a look
+at <a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386">musl libc&rsquo;s</a>
+implementation for x86.
+First, I&rsquo;ll explain their interfaces and show an example usage program.
+Next, since this post isn&rsquo;t aimed at the assembly wizard, I&rsquo;ll cover some
+basics of x86 and Linux calling convention to provide some required background
+knowledge.
+Lastly, I&rsquo;ll walk through the source, line by line.</p>
+
+<h2 id="interfaces">Interfaces</h2>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">setjmp</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">jmp_buf</span> <span style="color:#000">env</span><span style="color:#000;font-weight:bold">);</span></code></pre></div>
+<p><code>setjmp()</code> takes a single <code>jmp_buf</code> opaque type, returns 0, and continues
+execution afterward normally. A <code>jmp_buf</code> is the
+structure that <code>setjmp()</code> will save the calling execution context in. We&rsquo;ll
+examine it more closely later on.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">longjmp</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">jmp_buf</span> <span style="color:#000">env</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">val</span><span style="color:#000;font-weight:bold">);</span></code></pre></div>
+<p><code>longjmp()</code> takes a <code>jmp_buf</code> and an <code>int</code>, simply returning back the given
+<code>int</code> value (unless it was 0, in which case it returns 1). The unusual aspect
+is that when it returns, the program&rsquo;s execution resumes as if <code>setjmp()</code> had
+just been called. This allows the user to jump back an arbitrary amount of
+frames on the current call stack (presumably out of some deep routine which had
+an error). The return value allows the code following the <code>setjmp()</code> call to
+differentiate if <code>setjmp()</code> or <code>longjmp()</code> had just been called, and proceed
+accordingly.</p>
+
+<p>Here&rsquo;s a simple example.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#8f5902;font-style:italic">#include</span> <span style="color:#8f5902;font-style:italic">&lt;setjmp.h&gt;</span><span style="color:#8f5902;font-style:italic">
+</span><span style="color:#8f5902;font-style:italic">#include</span> <span style="color:#8f5902;font-style:italic">&lt;stdio.h&gt;</span><span style="color:#8f5902;font-style:italic">
+</span><span style="color:#8f5902;font-style:italic"></span>
+<span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">fancy_func</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">jmp_buf</span> <span style="color:#000">env</span><span style="color:#000;font-weight:bold">);</span>
+
+<span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">main</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">jmp_buf</span> <span style="color:#000">env</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">ret</span> <span style="color:#ce5c00;font-weight:bold">=</span> <span style="color:#000">setjmp</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">env</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">ret</span> <span style="color:#ce5c00;font-weight:bold">==</span> <span style="color:#0000cf;font-weight:bold">0</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#000">puts</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34;just returning from setjmp!&#34;</span><span style="color:#000;font-weight:bold">);</span>
+        <span style="color:#000">fancy_func</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">env</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#000;font-weight:bold">}</span> <span style="color:#204a87;font-weight:bold">else</span> <span style="color:#000;font-weight:bold">{</span>
+        <span style="color:#000">puts</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34;now returning from longjmp and exiting!&#34;</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#000;font-weight:bold">}</span>
+
+<span style="color:#000;font-weight:bold">}</span>
+
+<span style="color:#204a87;font-weight:bold">void</span> <span style="color:#000">fancy_func</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">jmp_buf</span> <span style="color:#000">env</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">puts</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">&#34;doing fancy stuff&#34;</span><span style="color:#000;font-weight:bold">);</span>
+    <span style="color:#000">longjmp</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">env</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">);</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
+<p>Output:</p>
+
+<pre><code>$ ./main
+just returning from setjmp!
+doing fancy stuff
+now returning from longjmp and exiting!
+</code></pre>
+
+<p>The above code creates a <code>jmp_buf</code> and calls <code>setjmp()</code>, saving the current
+execution context. Since <code>setjmp()</code> returns 0, the code follows the
+first branch, calling  <code>fancy_func()</code> and
+forwarding on the <code>jmp_buf</code>. <code>fancy_func()</code> does some fancy stuff, then calls
+<code>longjmp()</code>, passing in the <code>jmp_buf</code> and 1. Execution returns to the if
+statement on line 9, except this time, <code>ret</code> is 1 instead of 0, because
+we&rsquo;re returning from <code>longjmp()</code>.  Now the code
+follows the <code>else</code> path which prints and exits. <sup class="footnote-ref" id="fnref:2"><a href="#fn:2">2</a></sup></p>
+
+<h2 id="background-knowledge">Background Knowledge</h2>
+
+<p>I&rsquo;ve mentioned &ldquo;execution context&rdquo; a few times, but let&rsquo;s make that a little
+more concrete. In this case, a program&rsquo;s execution context can be defined by
+the state of the processor&rsquo;s registers.</p>
+
+<p>On x86, the relevant registers are the general purpose, index, and pointer
+registers.</p>
+
+<pre><code>General Purpose: eax, ebx, ecx, edx
+Index:           esi, edi
+Pointer:         ebp, esp, eip
+</code></pre>
+
+<p>ebx, ecx, edx, esi, and edi don&rsquo;t have particularly special meaning here and
+can be thought of as arbitrary 32 bit storage locations. However eax, ebp, and eip
+are a little different.</p>
+
+<ul>
+<li>eax is used for function return values (specified by the
+<a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a> calling
+convention)</li>
+<li>ebp, the frame pointer, contains a pointer to the start of the current stack
+frame.</li>
+<li>eip, the instruction pointer, contains a pointer to the next instruction to
+execute.</li>
+</ul>
+
+<p>With this in mind, I initially thought that a <code>jmp_buf</code> would be an array
+of 9 ints or something, in order to hold each register.</p>
+
+<p>As it happens, <code>jmp_buf</code> is instead declared as (<a href="http://git.musl-libc.org/cgit/musl/tree/include/setjmp.h#n12">link</a>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#204a87;font-weight:bold">typedef</span> <span style="color:#204a87;font-weight:bold">struct</span> <span style="color:#000">__jmp_buf_tag</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">__jmp_buf</span> <span style="color:#000">__jb</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#204a87;font-weight:bold">unsigned</span> <span style="color:#204a87;font-weight:bold">long</span> <span style="color:#000">__fl</span><span style="color:#000;font-weight:bold">;</span>
+    <span style="color:#204a87;font-weight:bold">unsigned</span> <span style="color:#204a87;font-weight:bold">long</span> <span style="color:#000">__ss</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">128</span><span style="color:#ce5c00;font-weight:bold">/</span><span style="color:#204a87;font-weight:bold">sizeof</span><span style="color:#000;font-weight:bold">(</span><span style="color:#204a87;font-weight:bold">long</span><span style="color:#000;font-weight:bold">)];</span>
+<span style="color:#000;font-weight:bold">}</span> <span style="color:#000">jmp_buf</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">];</span></code></pre></div>
+<p>And for x86, <code>__jmp_buf</code> is declared as (<a href="http://git.musl-libc.org/cgit/musl/tree/arch/i386/bits/setjmp.h#n1">link</a>):</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c" data-lang="c"><span style="color:#204a87;font-weight:bold">typedef</span> <span style="color:#204a87;font-weight:bold">unsigned</span> <span style="color:#204a87;font-weight:bold">long</span> <span style="color:#000">__jmp_buf</span><span style="color:#000;font-weight:bold">[</span><span style="color:#0000cf;font-weight:bold">6</span><span style="color:#000;font-weight:bold">];</span></code></pre></div>
+<p>I had never seen this syntax of using bracket operators at the end of a typedef
+but searched and found out that the <code>__jmp_buf</code> declaration
+declares a fixed size array of 6 unsigned longs, and the <code>jmp_buf</code> declaration
+declares an array of 1 <code>struct __jmp_buf_tag</code>. The reason for the array of 1
+is so the pointer semantics of arrays kick in and the <code>struct __jmp_buf_tag</code>
+is actually passed by reference in calls to <code>setjmp()</code>/<code>longjmp()</code> (as opposed
+to being copied).</p>
+
+<p>Anyway, apparently my guess of 9 ints was incorrect, and it&rsquo;s actually 6 (longs).</p>
+
+<p>Before we
+can dig into the source to understand why this is,
+we need to understand what the state of
+the program stack is at the point <code>setjmp()</code> is called, and to do that, we need
+to understand
+which calling convention is being used. Since we assume x86 Linux, this will
+be <a href="https://en.wikipedia.org/wiki/X86_calling_conventions#cdecl">cdecl</a>. The
+relevant parts of cdecl for this case are:</p>
+
+<ul>
+<li>arguments passed on the stack</li>
+<li>integer values and memory addresses returned in eax (as mentioned above)</li>
+<li>eax, ecx, edx are caller saved, the rest are callee saved</li>
+</ul>
+
+<p><code>setjmp()</code>&rsquo;s code executes immediately
+after <code>setjmp()</code>&rsquo;s <code>call</code> instruction, so at the point the first
+instruction of <code>setjmp()</code> executes, the stack looks something like this.</p>
+
+<pre><code>&gt; high memory &lt;
+| ...                       |
+| caller's caller saved eip |
+| caller's caller saved ebp | &lt; ebp
+| caller stack var 1        | // caller's stack frame
+| caller stack var 2        |
+| caller stack var ...      |
+| caller stack var n        |
+| pointer to jmp_buf        | // argument to setjmp
+| caller saved eip          | &lt; esp
++---------------------------+ // setjmp's stack frame
+&gt; low memory &lt;
+</code></pre>
+
+<p>(In this illustration, the stack grows down.)</p>
+
+<p>At the top of the stack is the eip value that the <code>call</code> instruction pushed,
+or where to return to after <code>setjmp()</code> finishes. Above that is the first,
+and only argument, the pointer to the given <code>jmp_buf</code>. Lastly, above that is
+the caller&rsquo;s stack frame.
+esp points to the top
+of the stack as usual, and ebp is still pointing to the start of the caller&rsquo;s
+stack
+frame. Usually the first thing a function does is push
+ebp on the stack, and set ebp to esp to now point to the current stack frame (a.k.a the prologue),
+but since <code>setjmp()</code> is such a minimal function, it doesn&rsquo;t do this.
+Furthermore, since ebp is one of the registers that needs to be saved, <code>setjmp()</code>
+needs it to be unperturbed.</p>
+
+<p>After <code>setjmp()</code> returns, the stack will look something like this:</p>
+
+<pre><code>&gt; high memory &lt;
+| ...                       |
+| caller's caller saved eip |
+| caller's caller saved ebp | &lt; ebp
+| caller stack var 1        | // caller's stack frame
+| caller stack var 2        |
+| caller stack var ...      |
+| caller stack var n        |
+| pointer to jmp_buf        | &lt; esp
++---------------------------+
+&gt; low memory &lt;
+</code></pre>
+
+<p>It&rsquo;s nearly identical, except eip has been popped off the stack, and is now
+executing the next instruction after the caller&rsquo;s <code>call setjmp</code>. esp has
+also been updated accordingly. This is the state of the program that <code>setjmp()</code>
+will need to record, and that <code>longjmp()</code> will restore.</p>
+
+<p>Before reading the source I tried to reason about what I expected would happen.
+I presume:</p>
+
+<ul>
+<li>General purpose and index registers (eax, ebx, ecx, edx, esi, edi) which don&rsquo;t
+have any effect on control flow can be trivially saved and restored</li>
+<li>ebp can similarly be saved &ldquo;as is&rdquo;, since its value when
+<code>setjmp()</code> executes is exactly what it needs to be restored to in <code>longjmp()</code></li>
+<li>esp cannot be saved &ldquo;as is&rdquo; because when <code>setjmp()</code> executes, there is the
+extra eip on the stack that is not there after the function returns. Therefore,
+the value for esp that should be saved is esp+4 to match the expected
+state of the stack after return</li>
+<li>The eip that should be saved is the address of the instruction after the
+<code>call setjmp</code> instruction, which can be retrieved from the top of the
+stack by dereferencing esp</li>
+</ul>
+
+<p>With all that out of the way, let&rsquo;s read the source (all annotations by me)
+(<a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386/setjmp.s">link</a>).
+Since this type of low level register manipulation isn&rsquo;t available from C
+(modulo compiler intrinsics), both of these functions are necessarily written
+in assembly.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#f57900">setjmp:</span>
+    <span style="color:#000">mov</span> <span style="color:#0000cf;font-weight:bold">4</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%esp</span><span style="color:#000;font-weight:bold">),</span> <span style="color:#000">%eax</span>     <span style="color:#8f5902;font-style:italic">; get pointer to jmp_buf, passed as argument on stack
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%ebx</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span>   <span style="color:#8f5902;font-style:italic">; jmp_buf[0] = ebx
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%esi</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">4</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic">; jmp_buf[1] = esi
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%edi</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">8</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic">; jmp_buf[2] = edi
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%ebp</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">12</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#8f5902;font-style:italic">; jmp_buf[3] = ebp
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">lea</span> <span style="color:#0000cf;font-weight:bold">4</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%esp</span><span style="color:#000;font-weight:bold">),</span> <span style="color:#000">%ecx</span>     <span style="color:#8f5902;font-style:italic">; get previous value of esp, before call
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%ecx</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">16</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#8f5902;font-style:italic">; jmp_buf[4] = esp before call
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>  <span style="color:#000;font-weight:bold">(</span><span style="color:#000">%esp</span><span style="color:#000;font-weight:bold">),</span> <span style="color:#000">%ecx</span>     <span style="color:#8f5902;font-style:italic">; get saved caller eip from top of stack
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>    <span style="color:#000">%ecx</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#0000cf;font-weight:bold">20</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">)</span> <span style="color:#8f5902;font-style:italic">; jmp_buf[5] = saved eip
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">xor</span>    <span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">,</span> <span style="color:#000">%eax</span>     <span style="color:#8f5902;font-style:italic">; eax = 0
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">ret</span>                   <span style="color:#a40000">;</span> <span style="color:#000">pop</span> <span style="color:#000">stack</span> <span style="color:#000">into</span> <span style="color:#000">eip</span></code></pre></div>
+<p>The first line retrieves the argument off the stack, placing a pointer to
+the <code>jmp_buf</code> (remember, an array of 6 unsigned longs) in eax. It then moves
+ebx, esi,
+edi, and ebp &ldquo;as is&rdquo; into the int array. It adds 4 to esp with a <code>lea</code> and
+stores that next. Next, it dereferences esp and stores that in the last slot
+in the array. Lastly, it zeroes out eax and returns.</p>
+
+<p>The final state of the <code>jmp_buf</code> after <code>setjmp()</code> returns looks like:</p>
+
+<pre><code>   0    1    2    3    4    5
+[ ebx, esi, edi, ebp, esp, eip ]
+</code></pre>
+
+<p>Now let&rsquo;s look at <code>longjmp()</code> (<a href="http://git.musl-libc.org/cgit/musl/tree/src/setjmp/i386/longjmp.s">link</a>).</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#f57900">longjmp:</span>
+    <span style="color:#000">mov</span>  <span style="color:#0000cf;font-weight:bold">4</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%esp</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%edx</span> <span style="color:#8f5902;font-style:italic">; get pointer to jmp_buf, passed as argument 1 on stack
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>  <span style="color:#0000cf;font-weight:bold">8</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%esp</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%eax</span> <span style="color:#8f5902;font-style:italic">; get int val in eax, passed as argument 2 on stack
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">test</span>    <span style="color:#000">%eax</span><span style="color:#000;font-weight:bold">,</span><span style="color:#000">%eax</span> <span style="color:#8f5902;font-style:italic">; is int val == 0?
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">jnz</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000">f</span>
+    <span style="color:#000">inc</span>     <span style="color:#000">%eax</span>      <span style="color:#8f5902;font-style:italic">; if so, eax++
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">:</span>
+    <span style="color:#000">mov</span>   <span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%ebx</span> <span style="color:#8f5902;font-style:italic">; ebx = jmp_buf[0]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>  <span style="color:#0000cf;font-weight:bold">4</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%esi</span> <span style="color:#8f5902;font-style:italic">; esi = jmp_buf[1]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>  <span style="color:#0000cf;font-weight:bold">8</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%edi</span> <span style="color:#8f5902;font-style:italic">; edi = jmp_buf[2]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span> <span style="color:#0000cf;font-weight:bold">12</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%ebp</span> <span style="color:#8f5902;font-style:italic">; ebp = jmp_buf[3]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span> <span style="color:#0000cf;font-weight:bold">16</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%ecx</span> <span style="color:#8f5902;font-style:italic">; ecx = jmp_buf[4]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span>     <span style="color:#000">%ecx</span><span style="color:#000;font-weight:bold">,</span><span style="color:#000">%esp</span> <span style="color:#8f5902;font-style:italic">; esp = ecx
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">mov</span> <span style="color:#0000cf;font-weight:bold">20</span><span style="color:#000;font-weight:bold">(</span><span style="color:#000">%edx</span><span style="color:#000;font-weight:bold">),</span><span style="color:#000">%ecx</span> <span style="color:#8f5902;font-style:italic">; ecx = jmp_buf[5]
+</span><span style="color:#8f5902;font-style:italic"></span>    <span style="color:#000">jmp</span> <span style="color:#000;font-weight:bold">*</span><span style="color:#000">%ecx</span>         <span style="color:#a40000">;</span> <span style="color:#000">eip</span> <span style="color:#a40000">=</span> <span style="color:#000">ecx</span></code></pre></div>
+<p>The first two lines retrieve the arguments (pointer to <code>jmp_buf</code>, int return
+val) from the stack into edx and eax, respectively. The int val is
+incremented to 1 if it is 0, according to the spec. Next, ebx, esi, edi, and
+ebp are reset
+to their saved state, stored in the <code>jmp_buf</code>, in a straightforward manner.
+As you can see, both <code>setjmp()</code> and <code>longjmp()</code> need to precisely agree on
+where each particular register is saved in the <code>jmp_buf</code>.
+esp is mysteriously restored in an indirect manner, via ecx<sup class="footnote-ref" id="fnref:3"><a href="#fn:3">3</a></sup> and
+finally, eip is reset to the saved state via an indirect jump.</p>
+
+<p>So I was mostly correct, but it seems like eax, ecx, and edx were not saved
+in the <code>jmp_buf</code>!
+If we look back on the details of cdecl, it becomes clear why.</p>
+
+<ul>
+<li>eax doesn&rsquo;t need to be saved, because it is reserved for the return value</li>
+<li>ecx and edx are <strong>caller saved</strong>. This means that a callee subroutine is
+free to trash these registers, and it is the responsibility for the caller
+to save and restore them after the subroutine returns. Because of this,
+if the function that calls <code>setjmp()</code> needs to use ecx or edx after the
+call, it will <strong>already</strong> have code to save and restore those registers before
+and after the function call. Since <code>longjmp()</code> resumes execution as if
+<code>setjmp()</code> had immediately returned, execution will automatically hit the
+code that restores ecx and edx, making it unnecessary to save them in the
+<code>jmp_buf</code>.</li>
+</ul>
+
+<p>This is just one example of how great musl libc is at providing an
+<em>understandable</em> resource for learning the internals of systems software. I
+often find myself referencing it when I&rsquo;m curious about libc internals, and
+if you&rsquo;re not familiar with it, I highly recommend checking it out!</p>
+<div class="footnotes">
+
+<hr />
+
+<ol>
+<li id="fn:1">Mainly, that the function which called <code>setjmp()</code> cannot have returned before the corresponding <code>longjmp()</code> call.
+ <a class="footnote-return" href="#fnref:1"><sup>[return]</sup></a></li>
+<li id="fn:2">A slight aside: This situation where a function returns different values based on the execution context also appears in <code>fork()</code>, in which the caller uses the return value to differentiate whether it is now executing in the child or parent process.<br />
+ <a class="footnote-return" href="#fnref:2"><sup>[return]</sup></a></li>
+<li id="fn:3">I actually have no good explanation for this and am pretty curious why it&rsquo;s done this way. Something like <code>mov $esp, [$edx+16]</code> is a perfectly valid instruction (tested with <code>rasm2</code>)! I asked on the musl <a href="http://www.openwall.com/lists/musl/2016/01/12/11">mailing list</a>, but no one responded :(. If you have an explanation, please let me know!
+ <a class="footnote-return" href="#fnref:3"><sup>[return]</sup></a></li>
+</ol>
+</div>
+
+                </section>
+            </article>
+
+            
+                <a class="twitter" href="https://twitter.com/intent/tweet?text=%2fposts%2f2016-01-11-lets-understand-setjmp-slash-longjmp%2f - Let%27s%20understand%3a%20setjmp%28%29%2flongjmp%28%29 by @offlinemark"><span class="icon-twitter"> tweet</span></a> | 
+
+<a class="facebook" href="#" onclick="
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),
+      'facebook-share-dialog',
+      'width=626,height=436');
+    return false;"><span class="icon-facebook-rect"> Share</span>
+</a>
+
+            
+
+            
+                <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'your_disqus_short_name'; 
+
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+            
+
+            
+
+            <footer id="footer">
+    
+        <div id="social">
+
+	
+	
+    <a class="symbol" href="https://www.github.com/mossberg">
+        <i class="fa fa-github-square"></i>
+    </a>
+    
+    <a class="symbol" href="https://www.twitter.com/offlinemark">
+        <i class="fa fa-twitter-square"></i>
+    </a>
+    
+
+
+</div>
+
+    
+    <p class="small">
+    
+       © Copyright 2019 <i class="fa fa-heart" aria-hidden="true"></i> Mark Mossberg
+    
+    </p>
+    <p class="small">
+        Powered by <a href="http://www.gohugo.io/">Hugo</a> Theme By <a href="https://github.com/nodejh/hugo-theme-cactus-plus">nodejh</a>
+    </p>
+</footer>
+
+        </section>
+
+        <script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-36552439-2', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+
+
+
+
+
+    </body>
+</html>

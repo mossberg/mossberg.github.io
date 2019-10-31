@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Mark Mossberg&#39;s Blog</title>
+    <link>/</link>
+    <description>Recent content on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 31 Oct 2019 12:41:17 -0700</lastBuildDate>
+    
+	<atom:link href="/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>About</title>
+      <link>/about/</link>
+      <pubDate>Thu, 31 Oct 2019 12:41:17 -0700</pubDate>
+      
+      <guid>/about/</guid>
+      <description>I&amp;rsquo;m a music producer and computer programmer :)
+https://soundcloud.com/sendcomfort
+https://twitter.com/offlinemark
+https://github.com/mossberg</description>
+    </item>
+    
+    <item>
+      <title>Struct stat notes</title>
+      <link>/posts/2017-40-3-stat/</link>
+      <pubDate>Thu, 20 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/2017-40-3-stat/</guid>
+      <description>Note: i&amp;rsquo;m going to try a significantly more informal blogging style
+ struct stat on Linux is pretty interesting
+ the struct definition in the man page is not exactly accurate glibc explicitly pads the struct with unused members which is intersting. I guess to reserve space for expansion of fields  if you want to see the real definition, a trick you can use is writing a test program that uses a struct stat, and compiling with -E to stop after preprocessing then look in that output for the definition  you can look in the glibc sources and the linux sources and see that they actually have to make their struct definitions match!</description>
+    </item>
+    
+    <item>
+      <title>Let&#39;s understand: setjmp()/longjmp()</title>
+      <link>/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</link>
+      <pubDate>Tue, 09 Feb 2016 00:00:00 +0000</pubDate>
+      
+      <guid>/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</guid>
+      <description>Pretty recently I learned about setjmp() and longjmp(). They&amp;rsquo;re a neat pair of libc functions which allow you to save your program&amp;rsquo;s current execution context and resume it at an arbitrary point in the future (with some caveats1). If you&amp;rsquo;re wondering why this is particularly useful, to quote the manpage, one of their main use cases is &amp;ldquo;&amp;hellip;for dealing with errors and interrupts encountered in a low-level subroutine of a program.</description>
+    </item>
+    
+    <item>
+      <title>Building a Simple IoT Light Switch, Pt. 2</title>
+      <link>/posts/2015-06-14-building-a-simple-iot-light-switch/</link>
+      <pubDate>Sun, 14 Jun 2015 15:13:07 -0400</pubDate>
+      
+      <guid>/posts/2015-06-14-building-a-simple-iot-light-switch/</guid>
+      <description>This is a pretty late post, but I wanted to show off the hardware I designed as a follow up to the first &amp;ldquo;Building a Simple IoT Light Switch&amp;rdquo;. In that post I presented a prototype of a smart light switch I designed that consisted of a button which triggered a small Python server running on a Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an extraordinarily simple design that worked well enough, how it was very inconvenient to transport since I had to rewire the breadboard to the raspi GPIO pins every time I moved.</description>
+    </item>
+    
+    <item>
+      <title>Building a Sketchy Website 101</title>
+      <link>/posts/2015-04-25-building-a-sketchy-website-101/</link>
+      <pubDate>Sat, 25 Apr 2015 17:42:10 -0400</pubDate>
+      
+      <guid>/posts/2015-04-25-building-a-sketchy-website-101/</guid>
+      <description>Back in April, I won a free &amp;ldquo;.club&amp;rdquo; domain through gandi.net&amp;rsquo;s anniversary prize giveaway. I really didn&amp;rsquo;t need a &amp;ldquo;.club&amp;rdquo; domain in particular, so I thought it would be pretty fun to register a stereotypical &amp;ldquo;sketchy&amp;rdquo; domain and set it up as a drive-by download site or something, because while I&amp;rsquo;ve heard of doing this kind of thing, I&amp;rsquo;ve never actually done it before. Here&amp;rsquo;s a blog post walking through what I did.</description>
+    </item>
+    
+    <item>
+      <title>Building A Simple IoT Light Switch</title>
+      <link>/posts/2015-01-18-a-simple-iot-light-switch/</link>
+      <pubDate>Sun, 18 Jan 2015 13:32:48 -0500</pubDate>
+      
+      <guid>/posts/2015-01-18-a-simple-iot-light-switch/</guid>
+      <description>I&amp;rsquo;m lucky enough to own a Philips Hue wireless lighting unit (thanks NUACM!) which essentially is this really awesome Internet of Things (IoT) product that lets me replace all my standard light bulbs with special RGB ones that can be controlled wirelessly. The bulbs communicate via ZigBee with a &amp;ldquo;Bridge&amp;rdquo; unit that is connected to my local network and hosts an HTTP API for interfacing with the lights. This API is used by the official Hue mobile app for controlling the lights, but is also publicly documented and totally hacker friendly.</description>
+    </item>
+    
+  </channel>
+</rss>
