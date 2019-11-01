@@ -13,12 +13,12 @@
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/</loc>
+    <loc>https://vmresu.me/tags/c/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/linux-c-systems-glibc/</loc>
+    <loc>https://vmresu.me/tags/linux/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
@@ -33,7 +33,12 @@
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/assembly-linux/</loc>
+    <loc>https://vmresu.me/tags/</loc>
+    <lastmod>2017-04-20T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/tags/assembly/</loc>
     <lastmod>2016-02-09T00:00:00+00:00</lastmod>
   </url>
   
@@ -43,12 +48,17 @@
   </url>
   
   <url>
+    <loc>https://vmresu.me/tags/lowlevel/</loc>
+    <lastmod>2016-02-09T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/hardware/</loc>
+    <loc>https://vmresu.me/tags/hardware/</loc>
     <lastmod>2015-06-14T15:13:07-04:00</lastmod>
   </url>
   
@@ -58,17 +68,17 @@
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/hacking/</loc>
+    <loc>https://vmresu.me/tags/hacking/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/sysadmin/</loc>
+    <loc>https://vmresu.me/tags/sysadmin/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/web/</loc>
+    <loc>https://vmresu.me/tags/web/</loc>
     <lastmod>2015-04-25T17:42:10-04:00</lastmod>
   </url>
   
@@ -78,12 +88,17 @@
   </url>
   
   <url>
-    <loc>https://vmresu.me/categories/programming-python-hardware/</loc>
+    <loc>https://vmresu.me/tags/programming/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/tags/</loc>
+    <loc>https://vmresu.me/tags/python/</loc>
+    <lastmod>2015-01-18T13:32:48-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/categories/</loc>
   </url>
   
 </urlset>

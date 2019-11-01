@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>lowlevel on Mark Mossberg&#39;s Blog</title>
+    <link>https://vmresu.me/tags/lowlevel/</link>
+    <description>Recent content in lowlevel on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 09 Feb 2016 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://vmresu.me/tags/lowlevel/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Let&#39;s understand: setjmp()/longjmp()</title>
+      <link>https://vmresu.me/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</link>
+      <pubDate>Tue, 09 Feb 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://vmresu.me/posts/2016-01-11-lets-understand-setjmp-slash-longjmp/</guid>
+      <description>Pretty recently I learned about setjmp() and longjmp(). They&amp;rsquo;re a neat pair of libc functions which allow you to save your program&amp;rsquo;s current execution context and resume it at an arbitrary point in the future (with some caveats1). If you&amp;rsquo;re wondering why this is particularly useful, to quote the manpage, one of their main use cases is &amp;ldquo;&amp;hellip;for dealing with errors and interrupts encountered in a low-level subroutine of a program.</description>
+    </item>
+    
+  </channel>
+</rss>

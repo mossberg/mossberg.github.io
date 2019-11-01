@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>c on Mark Mossberg&#39;s Blog</title>
+    <link>https://vmresu.me/tags/c/</link>
+    <description>Recent content in c on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 20 Apr 2017 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://vmresu.me/tags/c/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Struct stat notes</title>
+      <link>https://vmresu.me/posts/2017-40-3-stat/</link>
+      <pubDate>Thu, 20 Apr 2017 00:00:00 +0000</pubDate>
+      
+      <guid>https://vmresu.me/posts/2017-40-3-stat/</guid>
+      <description>Note: i&amp;rsquo;m going to try a significantly more informal blogging style
+ struct stat on Linux is pretty interesting
+ the struct definition in the man page is not exactly accurate glibc explicitly pads the struct with unused members which is intersting. I guess to reserve space for expansion of fields  if you want to see the real definition, a trick you can use is writing a test program that uses a struct stat, and compiling with -E to stop after preprocessing then look in that output for the definition  you can look in the glibc sources and the linux sources and see that they actually have to make their struct definitions match!</description>
+    </item>
+    
+  </channel>
+</rss>

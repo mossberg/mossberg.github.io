@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>hardware on Mark Mossberg&#39;s Blog</title>
+    <link>https://vmresu.me/tags/hardware/</link>
+    <description>Recent content in hardware on Mark Mossberg&#39;s Blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 14 Jun 2015 15:13:07 -0400</lastBuildDate>
+    
+	<atom:link href="https://vmresu.me/tags/hardware/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Building a Simple IoT Light Switch, Pt. 2</title>
+      <link>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</link>
+      <pubDate>Sun, 14 Jun 2015 15:13:07 -0400</pubDate>
+      
+      <guid>https://vmresu.me/posts/2015-06-14-building-a-simple-iot-light-switch/</guid>
+      <description>This is a pretty late post, but I wanted to show off the hardware I designed as a follow up to the first &amp;ldquo;Building a Simple IoT Light Switch&amp;rdquo;. In that post I presented a prototype of a smart light switch I designed that consisted of a button which triggered a small Python server running on a Raspberry Pi to control my Phillips Hue lights over an HTTP API. It was an extraordinarily simple design that worked well enough, how it was very inconvenient to transport since I had to rewire the breadboard to the raspi GPIO pins every time I moved.</description>
+    </item>
+    
+    <item>
+      <title>Building A Simple IoT Light Switch</title>
+      <link>https://vmresu.me/posts/2015-01-18-a-simple-iot-light-switch/</link>
+      <pubDate>Sun, 18 Jan 2015 13:32:48 -0500</pubDate>
+      
+      <guid>https://vmresu.me/posts/2015-01-18-a-simple-iot-light-switch/</guid>
+      <description>I&amp;rsquo;m lucky enough to own a Philips Hue wireless lighting unit (thanks NUACM!) which essentially is this really awesome Internet of Things (IoT) product that lets me replace all my standard light bulbs with special RGB ones that can be controlled wirelessly. The bulbs communicate via ZigBee with a &amp;ldquo;Bridge&amp;rdquo; unit that is connected to my local network and hosts an HTTP API for interfacing with the lights. This API is used by the official Hue mobile app for controlling the lights, but is also publicly documented and totally hacker friendly.</description>
+    </item>
+    
+  </channel>
+</rss>
