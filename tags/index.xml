@@ -6,10 +6,37 @@
     <description>Recent content in Tags on Mark Mossberg&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 20 Apr 2017 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Thu, 28 Nov 2019 11:18:14 -0500</lastBuildDate>
     
 	<atom:link href="https://vmresu.me/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>C&#43;&#43;</title>
+      <link>https://vmresu.me/tags/c&#43;&#43;/</link>
+      <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
+      
+      <guid>https://vmresu.me/tags/c&#43;&#43;/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>cmake</title>
+      <link>https://vmresu.me/tags/cmake/</link>
+      <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
+      
+      <guid>https://vmresu.me/tags/cmake/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>linux</title>
+      <link>https://vmresu.me/tags/linux/</link>
+      <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
+      
+      <guid>https://vmresu.me/tags/linux/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>c</title>
@@ -17,15 +44,6 @@
       <pubDate>Thu, 20 Apr 2017 00:00:00 +0000</pubDate>
       
       <guid>https://vmresu.me/tags/c/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>linux</title>
-      <link>https://vmresu.me/tags/linux/</link>
-      <pubDate>Thu, 20 Apr 2017 00:00:00 +0000</pubDate>
-      
-      <guid>https://vmresu.me/tags/linux/</guid>
       <description></description>
     </item>
     

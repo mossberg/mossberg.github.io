@@ -6,10 +6,22 @@
     <description>Recent content on Mark Mossberg&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 31 Oct 2019 12:41:17 -0700</lastBuildDate>
+    <lastBuildDate>Thu, 28 Nov 2019 11:18:14 -0500</lastBuildDate>
     
 	<atom:link href="https://vmresu.me/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>C&#43;&#43; compilation notes (CMake &#43; libxml&#43;&#43;)</title>
+      <link>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</link>
+      <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
+      
+      <guid>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</guid>
+      <description>Let&amp;rsquo;s set up a simple C++ program that links to libxml++ on Ubuntu 18.04.
+First, we&amp;rsquo;ll install libxml++ from apt.
+sudo apt install libxml++2.6-dev This installs a pre-built libxml++ shared object, and also header files that we&amp;rsquo;ll need for development.
+Sidenote: If you simply want to install libxml++ as a dependency for another app, and aren&amp;rsquo;t planning on doing any dev work, you can simply download the libxml++2.6-2v5 package, which only contains the shared objects, and no headers.</description>
+    </item>
     
     <item>
       <title>About</title>

@@ -3,12 +3,47 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://vmresu.me/about/</loc>
-    <lastmod>2019-10-31T12:41:17-07:00</lastmod>
+    <loc>https://vmresu.me/tags/c&#43;&#43;/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/categories/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/tags/cmake/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/tags/linux/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
   </url>
   
   <url>
     <loc>https://vmresu.me/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/posts/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/tags/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/about/</loc>
     <lastmod>2019-10-31T12:41:17-07:00</lastmod>
   </url>
   
@@ -18,22 +53,7 @@
   </url>
   
   <url>
-    <loc>https://vmresu.me/tags/linux/</loc>
-    <lastmod>2017-04-20T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://vmresu.me/posts/</loc>
-    <lastmod>2017-04-20T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
     <loc>https://vmresu.me/posts/2017-40-3-stat/</loc>
-    <lastmod>2017-04-20T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://vmresu.me/tags/</loc>
     <lastmod>2017-04-20T00:00:00+00:00</lastmod>
   </url>
   
@@ -95,10 +115,6 @@
   <url>
     <loc>https://vmresu.me/tags/python/</loc>
     <lastmod>2015-01-18T13:32:48-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://vmresu.me/categories/</loc>
   </url>
   
 </urlset>
