@@ -19,7 +19,7 @@
       <guid>https://vmresu.me/posts/2019-11-28-pedantic-c&#43;&#43;-compilation/</guid>
       <description>Takeaways:
  Don&amp;rsquo;t assume it&amp;rsquo;s safe to use pre-built dependencies when compiling C++ programs. You might want to build from source, especially if you can&amp;rsquo;t determine how a pre-built object was compiled, or if you want to use a different C++ standard than was used to compile it.
- Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source.</description>
+ Ubuntu has public build logs which can help you determine if you can use a pre-built object, or if you should compile from source.</description>
     </item>
     
   </channel>
