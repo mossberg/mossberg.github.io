@@ -13,6 +13,17 @@
     
     <item>
       <title>Being pedantic about C&#43;&#43; compilation</title>
+      <link>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</link>
+      <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
+      
+      <guid>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</guid>
+      <description>Takeaways:
+ Don&amp;rsquo;t assume it&amp;rsquo;s safe to use pre-built dependencies when compiling C++ programs. You might want to build from source, especially if you can&amp;rsquo;t determine how a pre-built object was compiled, or if you want to use a different C++ standard than was used to compile it.
+ Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source.</description>
+    </item>
+    
+    <item>
+      <title>Being pedantic about C&#43;&#43; compilation</title>
       <link>https://vmresu.me/posts/2019-11-28-pedantic-c&#43;&#43;-compilation/</link>
       <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
       

@@ -13,7 +13,7 @@
     
   
   
-  <meta name="twitter:title" content="Notes on pedantic C&#43;&#43; compilation"/>
+  <meta name="twitter:title" content="Being pedantic about C&#43;&#43; compilation"/>
   <meta name="twitter:description" content="Takeaways:
  Don&rsquo;t assume it&rsquo;s safe to use pre-built dependencies when compiling C&#43;&#43; programs. You might want to build from source, especially if you can&rsquo;t determine how a pre-built object was compiled, or if you want to use a different C&#43;&#43; standard than was used to compile it.
  Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source."/>
@@ -32,7 +32,7 @@
 		<meta name="author" content="Mark Mossberg">
 		<meta name="description" content="Hacker Nonsense">
 		<meta name="generator" content="Hugo 0.59.0" />
-		<title>Notes on pedantic C&#43;&#43; compilation &middot; Mark Mossberg&#39;s Blog</title>
+		<title>Being pedantic about C&#43;&#43; compilation &middot; Mark Mossberg&#39;s Blog</title>
 		<link rel="shortcut icon" href="https://vmresu.me/images/favicon.ico">
 		<link rel="stylesheet" href="https://vmresu.me/css/style.css">
 		<link rel="stylesheet" href="https://vmresu.me/css/highlight.css">
@@ -71,11 +71,11 @@
             <article>
                 <header>
                     <h1>
-                        Notes on pedantic C&#43;&#43; compilation
+                        Being pedantic about C&#43;&#43; compilation
                     </h1>
                     <h2 class="headline">
                     Nov 28, 2019
-                    · 2052 words
+                    · 2056 words
                     · 10 minute read
                       <span class="tags">
                       
@@ -258,7 +258,8 @@ What if we want to use standard c++ 14 instead of GNU c++ 14?
 We have no choice here; we should compile libxml++ from source with whatever
 standard we want to use in our app. (Although in this case, we can&rsquo;t because
 <code>std::auto_ptr</code> was removed in c++ 17, and libxml++-2.6 uses it. libxml++-3.0
-fixes this, but it this wasn&rsquo;t available, we&rsquo;d need to find another xml library).</p>
+fixes this, but it this wasn&rsquo;t available, we&rsquo;d need to find another xml library
+or port it ourselves).</p>
 
 <h2 id="building-our-app">Building our app</h2>
 
@@ -481,7 +482,7 @@ is a lot simpler than what was in those random links we found.</p>
             </article>
 
             
-                <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fvmresu.me%2fposts%2f2019-11-28-cmake-libxml%2b%2b%2f - Notes%20on%20pedantic%20C%2b%2b%20compilation by @offlinemark"><span class="icon-twitter"> tweet</span></a> | 
+                <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fvmresu.me%2fposts%2f2019-11-28-cmake-libxml%2b%2b%2f - Being%20pedantic%20about%20C%2b%2b%20compilation by @offlinemark"><span class="icon-twitter"> tweet</span></a> | 
 
 <a class="facebook" href="#" onclick="
     window.open(
