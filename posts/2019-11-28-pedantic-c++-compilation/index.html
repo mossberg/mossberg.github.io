@@ -242,11 +242,8 @@ make sure to use exactly this standard flag.</p>
 
 <p>In case I happened to have that version of gcc installed locally, it seems
 that this is the <em>easiest</em> way to find the default c++ version<sup class="footnote-ref" id="fnref:default-version"><a href="#fn:default-version">5</a></sup> 😔:</p>
-
-<pre><code>[I] vagrant ubuntu-bionic /v/l/c/compileplay ❯ g++ -dM -E -xc++ /dev/null | grep __cplusplus
-#define __cplusplus 201402L
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/compileplay ❯ g++ -dM -E -xc++ /dev/null | grep __cplusplus
+#define __cplusplus 201402L</code></pre></div>
 <h2 id="when-do-i-need-to-build-from-source">When do I need to build from source?</h2>
 
 <p>What if there wasn&rsquo;t a build log available?
