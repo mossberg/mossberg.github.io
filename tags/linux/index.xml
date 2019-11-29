@@ -6,21 +6,10 @@
     <description>Recent content in linux on Mark Mossberg&#39;s Blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 28 Nov 2019 18:55:41 -0500</lastBuildDate>
+    <lastBuildDate>Thu, 28 Nov 2019 11:18:14 -0500</lastBuildDate>
     
 	<atom:link href="https://vmresu.me/tags/linux/index.xml" rel="self" type="application/rss+xml" />
     
-    
-    <item>
-      <title>Compiling with libbzip</title>
-      <link>https://vmresu.me/posts/2019-11-28-bzip2/</link>
-      <pubDate>Thu, 28 Nov 2019 18:55:41 -0500</pubDate>
-      
-      <guid>https://vmresu.me/posts/2019-11-28-bzip2/</guid>
-      <description>Let&amp;rsquo;s try to compile this program:
-#include &amp;lt;bzlib.h&amp;gt; int main() { BZ2_bzReadOpen; }  It links against a third-party library, and references some symbol (I don&amp;rsquo;t have any idea how to actually use this library).
-[I] vagrant ubuntu-bionic /v/l/c/c/bzplay ❯ g++ main.cc [I] vagrant ubuntu-bionic /v/l/c/c/bzplay ❯  This just works. No flags needed. I was a bit confused, I would have thought surely at least a -lbz2 or something would have been needed.</description>
-    </item>
     
     <item>
       <title>C&#43;&#43; compilation notes (CMake &#43; libxml&#43;&#43;)</title>
