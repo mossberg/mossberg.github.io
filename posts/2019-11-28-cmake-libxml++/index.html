@@ -76,7 +76,7 @@ Sidenote: If you simply want to install libxml&#43;&#43; as a dependency for ano
                     </h1>
                     <h2 class="headline">
                     Nov 28, 2019
-                    · 1493 words
+                    · 1516 words
                     · 8 minute read
                       <span class="tags">
                       
@@ -107,7 +107,7 @@ as a dependency for another app, and aren&rsquo;t planning on doing any dev work
 you can simply download the <code>libxml++2.6-2v5</code> package, which only contains
 the shared objects, and no headers.</p>
 
-<p>We can check what&rsquo;s inside a apt package using <code>dpkg -L</code>.</p>
+<p>We can check what&rsquo;s inside an apt package using <code>dpkg -L</code>.</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ dpkg -L libxml++2.6-dev | head -n10
 /.
 /usr
@@ -179,8 +179,10 @@ We want to keep the momentum going and make sure that you have a similarly succe
 in the log anywhere, but I did see this line from the <code>./configure</code> output.</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">checking whether g++ supports C++11 features by default... yes</code></pre></div>
 <p>This is consistent with the libxml++ <a href="https://developer.gnome.org/libxml++-tutorial/stable/chapter-introduction.html">docs</a> that state that a
-C++11 compliant compiler is required. I guess I&rsquo;ll assume they they used C++11,
-and will make sure to use that standard when compiling my app.</p>
+C++11 compliant compiler is required. I guess I&rsquo;ll assume they used C++11,
+and should make sure to use that standard when compiling my app. If I want to
+use a newer standard in my app, then I should not use this pre-built package,
+and should build it myself.</p>
 
 <p>Anyway, now that we&rsquo;ve roughly checked that it&rsquo;s ok to use this binary with our
 system toolchain, let&rsquo;s continue.</p>
@@ -228,7 +230,7 @@ In file included from /usr/include/c++/7/memory:80:0,
                  from main.cc:1:
 ...</code></pre></div>
 <p>I needed to use <code>eval</code> because I use fish shell, which apparently has some issues
-with command substition used this way<sup class="footnote-ref" id="fnref:5"><a href="#fn:5">5</a></sup>.</p>
+with command substitution used this way<sup class="footnote-ref" id="fnref:5"><a href="#fn:5">5</a></sup>.</p>
 
 <p>There&rsquo;s a TON of warnings about <code>std::auto_ptr</code> (which is deprecated, and removed in C++17<sup class="footnote-ref" id="fnref:6"><a href="#fn:6">6</a></sup>🤮), but no errors, so yay,
 it worked! Also, all those warnings appear in ubuntu&rsquo;s official build output too!
