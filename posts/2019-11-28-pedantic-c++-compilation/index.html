@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		 
+			
+  
+    <meta name="twitter:card" content="summary"/>
+    
+      <meta name="twitter:image" content="https://vmresu.me/images/avatar.png" />
+    
+  
+  
+  <meta name="twitter:title" content="Being pedantic about C&#43;&#43; compilation"/>
+  <meta name="twitter:description" content="Takeaways:
+ Don&rsquo;t assume it&rsquo;s safe to use pre-built dependencies when compiling C&#43;&#43; programs. You might want to build from source, especially if you can&rsquo;t determine how a pre-built object was compiled, or if you want to use a different C&#43;&#43; standard than was used to compile it.
+ Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source."/>
+  
+    <meta name="twitter:site" content="@offlinemark"/>
+  
+  
+  
+  
+    <meta name="twitter:creator" content="@Mark Mossberg"/>
+  
+
+
+
+		
+		<meta name="author" content="Mark Mossberg">
+		<meta name="description" content="Hacker Nonsense">
+		<meta name="generator" content="Hugo 0.59.0" />
+		<title>Being pedantic about C&#43;&#43; compilation &middot; Mark Mossberg&#39;s Blog</title>
+		<link rel="shortcut icon" href="https://vmresu.me/images/favicon.ico">
+		<link rel="stylesheet" href="https://vmresu.me/css/style.css">
+		<link rel="stylesheet" href="https://vmresu.me/css/highlight.css">
+
+		
+		<link rel="stylesheet" href="https://vmresu.me/css/font-awesome.min.css">
+		
+
+		
+		<link href="https://vmresu.me/index.xml" rel="alternate" type="application/rss+xml" title="Mark Mossberg&#39;s Blog" />
+		
+
+		
+	</head>
+
+    <body>
+       <nav class="main-nav">
+	
+	
+		<a href='https://vmresu.me/'> <span class="arrow">← </span>Home</a>
+	
+	<a href='https://vmresu.me/about'>About</a>
+	<a href='https://vmresu.me/posts'>Archive</a>
+	<a href='https://vmresu.me/tags'>Tags</a>
+
+	
+
+	
+	
+	<a  href="https://vmresu.me/index.xml">Subscribe</a>
+	
+</nav>
+
+
+        <section id="wrapper" class="post">
+            <article>
+                <header>
+                    <h1>
+                        Being pedantic about C&#43;&#43; compilation
+                    </h1>
+                    <h2 class="headline">
+                    Nov 28, 2019
+                    · 2052 words
+                    · 10 minute read
+                      <span class="tags">
+                      
+                      
+                          
+                              <a href="https://vmresu.me/tags/linux">linux</a>
+                          
+                              <a href="https://vmresu.me/tags/cmake">cmake</a>
+                          
+                              <a href="https://vmresu.me/tags/c&#43;&#43;">C&#43;&#43;</a>
+                          
+                              <a href="https://vmresu.me/tags/build">Build</a>
+                          
+                      
+                      
+                      </span>
+                    </h2>
+                </header>
+                
+                  
+                    <div id="toc">
+                      <nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#abi-incompatibility">ABI Incompatibility</a></li>
+<li><a href="#when-do-i-need-to-build-from-source">When do I need to build from source?</a></li>
+<li><a href="#building-our-app">Building our app</a></li>
+<li><a href="#building-our-app-with-cmake">Building our app with CMake</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul></li>
+</ul>
+</nav>
+                    </div>
+                  
+                
+                <section id="post-body">
+                    
+
+<blockquote>
+<p><strong>Takeaways</strong>:</p>
+
+<ul>
+<li><p>Don&rsquo;t assume it&rsquo;s safe to use pre-built dependencies when compiling C++ programs. You might want to build from source,
+especially if you can&rsquo;t determine how a pre-built object was compiled, or if you want to use a different C++ standard
+than was used to compile it.</p></li>
+
+<li><p>Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source.</p></li>
+
+<li><p><code>pkg-config</code> is useful for generating the flags needed to compile a complex third-party dependency.
+CMake&rsquo;s <code>PkgConfig</code> can make it easy to integrate a dep into your CMake build system.</p></li>
+
+<li><p>Use the CMake <code>IMPORTED</code> targets (e.g. <code>BZip2::Bzip2</code>) versus legacy variables (e.g. <code>BZIP2_INCLUDE_DIRS</code> and <code>BZIP2_LIBRARIES</code>).</p></li>
+</ul>
+</blockquote>
+
+<hr />
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Let&rsquo;s set up a simple C++ program that links to libxml++ on Ubuntu 18.04.</p>
+
+<p>First, we&rsquo;ll install libxml++ from apt.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">sudo apt install libxml++2.6-dev</code></pre></div>
+<p>This installs a pre-built libxml++ shared object, and also header files that
+we&rsquo;ll need for development.</p>
+
+<p>Sidenote: If you simply want to install libxml++
+as a dependency for another app, and aren&rsquo;t planning on doing any dev work,
+you can simply download the <code>libxml++2.6-2v5</code> package, which only contains
+the shared objects, and no headers.</p>
+
+<p>We can check what&rsquo;s inside an apt package using <code>dpkg -L</code>.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ dpkg -L libxml++2.6-dev | head -n10
+/.
+/usr
+/usr/include
+/usr/include/libxml++-2.6
+/usr/include/libxml++-2.6/libxml++
+/usr/include/libxml++-2.6/libxml++/attribute.h
+/usr/include/libxml++-2.6/libxml++/attributedeclaration.h
+/usr/include/libxml++-2.6/libxml++/attributenode.h
+/usr/include/libxml++-2.6/libxml++/document.h
+/usr/include/libxml++-2.6/libxml++/dtd.h
+[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ dpkg -L libxml++2.6-dev | grep .so
+/usr/lib/x86_64-linux-gnu/libxml++-2.6.so
+[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ dpkg -L libxml++2.6-2v5
+/.
+/usr
+/usr/lib
+/usr/lib/x86_64-linux-gnu
+/usr/lib/x86_64-linux-gnu/libxml++-2.6.so.2.0.7
+/usr/share
+/usr/share/doc
+/usr/share/doc/libxml++2.6-2v5
+/usr/share/doc/libxml++2.6-2v5/changelog.Debian.gz
+/usr/share/doc/libxml++2.6-2v5/copyright
+/usr/lib/x86_64-linux-gnu/libxml++-2.6.so.2
+[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯</code></pre></div>
+<h2 id="abi-incompatibility">ABI Incompatibility</h2>
+
+<p><strong>In general, we should exercise a bit of caution when dealing with pre-built
+objects.</strong></p>
+
+<p>Due to ABI incompatibility, it&rsquo;s technically good practice to
+ensure that all objects used in a compilation process were compiled with the
+same<sup class="footnote-ref" id="fnref:1"><a href="#fn:1">1</a></sup>:</p>
+
+<ul>
+<li>C++ language standard</li>
+<li>Compiler (major) version</li>
+<li>Compiler flags (including ABI version [<code>-fabi-version</code>])</li>
+</ul>
+
+<p>Otherwise, we could (at best) have link errors, or even runtime errors and
+<em>memory corruption</em> 😋.</p>
+
+<p>So if we really wanted to be confident that we are avoiding these issues,
+ we could check how this <code>libxml++2.6.so.2</code>
+was compiled and ensure we compile our app in the same way.
+To do this, we can look at the build logs.</p>
+
+<p>I googled &ldquo;ubuntu libxml++ apt&rdquo; and found this: <a href="https://launchpad.net/ubuntu/+source/libxml%2B%2B2.6">https://launchpad.net/ubuntu/+source/libxml%2B%2B2.6</a>.
+Digging around a bit more, I was able to find the build log for the amd64 build
+for 18.04: <a href="https://launchpadlibrarian.net/349579832/buildlog_ubuntu-bionic-amd64.libxml++2.6_2.40.1-2_BUILDING.txt.gz">https://launchpadlibrarian.net/349579832/buildlog_ubuntu-bionic-amd64.libxml++2.6_2.40.1-2_BUILDING.txt.gz</a>.
+It&rsquo;s pretty cool that this info is public, and we can see exactly how our packages
+were built!</p>
+
+<p>Searching through that page for &ldquo;g++&rdquo; I find these lines:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">Preparing to unpack .../10-g++-7_7.2.0-18ubuntu2_amd64.deb ...
+Unpacking g++-7 (7.2.0-18ubuntu2) over (7.2.0-6ubuntu1) ...</code></pre></div>
+<p>So it looks like they&rsquo;re compiling with g++ 7.2.0. What version is installed on
+my system?</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ g++ --version
+g++ (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0</code></pre></div>
+<p>They&rsquo;re not the same version, but since they&rsquo;re only a few minor versions away,
+it should still be fine. Honestly, even if they were even a major version away,
+gcc is known for prioritizing ABI stability, so it probably wouldn&rsquo;t be a problem
+anyway<sup class="footnote-ref" id="fnref:2"><a href="#fn:2">2</a></sup>.
+In general, most platforms unofficially guarantee ABI stability, so this is not
+really a big concern. In the past, however, Windows intentionally broke
+ABI in every major release of Visual Studio<sup class="footnote-ref" id="fnref:3"><a href="#fn:3">3</a></sup>, so it&rsquo;s good to be aware of this stuff.
+With modern Visual Studio, they also seem to be trending more towards stability.</p>
+
+<blockquote>
+<p>We heard it loud and clear that a major reason contributing to MSVC v141’s fast adoption today is its binary compatibility with MSVC v140. This allowed you to migrate your own code to the v141 toolset at your own pace, without having to wait for any of your 3rd party library dependencies to migrate first.
+We want to keep the momentum going and make sure that you have a similarly successful adoption experience with MSVC v142 too. This is why we’re announcing today that our team is committed to provide binary compatibility for MSVC v142 with both MSVC v141 and v140.
+<sup class="footnote-ref" id="fnref:4"><a href="#fn:4">4</a></sup></p>
+</blockquote>
+
+<p>I didn&rsquo;t see <code>-std=</code> anywhere in that output, so we&rsquo;ll assume the code is compiled
+with the default c++ standard for g++ 7.2.0. Find exactly what standard it is,
+we can look at the gcc documentation for that version. Version 7.2.0 isn&rsquo;t available
+on the <a href="https://gcc.gnu.org/onlinedocs/">gcc website</a>, but the URLs are consistent, so we can
+guess the URL for 7.2.0: <a href="https://gcc.gnu.org/onlinedocs/gcc-7.2.0/gcc/Standards.html#C_002b_002b-Language">https://gcc.gnu.org/onlinedocs/gcc-7.2.0/gcc/Standards.html#C_002b_002b-Language</a>.</p>
+
+<blockquote>
+<p>The default, if no C++ language dialect options are given, is -std=gnu++14.</p>
+</blockquote>
+
+<p>Therefore, when I build my app, to ensure compatibility, we should
+make sure to use exactly this standard flag.</p>
+
+<p>In case I happened to have that version of gcc installed locally, it seems
+that this is the <em>easiest</em> way to find the default c++ version<sup class="footnote-ref" id="fnref:default-version"><a href="#fn:default-version">5</a></sup> 😔:</p>
+
+<pre><code>g++ -dM -E -xc++ /dev/null | grep __cplusplus
+</code></pre>
+
+<h2 id="when-do-i-need-to-build-from-source">When do I need to build from source?</h2>
+
+<p>What if there wasn&rsquo;t a build log available?
+Then we have no way of knowing how that object was built, and furthermore,
+no way of knowing if we are building our client app in an ABI compatible way.
+We should build libxml++ from source, or &ldquo;risk&rdquo; incompatibility issues.</p>
+
+<p>What if we want to use c++ 17 instead of 14 (with GNU extensions) for our app?
+What if we want to use standard c++ 14 instead of GNU c++ 14?
+We have no choice here; we should compile libxml++ from source with whatever
+standard we want to use in our app. (Although in this case, we can&rsquo;t because
+<code>std::auto_ptr</code> was removed in c++ 17, and libxml++-2.6 uses it. libxml++-3.0
+fixes this, but it this wasn&rsquo;t available, we&rsquo;d need to find another xml library).</p>
+
+<h2 id="building-our-app">Building our app</h2>
+
+<p>Anyway, now that we&rsquo;ve roughly checked that it&rsquo;s ok to use this binary with our
+system toolchain, and determined what <code>-std=</code> flag we should use,
+let&rsquo;s continue.</p>
+
+<p>My goal is to get this program to compile, which tests whether we can include
+the libxml++ headers, and instantiate a class.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-c++" data-lang="c++"><span style="color:#8f5902;font-style:italic">#include</span> <span style="color:#8f5902;font-style:italic">&lt;libxml++/libxml++.h&gt;</span><span style="color:#8f5902;font-style:italic">
+</span><span style="color:#8f5902;font-style:italic"></span>
+<span style="color:#204a87;font-weight:bold">int</span> <span style="color:#000">main</span><span style="color:#000;font-weight:bold">()</span> <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#000">xmlpp</span><span style="color:#ce5c00;font-weight:bold">::</span><span style="color:#000">DomParser</span> <span style="color:#000">parser</span><span style="color:#000;font-weight:bold">;</span>
+<span style="color:#000;font-weight:bold">}</span>
+</code></pre></div>
+<p>libxml++ includes a <code>pkg-config</code> <code>.pc</code> file which is really helpful. <code>pkg-config</code>
+is a program that prints out the compiler/linker flags needed to compilation.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ dpkg -L libxml++2.6-dev | grep .pc
+/usr/lib/x86_64-linux-gnu/pkgconfig/libxml++-2.6.pc
+[I] vagrant ubuntu-bionic /v/l/c/x/l/b ❯ pkg-config --cflags --libs libxml++-2.6
+-I/usr/include/libxml++-2.6 -I/usr/lib/x86_64-linux-gnu/libxml++-2.6/include -I/usr/include/libxml2 -I/usr/include/glibmm-2.4 -I/usr/lib/x86_64-linux-gnu/glibmm-2.4/include -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include -I/usr/include/sigc++-2.0 -I/usr/lib/x86_64-linux-gnu/sigc++-2.0/include -lxml++-2.6 -lxml2 -lglibmm-2.4 -lgobject-2.0 -lglib-2.0 -lsigc-2.0</code></pre></div>
+<p>libxml++ is apparently pretty complex to build because of <em>its</em> dependencies:
+libxml2, glibmm, and sigc++. Each of these has their own include directories
+that need to be passed to the compiler, and also their own <code>-l</code> linker flags.</p>
+
+<p>Using pkg-config, we can easily run a manual gcc command to compile our app.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/libxml++play ❯ eval g++ main.cc -std=gnu++14 (pkg-config --cflags --libs libxml++-2.6)
+In file included from /usr/include/libxml++-2.6/libxml++/libxml++.h:53:0,
+                 from main.cc:1:
+/usr/include/libxml++-2.6/libxml++/parsers/saxparser.h:224:8: warning: ‘template&lt;class&gt; class std::auto_ptr’ is deprecated [-Wdeprecated-declarations]
+   std::auto_ptr&lt;_xmlSAXHandler&gt; sax_handler_;
+        ^~~~~~~~
+In file included from /usr/include/c++/7/memory:80:0,
+                 from /usr/include/libxml++-2.6/libxml++/parsers/saxparser.h:14,
+                 from /usr/include/libxml++-2.6/libxml++/libxml++.h:53,
+                 from main.cc:1:
+/usr/include/c++/7/bits/unique_ptr.h:51:28: note: declared here
+   template&lt;typename&gt; class auto_ptr;
+                            ^~~~~~~~
+In file included from /usr/include/libxml++-2.6/libxml++/libxml++.h:54:0,
+                 from main.cc:1:
+/usr/include/libxml++-2.6/libxml++/parsers/textreader.h:260:10: warning: ‘template&lt;class&gt; class std::auto_ptr’ is deprecated [-Wdeprecated-declarations]
+     std::auto_ptr&lt;PropertyReader&gt; propertyreader;
+          ^~~~~~~~
+In file included from /usr/include/c++/7/memory:80:0,
+                 from /usr/include/libxml++-2.6/libxml++/parsers/saxparser.h:14,
+                 from /usr/include/libxml++-2.6/libxml++/libxml++.h:53,
+                 from main.cc:1:
+...</code></pre></div>
+<p>I needed to use <code>eval</code> because I use fish shell, which apparently has some issues
+with command substitution used this way<sup class="footnote-ref" id="fnref:5"><a href="#fn:5">6</a></sup>.</p>
+
+<p>There&rsquo;s a TON of warnings about <code>std::auto_ptr</code> (which is deprecated, and removed in C++17<sup class="footnote-ref" id="fnref:6"><a href="#fn:6">7</a></sup>🤮), but no errors, so yay,
+it worked! Also, all those warnings appear in ubuntu&rsquo;s official build output too!
+That&rsquo;s pretty cool to see.</p>
+
+<h2 id="building-our-app-with-cmake">Building our app with CMake</h2>
+
+<p>Using this, we could start to write a Makefile, and create a build
+system for our app.
+I&rsquo;d like to use CMake though; it&rsquo;s a bit more modern and lets you avoid
+rolling your own build system from scratch via make.</p>
+
+<p>A basic <code>CMakeLists.txt</code> looks like this.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#204a87">cmake_minimum_required</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">VERSION</span> <span style="color:#4e9a06">3.6</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_STANDARD</span> <span style="color:#4e9a06">14</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_STANDARD_REQUIRED</span> <span style="color:#4e9a06">ON</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic"># it might &#34;decay&#34; to a previous std otherwise
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_EXTENSIONS</span> <span style="color:#4e9a06">ON</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic"># it&#39;s on by default anyway
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">project</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">add_executable</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#4e9a06">main.cc</span><span style="color:#000;font-weight:bold">)</span></code></pre></div>
+<p>The three <code>set</code> lines will produce the <code>-std=gnu++14</code> flag that we want.
+<code>CMAKE_CXX_STANDARD_REQUIRED</code> will trigger an error if, for some reason,
+c++ 14 support is not available in our compiler. Otherwise, CMake might silently
+&ldquo;decay&rdquo; to a previous standard<sup class="footnote-ref" id="fnref:decay"><a href="#fn:decay">8</a></sup>. <code>CMAKE_CXX_EXTENSIONS</code> is what requests
+using <code>-std=gnu++14</code> vs <code>-std=c++14</code><sup class="footnote-ref" id="fnref:gnu"><a href="#fn:gnu">9</a></sup>. This is actually enabled by default!
+So keep in mind that if you want your project to strictly use standard c++,
+with no extensions, you should disable this variable.</p>
+
+<p>Now that we&rsquo;ve taken care of setting the proper standard, we need to
+tell CMake about our libxml++ dependency, otherwise, we
+get an error about includes. When you want to add a system dependency (typically
+residing in <code>/usr</code>, not in your source tree), you typically use a CMake &ldquo;find module&rdquo;.
+These are little CMake programs that ship with CMake designed to build targets
+for specific pieces of software.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/libxml++play ❯ cmake --help-module-list|head -n10
+AddFileDependencies
+AndroidTestUtilities
+BundleUtilities
+CMakeAddFortranSubdirectory
+CMakeBackwardCompatibilityCXX
+CMakeDependentOption
+CMakeDetermineVSServicePack
+CMakeExpandImportedTargets
+CMakeFindDependencyMacro
+CMakeFindFrameworks</code></pre></div>
+<p>If CMake includes a find module for the dependency you&rsquo;re linking to, that&rsquo;s great news.
+You can just do something like:</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#204a87">find_package</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">BZip2</span> <span style="color:#4e9a06">REQUIRED</span><span style="color:#000;font-weight:bold">)</span></code></pre></div>
+<p>which will automatically find the locations of the bzip2 headers and shared objects
+and prepare a CMake <code>IMPORTED</code> target for you to link against in a <code>target_link_libraries</code> call.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#8f5902;font-style:italic"># the modern way; prefer this
+</span><span style="color:#8f5902;font-style:italic"># `BZip2::BZip2` is an IMPORTED target
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#204a87">target_link_libraries</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#4e9a06">BZip2::BZip2</span><span style="color:#000;font-weight:bold">)</span></code></pre></div>
+<p>That find module will also go the legacy route of defining certain CMake variables
+that you manually include in your own <code>target_include_directories</code> and <code>target_link_libraries</code> calls.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#8f5902;font-style:italic"># legacy way; avoid this
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#204a87">target_include_directories</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#ce5c00;font-weight:bold">${</span><span style="color:#000">BZIP2_INCLUDE_DIRS</span><span style="color:#ce5c00;font-weight:bold">}</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">target_link_libraries</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#ce5c00;font-weight:bold">${</span><span style="color:#000">BZIP2_LIBRARIES</span><span style="color:#ce5c00;font-weight:bold">}</span><span style="color:#000;font-weight:bold">)</span></code></pre></div>
+<p>The documentation for the various included modules is available with the CMake
+documentation: <a href="http://cmake.org/cmake/help/v3.15/module/FindBZip2.html">http://cmake.org/cmake/help/v3.15/module/FindBZip2.html</a></p>
+
+<p>Unfortunately, CMake does not include a module for libxml++.
+This means that we need to find some random one online somewhere, or write our
+own. Searching for &ldquo;cmake findlibxml++&rdquo; yields a couple results:</p>
+
+<ul>
+<li><a href="https://github.com/Washington-University/CiftiLib/blob/master/cmake/Modules/Findlibxml%2B%2B.cmake">https://github.com/Washington-University/CiftiLib/blob/master/cmake/Modules/Findlibxml%2B%2B.cmake</a></li>
+<li><a href="https://github.com/nitram2342/degate/blob/master/cmake/Modules/FindLibXML%2B%2B.cmake">https://github.com/nitram2342/degate/blob/master/cmake/Modules/FindLibXML%2B%2B.cmake</a></li>
+<li><a href="https://models.slf.ch/p/meteoio/source/tree/HEAD/trunk/tools/cmake/FindLibXML%2B%2B.cmake">https://models.slf.ch/p/meteoio/source/tree/HEAD/trunk/tools/cmake/FindLibXML%2B%2B.cmake</a></li>
+<li><a href="https://sahara.irt-saintexupery.com/MOISE/Timed-Altarica-To-Fiacre-Translator/blob/master/config/FindLibXML++.cmake">https://sahara.irt-saintexupery.com/MOISE/Timed-Altarica-To-Fiacre-Translator/blob/master/config/FindLibXML++.cmake</a></li>
+</ul>
+
+<p>To use these, you need to copy them somewhere in your source tree, and then
+write a bit of CMake to allow CMake to find it. There is some documentation on
+this here: <a href="https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/How-To-Find-Libraries">https://gitlab.kitware.com/cmake/community/wikis/doc/tutorials/How-To-Find-Libraries</a>. All of these links I found seem to do things the legacy way,
+and have a ton of cmake code.</p>
+
+<p>Since libxml++ includes a <code>pkg-config</code> file, writing our own cmake to link
+against it is actually not too hard. CMake&rsquo;s <code>pkg-config</code> module
+includes the <code>pkg_check_modules</code> helper function which will automatically
+create an <code>IMPORTED</code> target if you use the <code>IMPORTED_TARGET</code> argument.
+Then you can easily use that target in a <code>target_link_libraries</code> call.</p>
+
+<p>It seems like this is not that widely known? All of the above links use the
+legacy way with CMake <code>*_INCLUDE_DIRS</code> and <code>*_LIBRARIES</code> variables.</p>
+<div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-cmake" data-lang="cmake"><span style="color:#204a87">cmake_minimum_required</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">VERSION</span> <span style="color:#4e9a06">3.6</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_STANDARD</span> <span style="color:#4e9a06">14</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_STANDARD_REQUIRED</span> <span style="color:#4e9a06">ON</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic"># it might &#34;decay&#34; to a previous std otherwise
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#204a87">set</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">CMAKE_CXX_EXTENSIONS</span> <span style="color:#4e9a06">ON</span><span style="color:#000;font-weight:bold">)</span>  <span style="color:#8f5902;font-style:italic"># it&#39;s on by default anyway
+</span><span style="color:#8f5902;font-style:italic"></span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">project</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">function</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span>    <span style="color:#204a87">find_package</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">PkgConfig</span> <span style="color:#4e9a06">REQUIRED</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span>    <span style="color:#204a87">pkg_check_modules</span><span style="color:#000;font-weight:bold">(</span>
+        <span style="color:#4e9a06">LIBXML++</span>
+        <span style="color:#4e9a06">REQUIRED</span> <span style="color:#4e9a06">IMPORTED_TARGET</span>
+        <span style="color:#4e9a06">libxml++-2.6</span>
+    <span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span>    <span style="color:#204a87">add_executable</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#4e9a06">main.cc</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span>    <span style="color:#204a87">target_link_libraries</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#4e9a06">PkgConfig::LIBXML++</span><span style="color:#000;font-weight:bold">)</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">endfunction</span><span style="color:#000;font-weight:bold">()</span><span style="color:#a40000">
+</span><span style="color:#a40000">
+</span><span style="color:#a40000"></span><span style="color:#204a87">main</span><span style="color:#000;font-weight:bold">()</span></code></pre></div><div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/x/l/build ❯ cmake ..                       ❮ 11/
+-- The C compiler identification is GNU 7.4.0
+-- The CXX compiler identification is GNU 7.4.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version &#34;0.29.1&#34;)
+-- Checking for module &#39;libxml++-2.6&#39;
+--   Found libxml++-2.6, version 2.40.1
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /vagrant/lang/cpp/xmlplay/libxml++play/build
+[I] vagrant ubuntu-bionic /v/l/c/x/l/build ❯ make
+Scanning dependencies of target main
+[ 50%] Building CXX object CMakeFiles/main.dir/main.cc.o
+[100%] Linking CXX executable main
+[100%] Built target main</code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+
+<p>This works pretty well! Our program builds and links successfully, and we can
+actually start development. We can be especially confident that we&rsquo;ve avoided
+subtle ABI incompatibility issues (that might only manifest at runtime!)
+because we took the time to ensure that our app builds in the same way as
+the pre-built library.  Plus, our CMake to handle libxml++
+is a lot simpler than what was in those random links we found.</p>
+<div class="footnotes">
+
+<hr />
+
+<ol>
+<li id="fn:1">For more info, see this talk: <a href="https://youtu.be/ncyQAjTyPwU?list=WL&amp;t=571">https://youtu.be/ncyQAjTyPwU?list=WL&amp;t=571</a>
+ <a class="footnote-return" href="#fnref:1"><sup>[return]</sup></a></li>
+<li id="fn:2"><a href="https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html">https://gcc.gnu.org/onlinedocs/libstdc++/manual/abi.html</a>.
+ <a class="footnote-return" href="#fnref:2"><sup>[return]</sup></a></li>
+<li id="fn:3"><a href="https://www.reddit.com/r/cpp/comments/13zex3/can_vs2010_c_libsdlls_be_linked_into_a_vs2012_c/c78ott7/">https://www.reddit.com/r/cpp/comments/13zex3/can_vs2010_c_libsdlls_be_linked_into_a_vs2012_c/c78ott7/</a>
+ <a class="footnote-return" href="#fnref:3"><sup>[return]</sup></a></li>
+<li id="fn:4"><a href="https://devblogs.microsoft.com/cppblog/cpp-binary-compatibility-and-pain-free-upgrades-to-visual-studio-2019/">https://devblogs.microsoft.com/cppblog/cpp-binary-compatibility-and-pain-free-upgrades-to-visual-studio-2019/</a>
+ <a class="footnote-return" href="#fnref:4"><sup>[return]</sup></a></li>
+<li id="fn:default-version"><a href="https://stackoverflow.com/a/44735016">https://stackoverflow.com/a/44735016</a>
+ <a class="footnote-return" href="#fnref:default-version"><sup>[return]</sup></a></li>
+<li id="fn:5"><a href="https://github.com/fish-shell/fish-shell/issues/982">https://github.com/fish-shell/fish-shell/issues/982</a>
+ <a class="footnote-return" href="#fnref:5"><sup>[return]</sup></a></li>
+<li id="fn:6"><a href="https://en.cppreference.com/w/cpp/memory">https://en.cppreference.com/w/cpp/memory</a>
+ <a class="footnote-return" href="#fnref:6"><sup>[return]</sup></a></li>
+<li id="fn:decay"><a href="http://cmake.org/cmake/help/v3.16/prop_tgt/CXX_STANDARD_REQUIRED.html">http://cmake.org/cmake/help/v3.16/prop_tgt/CXX_STANDARD_REQUIRED.html</a>
+ <a class="footnote-return" href="#fnref:decay"><sup>[return]</sup></a></li>
+<li id="fn:gnu"><a href="http://cmake.org/cmake/help/v3.16/prop_tgt/CXX_EXTENSIONS.html">http://cmake.org/cmake/help/v3.16/prop_tgt/CXX_EXTENSIONS.html</a>
+ <a class="footnote-return" href="#fnref:gnu"><sup>[return]</sup></a></li>
+</ol>
+</div>
+
+                </section>
+            </article>
+
+            
+                <a class="twitter" href="https://twitter.com/intent/tweet?text=https%3a%2f%2fvmresu.me%2fposts%2f2019-11-28-pedantic-c%2b%2b-compilation%2f - Being%20pedantic%20about%20C%2b%2b%20compilation by @offlinemark"><span class="icon-twitter"> tweet</span></a> | 
+
+<a class="facebook" href="#" onclick="
+    window.open(
+      'https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),
+      'facebook-share-dialog',
+      'width=626,height=436');
+    return false;"><span class="icon-facebook-rect"> Share</span>
+</a>
+
+            
+
+            
+                <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'markmossberg'; 
+
+     
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+            
+
+            
+
+            <footer id="footer">
+    
+        <div id="social">
+
+	
+	
+    <a class="symbol" href="https://www.github.com/offlinemark">
+        <i class="fa fa-github-square"></i>
+    </a>
+    
+    <a class="symbol" href="https://www.twitter.com/offlinemark">
+        <i class="fa fa-twitter-square"></i>
+    </a>
+    
+
+
+</div>
+
+    
+    <p class="small">
+    
+       © Copyright 2019 <i class="fa fa-heart" aria-hidden="true"></i> Mark Mossberg
+    
+    </p>
+    <p class="small">
+        Powered by <a href="http://www.gohugo.io/">Hugo</a> Theme By <a href="https://github.com/nodejh/hugo-theme-cactus-plus">nodejh</a>
+    </p>
+</footer>
+
+        </section>
+
+        <script src="https://vmresu.me/js/jquery-3.3.1.min.js"></script>
+<script src="https://vmresu.me/js/main.js"></script>
+<script src="https://vmresu.me/js/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+
+
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+	ga('create', 'UA-36552439-2', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+
+
+
+
+
+    </body>
+</html>
