@@ -12,15 +12,14 @@
     
     
     <item>
-      <title>C&#43;&#43; compilation notes (CMake &#43; libxml&#43;&#43;)</title>
+      <title>Notes on pedantic C&#43;&#43; compilation</title>
       <link>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</link>
       <pubDate>Thu, 28 Nov 2019 11:18:14 -0500</pubDate>
       
       <guid>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</guid>
-      <description>Let&amp;rsquo;s set up a simple C++ program that links to libxml++ on Ubuntu 18.04.
-First, we&amp;rsquo;ll install libxml++ from apt.
-sudo apt install libxml++2.6-dev This installs a pre-built libxml++ shared object, and also header files that we&amp;rsquo;ll need for development.
-Sidenote: If you simply want to install libxml++ as a dependency for another app, and aren&amp;rsquo;t planning on doing any dev work, you can simply download the libxml++2.6-2v5 package, which only contains the shared objects, and no headers.</description>
+      <description>Takeaways:
+ Don&amp;rsquo;t assume it&amp;rsquo;s safe to use pre-built dependencies when compiling C++ programs. You might want to build from source, especially if you can&amp;rsquo;t determine how a pre-built object was compiled, or if you want to use a different C++ standard than was used to compile it.
+ Ubuntu has public build logs which you can help you determine if you can use a pre-built object, or if you should compile from source.</description>
     </item>
     
     <item>

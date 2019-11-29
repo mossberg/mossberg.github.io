@@ -3,12 +3,12 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://vmresu.me/tags/c&#43;&#43;/</loc>
+    <loc>https://vmresu.me/tags/build/</loc>
     <lastmod>2019-11-28T11:18:14-05:00</lastmod>
   </url>
   
   <url>
-    <loc>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</loc>
+    <loc>https://vmresu.me/tags/c&#43;&#43;/</loc>
     <lastmod>2019-11-28T11:18:14-05:00</lastmod>
   </url>
   
@@ -29,6 +29,11 @@
   
   <url>
     <loc>https://vmresu.me/</loc>
+    <lastmod>2019-11-28T11:18:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://vmresu.me/posts/2019-11-28-cmake-libxml&#43;&#43;/</loc>
     <lastmod>2019-11-28T11:18:14-05:00</lastmod>
   </url>
   
