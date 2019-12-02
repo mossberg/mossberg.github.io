@@ -75,8 +75,8 @@
                     </h1>
                     <h2 class="headline">
                     Nov 28, 2019
-                    · 2062 words
-                    · 10 minute read
+                    · 2353 words
+                    · 12 minute read
                       <span class="tags">
                       
                       
@@ -218,7 +218,7 @@ gcc is known for prioritizing ABI stability, so it probably wouldn&rsquo;t be a 
 anyway<sup class="footnote-ref" id="fnref:2"><a href="#fn:2">2</a></sup>.
 In general, most platforms unofficially guarantee ABI stability, so this is not
 really a big concern. In the past, however, Windows intentionally broke
-ABI in every major release of Visual Studio<sup class="footnote-ref" id="fnref:3"><a href="#fn:3">3</a></sup>, so it&rsquo;s good to be aware of this stuff.
+the library ABI in every major release of Visual Studio<sup class="footnote-ref" id="fnref:3"><a href="#fn:3">3</a></sup>, so it&rsquo;s still good to be aware of compatibility.
 With modern Visual Studio, they also seem to be trending more towards stability.</p>
 
 <blockquote>
@@ -228,9 +228,9 @@ We want to keep the momentum going and make sure that you have a similarly succe
 </blockquote>
 
 <p>I didn&rsquo;t see <code>-std=</code> anywhere in that output, so we&rsquo;ll assume the code is compiled
-with the default c++ standard for g++ 7.2.0. Find exactly what standard it is,
-we can look at the gcc documentation for that version. Version 7.2.0 isn&rsquo;t available
-on the <a href="https://gcc.gnu.org/onlinedocs/">gcc website</a>, but the URLs are consistent, so we can
+with the default C++ standard for g++ 7.2.0. Find exactly what standard it is,
+we can look at the gcc documentation for that version. Version 7.2.0 isn&rsquo;t listed
+<a href="https://gcc.gnu.org/onlinedocs/">here</a>, but the URLs are consistent, so we can
 guess the URL for 7.2.0: <a href="https://gcc.gnu.org/onlinedocs/gcc-7.2.0/gcc/Standards.html#C_002b_002b-Language">https://gcc.gnu.org/onlinedocs/gcc-7.2.0/gcc/Standards.html#C_002b_002b-Language</a>.</p>
 
 <blockquote>
@@ -241,23 +241,58 @@ guess the URL for 7.2.0: <a href="https://gcc.gnu.org/onlinedocs/gcc-7.2.0/gcc/S
 make sure to use exactly this standard flag.</p>
 
 <p>In case you happen to have that version of gcc installed locally, it seems
-that this is the <em>easiest</em> way to find the default c++ standard<sup class="footnote-ref" id="fnref:default-version"><a href="#fn:default-version">5</a></sup> 😔:</p>
+that this is the <em>easiest</em> way to find the default C++ standard<sup class="footnote-ref" id="fnref:default-version"><a href="#fn:default-version">5</a></sup> 😔:</p>
 <div class="highlight"><pre style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-txt" data-lang="txt">[I] vagrant ubuntu-bionic /v/l/c/compileplay ❯ g++ -dM -E -xc++ /dev/null | grep __cplusplus
 #define __cplusplus 201402L</code></pre></div>
 <h2 id="when-do-i-need-to-build-from-source">When do I need to build from source?</h2>
 
 <p>What if there wasn&rsquo;t a build log available?
-Then we have no way of knowing how that object was built, and furthermore,
+Then we have no way of knowing how that object was built, and therefore,
 no way of knowing if we are building our client app in an ABI compatible way.
 We should build libxml++ from source, or &ldquo;risk&rdquo; incompatibility issues.</p>
 
-<p>What if we want to use c++ 17 instead of 14 (with GNU extensions) for our app?
-What if we want to use standard c++ 14 instead of GNU c++ 14?
-We have no choice here; we should compile libxml++ from source with whatever
-standard we want to use in our app. (Although in this case, we can&rsquo;t because
-<code>std::auto_ptr</code> was removed in c++ 17, and libxml++-2.6 uses it. libxml++-3.0
-fixes this, but it this wasn&rsquo;t available, we&rsquo;d need to find another xml library
-or port it ourselves).</p>
+<p>What if we want to use C++17 instead of 14 (with GNU extensions) for our app?
+What if we want to use standard C++14 instead of GNU C++14?
+If the same compiler version is used to compile the app,
+recompiling may not be strictly necessary in this case, since gcc does
+have a strong cross-standard compatibility policy<sup class="footnote-ref" id="fnref:gcc-compat"><a href="#fn:gcc-compat">6</a></sup>.
+This will probably &ldquo;just work&rdquo; for many cases.
+However, in general, this
+depends on the compiler&rsquo;s language and library ABI compatibility
+across standard versions, and the specific nature of the interface between the objects.
+(What kinds of language features are used in the interface boundary?
+Do STL types pass through it?)</p>
+
+<p>Even given gcc&rsquo;s strong cross-standard compatibility policy,
+recompiling everything with the same compiler version <em>and</em> standard version would be
+the safest option, due to ABI bugs that have been known to happen.</p>
+
+<blockquote>
+<p>GCC versions 4.7.0 and 4.7.1 had changes to the C++ standard library which
+affected the ABI in C++11 mode: a data member was added to std::list changing
+its size and altering the definitions of some member functions, and
+std::pair&rsquo;s move constructor was non-trivial which altered the calling
+convention for functions with std::pair arguments or return types. The ABI
+incompatibilities have been fixed for GCC version 4.7.2 <strong>but as a result C++11
+code compiled with GCC 4.7.0 or 4.7.1 may be incompatible with C++11 code
+compiled with different GCC versions and with C++98/C++03 code compiled with
+any version</strong>.<sup class="footnote-ref" id="fnref:gcc4bug"><a href="#fn:gcc4bug">7</a></sup></p>
+</blockquote>
+
+<p>In that case, C++11 code compiled with GCC 4.7.0 could be incompatible with
+C++03 code compiled with the same version, for example.</p>
+
+<p>Unfortunately, it may not be possible to arbitrarily
+recompile code at a standard version it was not written for. For example,
+libxml++-2.6 makes liberal use of <code>std::auto_ptr</code>, which was removed in C++17).
+Porting may be necessary, or finding a replacement library, if that is not
+an option. If the main reason C++17 is desired for the app is because of
+standard library features, it might be possible to target the older standard,
+and get the new standard library features through a third party (like Abseil).</p>
+
+<p>In general, linking between objects built by the same compiler version, but
+at different standard versions <em>should</em> be fine, but if recompiling at the
+same standard version is possible, it should be preferred.</p>
 
 <h2 id="building-our-app">Building our app</h2>
 
@@ -308,9 +343,9 @@ In file included from /usr/include/c++/7/memory:80:0,
                  from main.cc:1:
 ...</code></pre></div>
 <p>I needed to use <code>eval</code> because I use fish shell, which apparently has some issues
-with command substitution used this way<sup class="footnote-ref" id="fnref:5"><a href="#fn:5">6</a></sup>.</p>
+with command substitution used this way<sup class="footnote-ref" id="fnref:5"><a href="#fn:5">8</a></sup>.</p>
 
-<p>There&rsquo;s a TON of warnings about <code>std::auto_ptr</code> (which is deprecated, and removed in C++17<sup class="footnote-ref" id="fnref:6"><a href="#fn:6">7</a></sup>🤮), but no errors, so yay,
+<p>There&rsquo;s a TON of warnings about <code>std::auto_ptr</code> (which is deprecated, and removed in C++17<sup class="footnote-ref" id="fnref:6"><a href="#fn:6">9</a></sup>🤮), but no errors, so yay,
 it worked! Also, all those warnings appear in ubuntu&rsquo;s official build output too!
 That&rsquo;s pretty cool to see.</p>
 
@@ -332,10 +367,10 @@ rolling your own build system from scratch via make.</p>
 </span><span style="color:#a40000"></span><span style="color:#204a87">add_executable</span><span style="color:#000;font-weight:bold">(</span><span style="color:#4e9a06">main</span> <span style="color:#4e9a06">main.cc</span><span style="color:#000;font-weight:bold">)</span></code></pre></div>
 <p>The three <code>set</code> lines will produce the <code>-std=gnu++14</code> flag that we want.
 <code>CMAKE_CXX_STANDARD_REQUIRED</code> will trigger an error if, for some reason,
-c++ 14 support is not available in our compiler. Otherwise, CMake might silently
-&ldquo;decay&rdquo; to a previous standard<sup class="footnote-ref" id="fnref:decay"><a href="#fn:decay">8</a></sup>. <code>CMAKE_CXX_EXTENSIONS</code> is what requests
-using <code>-std=gnu++14</code> vs <code>-std=c++14</code><sup class="footnote-ref" id="fnref:gnu"><a href="#fn:gnu">9</a></sup>. This is actually enabled by default!
-So keep in mind that if you want your project to strictly use standard c++,
+C++14 support is not available in our compiler. Otherwise, CMake might silently
+&ldquo;decay&rdquo; to a previous standard<sup class="footnote-ref" id="fnref:decay"><a href="#fn:decay">10</a></sup>. <code>CMAKE_CXX_EXTENSIONS</code> is what requests
+using <code>-std=gnu++14</code> vs <code>-std=c++14</code><sup class="footnote-ref" id="fnref:gnu"><a href="#fn:gnu">11</a></sup>. This is actually enabled by default!
+So keep in mind that if you want your project to strictly use standard C++,
 with no extensions, you should disable this variable.</p>
 
 <p>Now that we&rsquo;ve taken care of setting the proper standard, we need to
@@ -465,6 +500,10 @@ is a lot simpler than what was in those random links we found.</p>
  <a class="footnote-return" href="#fnref:4"><sup>[return]</sup></a></li>
 <li id="fn:default-version"><a href="https://stackoverflow.com/a/44735016">https://stackoverflow.com/a/44735016</a>
  <a class="footnote-return" href="#fnref:default-version"><sup>[return]</sup></a></li>
+<li id="fn:gcc-compat"><a href="https://stackoverflow.com/a/49119902">https://stackoverflow.com/a/49119902</a>
+ <a class="footnote-return" href="#fnref:gcc-compat"><sup>[return]</sup></a></li>
+<li id="fn:gcc4bug"><a href="https://gcc.gnu.org/gcc-4.7/changes.html">https://gcc.gnu.org/gcc-4.7/changes.html</a>
+ <a class="footnote-return" href="#fnref:gcc4bug"><sup>[return]</sup></a></li>
 <li id="fn:5"><a href="https://github.com/fish-shell/fish-shell/issues/982">https://github.com/fish-shell/fish-shell/issues/982</a>
  <a class="footnote-return" href="#fnref:5"><sup>[return]</sup></a></li>
 <li id="fn:6"><a href="https://en.cppreference.com/w/cpp/memory">https://en.cppreference.com/w/cpp/memory</a>
